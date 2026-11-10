@@ -242,7 +242,8 @@ def terminal_node_shell(command, directory, scenario, *, evidence):
                 if scenario == "missing":
                     terminal.wait_for_screen("Install kubectl")
                 elif scenario in {"shell_missing", "connection_loss"}:
-                    terminal.wait_for_screen("Node shell: closed")
+                    terminal.wait_for_screen("Node shell:")
+                    terminal.wait_for_screen("closed ·")
                 else:
                     terminal.wait_for_screen("NODE REMOTE READY café界")
                     terminal.wait_for_screen("Node: owned-pty-node")
@@ -267,7 +268,8 @@ def terminal_node_shell(command, directory, scenario, *, evidence):
                             break
                         else:
                             terminal.send(b"exit\r")
-                    terminal.wait_for_screen("Node shell: closed")
+                    terminal.wait_for_screen("Node shell:")
+                    terminal.wait_for_screen("closed ·")
                 deadline = time.monotonic() + 5
                 while server.pod is not None:
                     terminal.read(0.01)

@@ -101,7 +101,7 @@ class NodeShellScreen(ModalScreen[None]):
                         f"Limits: CPU {settings.limits.cpu}, memory {settings.limits.memory}\n"
                         "Privileges: root UID/GID 0, privileged, host PID / IPC / network\n"
                         "Host mount: / → /host, read-write, no mount propagation\n"
-                        "Service account token: not mounted; service links: disabled\n"
+                        "Token automount disabled; service links disabled\n"
                         f"Startup deadline: {settings.startup_timeout_seconds}s · "
                         f"Session deadline: {settings.session_timeout_seconds}s\n"
                         f"Container PID 1: /bin/sleep {settings.session_timeout_seconds}\n"

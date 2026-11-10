@@ -175,6 +175,7 @@ async def test_default_cancel_exact_create_real_pty_and_uid_cleanup_retains_node
                 "/host",
                 "host root",
                 "no automatic chroot",
+                "Token automount disabled; service links disabled",
             ):
                 assert text in preview
             await pilot.press("enter")
