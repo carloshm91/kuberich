@@ -170,3 +170,55 @@ def test_exact_source_actual_failure_and_cleanup_are_retained_without_private_er
     assert "synthetic-private" not in evidence.read_text()
     if failure:
         assert result["failure_type"] and result["failure_locations"]
+
+
+def test_pre_drain_connections_are_reported_separately_without_an_atomic_unsend_claim():
+    traffic = proof.ReplacementTraffic()
+    traffic.connect()
+    traffic.connect()
+    traffic.request()
+    before = traffic.snapshot()
+    assert before["connections_before_drain"] == 2 and before["requests_before_drain"] == 1
+    assert before["connections_after_drain"] == before["requests_after_drain"] == 0
+    with pytest.raises(AssertionError):
+        traffic.require_stopped()
+    traffic.drained = True
+    traffic.require_stopped()
+    assert traffic.snapshot()["connections_before_drain"] == 2
+
+
+@pytest.mark.parametrize("kind", ["connect", "request"])
+def test_any_injected_post_drain_traffic_still_fails(kind):
+    traffic = proof.ReplacementTraffic(drained=True)
+    getattr(traffic, kind)()
+    with pytest.raises(AssertionError):
+        traffic.require_stopped()
+    assert (
+        traffic.snapshot()[f"{'connections' if kind == 'connect' else 'requests'}_after_drain"] == 1
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fault", [None, "ready_forward", "review_replay"])
+async def test_lost_forward_or_consumed_review_cannot_become_a_new_authority(fault):
+    from kuberich.errors import AppError
+
+    class Forwards:
+        def owned_source(self, identity, attempt):
+            assert identity == "owned-id" and attempt == 0
+            if fault == "ready_forward":
+                return object()
+            raise AppError("not ready")
+
+    class Owner:
+        async def run(self, review):
+            assert review == "one-use-review"
+            if fault == "review_replay":
+                return object()
+            raise AppError("consumed")
+
+    if fault:
+        with pytest.raises(AssertionError):
+            await proof.require_retired(Owner(), "one-use-review", Forwards(), "owned-id")
+    else:
+        await proof.require_retired(Owner(), "one-use-review", Forwards(), "owned-id")

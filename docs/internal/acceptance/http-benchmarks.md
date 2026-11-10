@@ -11,7 +11,7 @@ Explicit reviewed load uses a configured free Vegeta v12.13.0 executable and
 one freshly verified backend Pod behind a dedicated loopback forward. Immutable
 load/request limits, one-use service consent, read-only policy and current
 client/UID/port checks precede effects. Existing forwards supply selection only.
-Observed loss never adopts another listener/backend or restarts load.
+Observed loss never authorizes another listener/backend or restarts load.
 
 Requests stay in private files and receive no inherited proxy/provider/API
 credentials. Owned process/parser/file work drains before the forward/client.
@@ -162,6 +162,25 @@ requests. Retaining zero response bytes still drains the wire: received bytes,
 response headers and external RSS are not capped by `max-body=0`.
 
 kubectl's final remote selection is name-based, and forward loss notification
-cannot eliminate the pre-observation listener-reuse race. Stop reacts to observed
-loss; it never treats an old port as ownership proof. Real provider/network/runtime
+cannot eliminate the listener-reuse race, including scheduled/in-flight connects
+during observed-loss cancellation and drainage. Stop reacts to observed loss;
+it never treats an old port as ownership proof. Real provider/network/runtime
 certification remains the maintainer's later opt-in work, separate from this issue.
+
+
+## Retained final-verifier cancellation-window failure
+
+The first frozen final verifier on `a1aeb3c4adc2676ecf422b3565cbbe3d660c3d0a`
+fails an overstrong assertion that an immediate replacement listener receives
+zero connections before generator drainage completes. The original receipt
+`artifacts/issue79/frozen-kind-01.json` records all 331 inputs unchanged and
+owned-cluster/private-directory deletion. It records only that the replacement
+count was nonzero; the exact count and child-PID assertions were not retained
+before that failure, so they cannot be claimed for this attempt.
+
+The corrected verifier separates accepted connections/requests during the
+cancellation window from traffic after confirmed process/handler drainage.
+It retains those counts and cleanup facts incrementally, rejects a new ready
+forward or a consumed review, and fails any deliberately injected post-drain
+traffic. Product code, load limits, cleanup deadlines and source guards are
+unchanged. The original failed attempt remains failed.

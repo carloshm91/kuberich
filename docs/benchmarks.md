@@ -78,11 +78,15 @@ Choose **Cancel** or press Escape to stop and wait for cleanup. Leaving the form
 changing connection, tightening read-only mode or quitting also stops the test.
 There is one active test per application, with no background or detach option.
 Observed target replacement or forward loss makes the run incomplete; it never
-switches to another Pod, restarts load or adopts another listener at the old port.
+switches to another Pod, restarts load or deliberately adopts another listener at the old port.
 
 kubectl selects its remote Pod by name. Identity checks and loss notifications
-reduce, but cannot eliminate, the race before a remote connection or an
-unobserved local listener replacement. Use the result's completion state.
+reduce, but cannot eliminate, the race before a remote connection or a local
+listener replacement. A request already scheduled or in flight can reach a
+replacement listener while observed-loss cancellation is still draining. The
+application waits for owned load to drain before returning or releasing its
+client; it never claims that cancellation can unsend requests. Use the result's
+completion state.
 
 ## Read the result
 

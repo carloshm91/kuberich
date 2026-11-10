@@ -9,6 +9,8 @@ import signal
 import subprocess
 import sys
 import time
+from contextlib import suppress
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +22,7 @@ from kuberich.domain.benchmarks import LoadOptions, RequestOptions
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.port_forwards import ForwardState
 from kuberich.domain.targets import ResourceTarget
+from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.benchmark_store import BenchmarkStore
 from kuberich.services.benchmarks import BenchmarkManager, BenchmarkService, BenchmarkState
@@ -64,10 +67,57 @@ BENCHMARK_CHECKS = (
     "actual-vegeta-statistics",
     "redacted-persistence-and-restart",
     "observed-forward-loss-cancels",
-    "replacement-listener-not-adopted",
+    "replacement-traffic-stops-after-drain",
+    "no-forward-reconnect-or-review-replay",
     "children-listeners-private-files-drained",
     "caller-kubeconfig-preserved",
 )
+
+
+@dataclass
+class ReplacementTraffic:
+    """Keep the cancellation window distinct from traffic after confirmed drain."""
+
+    drained: bool = False
+    connections_before_drain: int = 0
+    connections_after_drain: int = 0
+    requests_before_drain: int = 0
+    requests_after_drain: int = 0
+
+    def connect(self) -> None:
+        if self.drained:
+            self.connections_after_drain += 1
+        else:
+            self.connections_before_drain += 1
+
+    def request(self) -> None:
+        if self.drained:
+            self.requests_after_drain += 1
+        else:
+            self.requests_before_drain += 1
+
+    def snapshot(self) -> dict[str, bool | int]:
+        return asdict(self)
+
+    def require_stopped(self) -> None:
+        assert self.drained and self.connections_after_drain == self.requests_after_drain == 0
+
+
+async def require_retired(
+    owner: BenchmarkService, review: Any, forwards: ForwardManager, identity: Any
+) -> None:
+    try:
+        forwards.owned_source(identity, 0)
+    except AppError:
+        pass
+    else:
+        raise AssertionError("A lost forward became READY again.")
+    try:
+        await owner.run(review)
+    except AppError:
+        pass
+    else:
+        raise AssertionError("A consumed benchmark review was replayed.")
 
 
 def input_hashes(root: Path) -> dict[str, str]:
@@ -227,7 +277,9 @@ async def verify(
             )
             assert await count() == 2 and not owner.save_failed
             pids = owner.process_ids
+            progress["owned_process_ids"] = list(pids)
             require_gone(pids)
+            progress["complete_run_children_reaped"] = True
             assert forwards.active_count == processes.active_count == 0
             assert not list(Path(connection.directory.name).glob("benchmark-*"))
             saved = await store.scan()
@@ -262,29 +314,76 @@ async def verify(
                     observed_loss.set()
 
             unsubscribe = forwards.subscribe(lost)
-            replacement_connections = 0
+            traffic = ReplacementTraffic()
+            handlers: set[asyncio.Task[None]] = set()
+            handler_errors: list[str] = []
+            progress["replacement_traffic"] = traffic.snapshot()
+            progress["owned_process_ids"] = [*pids, *loss.process_ids]
+            progress["owned_forward_pid"] = forward.pid
 
             async def replacement(
                 reader: asyncio.StreamReader, writer: asyncio.StreamWriter
             ) -> None:
-                nonlocal replacement_connections
-                replacement_connections += 1
-                writer.close()
-                await writer.wait_closed()
+                try:
+                    async with asyncio.timeout(1):
+                        data = await reader.read(4096)
+                    if data:
+                        traffic.request()
+                        progress["replacement_traffic"] = traffic.snapshot()
+                except (OSError, TimeoutError):
+                    pass
+                finally:
+                    writer.close()
+                    with suppress(OSError):
+                        await writer.wait_closed()
+
+            def completed(task: asyncio.Task[None]) -> None:
+                handlers.discard(task)
+                if not task.cancelled():
+                    error = task.exception()
+                    if error is not None:
+                        handler_errors.append(type(error).__name__)
+                        progress["replacement_handler_errors"] = list(handler_errors)
+
+            def accepted(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+                traffic.connect()
+                progress["replacement_traffic"] = traffic.snapshot()
+                task = asyncio.create_task(replacement(reader, writer))
+                handlers.add(task)
+                task.add_done_callback(completed)
 
             os.kill(forward.pid, signal.SIGKILL)
             await asyncio.wait_for(observed_loss.wait(), 10)
             unsubscribe()
+            progress["forward_loss_observed"] = True
             replacement_server = await asyncio.start_server(
-                replacement, "127.0.0.1", forward.ports[0].local, reuse_address=True
+                accepted, "127.0.0.1", forward.ports[0].local, reuse_address=True
             )
             try:
                 incomplete = await asyncio.wait_for(running, 10)
+                require_gone(loss.process_ids)
+                progress["loss_run_children_reaped"] = True
+                # Finish handlers admitted during cancellation before declaring
+                # the post-drain observation window. In-flight requests cannot
+                # be retroactively unsent by the forward-loss notification.
+                while handlers:
+                    await asyncio.gather(*tuple(handlers))
+                assert not handler_errors
+                traffic.drained = True
+                progress["replacement_traffic"] = traffic.snapshot()
+                await require_retired(loss, review2, forwards, forward.identity)
+                progress["retired_forward_and_review_refused"] = True
                 await asyncio.sleep(0.4)
-                assert replacement_connections == 0
+                traffic.require_stopped()
             finally:
                 replacement_server.close()
                 await replacement_server.wait_closed()
+                for handler in tuple(handlers):
+                    handler.cancel()
+                await asyncio.gather(*tuple(handlers), return_exceptions=True)
+                progress["replacement_handlers_drained"] = True
+                progress["replacement_traffic"] = traffic.snapshot()
+                assert not handler_errors
             assert incomplete.completion == "target_lost" and incomplete.metrics is None
             after_loss = await count()
             await asyncio.sleep(0.4)
@@ -299,7 +398,7 @@ async def verify(
             return {
                 "checks": list(BENCHMARK_CHECKS),
                 "phase": "verified",
-                "replacement_listener_connections": replacement_connections,
+                "replacement_traffic": traffic.snapshot(),
                 "complete_requests": 2,
                 "loss_requests_total": after_loss,
                 "source_pod_uid_checked": True,
@@ -318,6 +417,9 @@ async def verify(
             await manager.close()
             await forwards.close()
             await sessions.close()
+            progress["application_cleanup_complete"] = True
+            require_gone(tuple(progress.get("owned_process_ids", ())))
+            progress["recorded_children_reaped_after_cleanup"] = True
 
 
 def main() -> None:

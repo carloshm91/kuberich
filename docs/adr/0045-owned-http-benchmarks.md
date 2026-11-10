@@ -27,7 +27,7 @@ Each run owns a new Pod forward with an ephemeral local port and no reconnects.
 A narrow forward observer reports readiness and loss for the exact UUID/attempt.
 Do not reuse an ordinary Service forward's listener or claim load balancing.
 Stop on observed target/client/policy invalidation or forward loss; never adopt
-another listener, backend or forwarding attempt.
+another listener, backend or forwarding attempt explicitly.
 
 Pass literal argv and a minimal noncredential environment. Private 0700 run
 directories and 0600 JSON target/raw-result files keep request values off argv.
@@ -60,8 +60,10 @@ explicit save-failed observation.
   throughput follows the producer's success semantics, with redirects separate.
 - `max-body=0` still drains response bodies. No whole-wire byte or external RSS
   quota is claimed; request deadlines and output limits remain separate controls.
-- kubectl's name-based remote selection and an unobserved local listener change
-  retain a final race. Notification stops observed loss without claiming atomic
+- kubectl's name-based remote selection and local listener changes retain a
+  final race. A scheduled/in-flight request can reach a replacement during
+  observed-loss cancellation and drainage. Notification stops further owned work
+  without claiming atomic
   UID binding for every connection.
 - File entry operations are reviewed named link/unlink transactions, not an
   interprocess filesystem compare-and-swap. Unknown files are never pruned.
