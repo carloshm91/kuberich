@@ -19,7 +19,9 @@ from kubernetes_asyncio import client as sdk
 from kubernetes_asyncio.client.exceptions import ApiException
 
 from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.adapters.pty import PtyEndpoint
 from kuberich.config.catalog import Entry, load_catalog
+from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.ephemeral_debug import EphemeralDebugOptions
 from kuberich.domain.mutations import MutationState
@@ -106,13 +108,16 @@ class DebugProxy:
             payload = await response.read()
             assert len(payload) <= 8 * 1024 * 1024
             receipt["status"] = response.status
+            content_type = response.headers.get("Content-Type", "application/json")
         self.receipts.append(receipt)
         if append and not receipt["dry_run"] and name == self.drop_name and response.status == 200:
             self.drop_name = None
             receipt["owned_fault"] = "post-commit-response-loss"
             request.transport.abort()
             return web.Response()
-        return web.Response(status=response.status, body=payload, content_type="application/json")
+        return web.Response(
+            status=response.status, body=payload, headers={"Content-Type": content_type}
+        )
 
     async def websocket(self, request: Any, receipt: dict[str, Any]) -> Any:
         """Relay the pinned kubectl WebSocket transport without recording terminal bytes."""
@@ -257,13 +262,46 @@ async def wait_for(predicate: Callable[[], Awaitable[bool]], *, seconds: float =
             await asyncio.sleep(0.1)
 
 
+async def owned_marker(endpoint: PtyEndpoint, marker: bytes, transcript: bytearray) -> int:
+    """Probe only owned shell stdout; terminal raw-mode setup may flush early input."""
+    commands = 0
+    while marker not in transcript:
+        endpoint.write(b"printf '%s%s\\n' 'OWNED-' '" + marker[6:] + b"'\r")
+        commands += 1
+        while marker not in transcript:
+            try:
+                async with asyncio.timeout(0.25):
+                    data = await endpoint.read()
+            except TimeoutError:
+                break
+            if not data:
+                raise AppError("Owned attach ended before its input/output marker.")
+            transcript.extend(data)
+            assert len(transcript) <= 65536
+    return commands
+
+
 async def terminal_trial(
-    service: EphemeralDebugService, name: str, *, detach: bool
+    service: EphemeralDebugService, name: str, *, detach: bool, progress: dict[str, Any]
 ) -> dict[str, Any]:
-    """Run the production attach lease through the production PTY, then reap it."""
+    """Keep collector cancellation confined to this owned terminal child task."""
+    task = asyncio.create_task(_terminal_trial(service, name, detach=detach, progress=progress))
+    try:
+        return await asyncio.shield(task)
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+async def _terminal_trial(
+    service: EphemeralDebugService, name: str, *, detach: bool, progress: dict[str, Any]
+) -> dict[str, Any]:
+    """Run a production attach lease and retain bounded owned-fixture failure diagnosis."""
     terminal, request = await service.prepare_shell(name)
     transcript = bytearray()
     marker = b"OWNED-DEBUG-DETACH" if detach else b"OWNED-DEBUG-COMPLETE"
+    attempt: dict[str, Any] = {"name": name, "detach": detach, "status": "failed"}
+    progress.setdefault("terminal_attempts", []).append(attempt)
     async with ProcessRunner(AccessPolicy(False)) as runner:
         async with (
             terminal.stage(request) as command,
@@ -274,22 +312,39 @@ async def terminal_trial(
         ):
             assert command.argv[4] == "attach" and "debug" not in command.argv
             pid = process.pid
-            async with asyncio.timeout(30):
-                while b"$" not in transcript and b"#" not in transcript:
-                    data = await endpoint.read()
-                    assert data, "Owned debug shell exited before attach input."
-                    transcript.extend(data)
-                    assert len(transcript) <= 65536
-                endpoint.write(b"printf '%s%s\\n' 'OWNED-' '" + marker[6:] + b"'\r")
-                while marker not in transcript:
-                    transcript.extend(await endpoint.read())
-                    assert len(transcript) <= 65536
-                endpoint.resize(52, 18)
-                endpoint.write(b"\x10\x11" if detach else b"exit 7\r")
-                while data := await endpoint.read():
-                    transcript.extend(data)
-                    assert len(transcript) <= 65536
-                result = await process.wait()
+            exit_sent = False
+            try:
+                async with asyncio.timeout(30):
+                    # Reattachment need not emit a prompt. Input has no local
+                    # echo containing the complete expected output marker.
+                    try:
+                        attempt["marker_commands"] = await owned_marker(
+                            endpoint, marker, transcript
+                        )
+                    except AppError:
+                        result = await process.wait()
+                        attempt["returncode"] = result.returncode
+                        raise
+                    endpoint.resize(52, 18)
+                    endpoint.write(b"\x10\x11" if detach else b"exit 7\r")
+                    exit_sent = True
+                    while data := await endpoint.read():
+                        transcript.extend(data)
+                        assert len(transcript) <= 65536
+                    result = await process.wait()
+            except asyncio.CancelledError:
+                if detach or not exit_sent:
+                    raise
+                # Fresh remote completion can beat the kubectl status frame.
+                # Give that owned transport a bounded chance to report its exit.
+                async with asyncio.timeout(10):
+                    result = await process.wait()
+                attempt["completion_monitor_cancelled"] = True
+            finally:
+                attempt["output_tail"] = sanitize_text(
+                    bytes(transcript[-4096:]).decode("utf-8", errors="replace"),
+                    allow_newlines=True,
+                )
         assert runner.active_count == 0
     assert not request.path.exists()
     try:
@@ -299,6 +354,7 @@ async def terminal_trial(
     else:
         raise AssertionError("Owned kubectl attach survived terminal drainage.")
     assert result.returncode == (0 if detach else 7)
+    attempt.update(status="passed", returncode=result.returncode)
     return {
         "returncode": result.returncode,
         "input_output_observed": marker in transcript,
@@ -423,7 +479,9 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
             checks.append("real-exact-uid-resourceversion-one-entry-append-workload-unchanged")
             await wait_for(lambda: remote(options.name, "running"))
             progress["phase"] = "production-kubectl-attach-completion"
-            progress["completion_pty"] = await terminal_trial(service, options.name, detach=False)
+            progress["completion_pty"] = await terminal_trial(
+                service, options.name, detach=False, progress=progress
+            )
             await wait_for(lambda: remote(options.name, "terminated"))
             completed = await manifest()
             status = next(
@@ -544,7 +602,7 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
             ).state is MutationState.SUCCEEDED
             await wait_for(lambda: remote(detached_options.name, "running"))
             progress["detach_pty"] = await terminal_trial(
-                detached, detached_options.name, detach=True
+                detached, detached_options.name, detach=True, progress=progress
             )
             assert await remote(detached_options.name, "running")
             checks.append("real-ctrl-p-ctrl-q-detach-reaps-local-pty-remote-still-running")
@@ -626,10 +684,7 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                                 command, width=90, height=28, guard=terminal.require_current
                             ) as (endpoint, _process),
                         ):
-                            data = bytearray()
-                            while b"$" not in data and b"#" not in data:
-                                data.extend(await endpoint.read())
-                                assert len(data) <= 65536
+                            await owned_marker(endpoint, b"OWNED-TARGET-MONITOR", bytearray())
                             attached.set()
                             await asyncio.Event().wait()
                     finally:

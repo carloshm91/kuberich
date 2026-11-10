@@ -1,6 +1,7 @@
 """HTTP and ownership evidence for reviewed append and existing-process attach."""
 
 import asyncio
+import threading
 from contextlib import suppress
 from dataclasses import replace
 
@@ -453,3 +454,169 @@ async def test_launch_checks_named_running_session_beyond_display_cap(tmp_path):
         async with shell.stage(request):
             assert request.path.exists()
         assert not request.path.exists()
+
+
+@pytest.mark.asyncio
+async def test_terminal_rejects_modified_or_other_container_request_before_staging(tmp_path):
+    async with debug_source(tmp_path) as (source, api, _):
+        await append(source)
+        shell, request = await source.prepare_shell(OPTIONS.name)
+        for foreign in (
+            replace(request),
+            replace(
+                request,
+                command=replace(
+                    request.command, target=replace(request.command.target, container="main")
+                ),
+            ),
+        ):
+            with pytest.raises(AppError, match="exact prepared"):
+                async with shell.stage(foreign):
+                    pytest.fail("unreviewed attach request must not stage")
+            assert not request.path.exists()
+        async with shell.stage(request):
+            assert request.path.exists()
+        assert len(api.requests) == 2
+
+
+@pytest.mark.asyncio
+async def test_collector_does_not_invalidate_terminal_during_offloop_preparation(
+    tmp_path, monkeypatch
+):
+    import kuberich.services.ephemeral_debug as module
+
+    entered, release = threading.Event(), threading.Event()
+    inspect = module.inspect_debug_instance
+
+    def blocked(*args):
+        entered.set()
+        assert release.wait(3)
+        return inspect(*args)
+
+    async with debug_source(tmp_path) as (source, _, _):
+        await append(source)
+        monkeypatch.setattr(module, "inspect_debug_instance", blocked)
+        source.start()
+        task = asyncio.create_task(source.prepare_shell(OPTIONS.name))
+        try:
+            assert await asyncio.to_thread(entered.wait, 3)
+            # A publication may arrive while the new terminal has no evidence yet.
+            await source.observe()
+        finally:
+            release.set()
+        shell, request = await task
+        async with shell.stage(request):
+            assert request.path.exists()
+
+
+@pytest.mark.asyncio
+async def test_terminal_self_stop_unwinds_staging_then_drains_without_dependency_cycle(tmp_path):
+    async with debug_source(tmp_path) as (source, api, _):
+        await append(source)
+        shell, request = await source.prepare_shell(OPTIONS.name)
+
+        async def terminal():
+            async with shell.stage(request):
+                assert request.path.exists()
+                await source.stop_owned()
+
+        task = asyncio.create_task(terminal())
+        async with asyncio.timeout(3):
+            result = await asyncio.gather(task, return_exceptions=True)
+            await source.stop_owned()
+        assert isinstance(result[0], asyncio.CancelledError)
+        assert source.operation_count == 0
+        assert not request.path.exists()
+        assert len(api.requests) == 2
+
+
+@pytest.mark.asyncio
+async def test_revalidation_respects_captured_client_timeout_and_records_unsent(tmp_path):
+    async with debug_source(tmp_path, timeout=0.1) as (source, api, _):
+        review = await source.prepare(OPTIONS)
+        api.block_read = True
+        result = await source.execute(source.confirm(review))
+        assert result.state is MutationState.TIMEOUT
+        assert source.observation.outcomes[-1].result == result
+        assert len(api.requests) == 1
+
+
+@pytest.mark.asyncio
+async def test_collector_stops_after_captured_generation_retires_and_publishes_no_late_rows(
+    tmp_path,
+):
+    async with debug_source(tmp_path) as (source, api, current):
+        observed = []
+        source.subscribe(observed.append)
+        current[0] = False
+        with pytest.raises(AppError):
+            source.start()
+        current[0] = True
+        api.block_read = True
+        source.start()
+        await api.read_entered.wait()
+        current[0] = False
+        api.read_release.set()
+        async with asyncio.timeout(2):
+            while source.operation_count:
+                await asyncio.sleep(0)
+        assert observed == []
+
+
+@pytest.mark.asyncio
+async def test_explicit_existing_session_attach_has_no_append_ownership_and_cannot_reuse_lease(
+    tmp_path,
+):
+    async with debug_source(tmp_path) as (source, api, current):
+        await append(source)
+        manager = EphemeralDebugManager()
+        existing = manager.create(
+            source.client,
+            PODS,
+            source.target,
+            source.policy,
+            lambda: current[0],
+            environment={},
+            directory=tmp_path,
+        )
+        await existing.observe()
+        assert existing.observation.outcomes == ()
+        shell, request = await existing.prepare_shell(OPTIONS.name)
+        assert shell.client is source.client
+        async with shell.stage(request):
+            assert request.path.exists()
+        with pytest.raises(AppError, match="lease"):
+            async with shell.stage(request):
+                pytest.fail("detached lease must not be reused")
+        await manager.close()
+        await manager.close_for_client(source.client)
+        assert manager.active_count == 0 and manager.records == ()
+        assert len(api.requests) == 2
+
+
+@pytest.mark.asyncio
+async def test_attached_profile_validation_keeps_event_loop_available(tmp_path, monkeypatch):
+    import kuberich.services.ephemeral_debug as module
+
+    entered, release = threading.Event(), threading.Event()
+    inspect = module.inspect_debug_instance
+
+    def blocked(*args):
+        entered.set()
+        assert release.wait(3)
+        return inspect(*args)
+
+    async with debug_source(tmp_path) as (source, _, _):
+        await append(source)
+        shell, request = await source.prepare_shell(OPTIONS.name)
+        async with shell.stage(request):
+            monkeypatch.setattr(module, "inspect_debug_instance", blocked)
+            observed = asyncio.create_task(source.observe())
+            try:
+                assert await asyncio.to_thread(entered.wait, 3)
+                async with asyncio.timeout(0.3):
+                    await asyncio.sleep(0.001)
+                assert not observed.done()
+            finally:
+                release.set()
+            await observed

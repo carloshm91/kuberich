@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import subprocess
 import sys
 from contextlib import asynccontextmanager, contextmanager
@@ -12,6 +13,7 @@ import pytest
 from aiohttp import web
 
 from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.processes import ProcessMode, ProcessPurpose, capture_command
 from scripts import verify_ephemeral_debug_kind as proof
 from tests.support.connections import catalog_fixture, certificate
 
@@ -323,3 +325,89 @@ async def test_websocket_relay_preserves_protocol_input_output_and_closes_both_d
                     "transport": "websocket",
                 }
             ]
+
+
+@pytest.mark.asyncio
+async def test_discovery_relay_preserves_negotiated_aggregated_content_type_exactly():
+    negotiated = "application/json;g=apidiscovery.k8s.io;v=v2;as=APIGroupDiscoveryList"
+    received = []
+
+    async def api(request):
+        received.append((request.path, request.headers["Accept"], await request.read()))
+        return web.Response(
+            body=b'{"apiVersion":"apidiscovery.k8s.io/v2","kind":"APIGroupDiscoveryList","items":[]}',
+            headers={"Content-Type": negotiated},
+        )
+
+    async with server(api) as endpoint, aiohttp.ClientSession() as upstream:
+        proxy = proof.DebugProxy(upstream, endpoint)
+        async with (
+            server(proxy.handle) as local,
+            upstream.get(local + "/apis", headers={"Accept": negotiated}) as response,
+        ):
+            assert response.headers["Content-Type"] == negotiated
+            assert (await response.json())["kind"] == "APIGroupDiscoveryList"
+        assert received == [("/apis", negotiated, b"")]
+
+
+@pytest.mark.asyncio
+async def test_terminal_proof_accepts_no_prompt_and_confines_completion_monitor_cancellation(
+    tmp_path,
+):
+    helper = tmp_path / "owned-helper.py"
+    exited = tmp_path / "remote-completed"
+    helper.write_text(
+        "import os,sys,time,tty\n"
+        "from pathlib import Path\n"
+        "tty.setraw(0)\n"
+        "data=b''\n"
+        "while True:\n"
+        " data+=os.read(0,4096)\n"
+        " if b'printf' in data:\n"
+        "  os.write(1,b'OWNED-DEBUG-COMPLETE\\r\\n');data=b''\n"
+        " if b'exit 7' in data:\n"
+        f"  Path({str(exited)!r}).write_text('terminated');time.sleep(.1);sys.exit(7)\n"
+    )
+    path = tmp_path / "delegated-config"
+    command = capture_command(
+        (sys.executable, str(helper), "--context=owned", "--namespace=owned", "attach"),
+        environment=dict(os.environ),
+        directory=tmp_path,
+        mode=ProcessMode.FOREGROUND,
+        purpose=ProcessPurpose.ATTACH,
+    )
+
+    class Terminal:
+        def require_current(self):
+            pass
+
+        @asynccontextmanager
+        async def stage(self, request):
+            owner = asyncio.current_task()
+            path.write_text("owned-synthetic-config")
+
+            async def monitor():
+                while not exited.exists():
+                    await asyncio.sleep(0.001)
+                owner.cancel()
+
+            task = asyncio.create_task(monitor())
+            try:
+                yield command
+            finally:
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
+                path.unlink()
+
+    class Service:
+        async def prepare_shell(self, name):
+            assert name == "debug-complete"
+            return Terminal(), SimpleNamespace(path=path)
+
+    progress = {}
+    result = await proof.terminal_trial(
+        Service(), "debug-complete", detach=False, progress=progress
+    )
+    assert result["returncode"] == 7 and result["process_reaped"]
+    assert progress["terminal_attempts"][0]["completion_monitor_cancelled"]
+    assert not path.exists() and not asyncio.current_task().cancelling()

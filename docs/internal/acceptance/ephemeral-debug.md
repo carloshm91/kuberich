@@ -62,3 +62,44 @@ uv run python -m scripts.verify_ephemeral_debug_kind --kind /absolute/path/to/ve
 Actual source-bound API/PTY evidence, meaningful fault results, installed-wheel
 trials, independent production/changed-line coverage and all protected exact-head
 checks remain pending. No tags, packages, hosting or DNS are changed by this work.
+
+## Original actual trial
+
+The first clean candidate, `fe33523d6ab7fe3ecd450bee06d0dc5b855dfd11`,
+fails in 33.26 seconds during actual kubectl attachment, before receiving
+terminal input. Its retained report is
+`artifacts/issue78/early-kind-01/evidence.json`. The recorded production
+requests establish successful HTTP 200 strict dry-run and a single conditional
+append with the same reviewed UID/version/request digest. The returned Pod
+contains the exact nonprivileged declaration. Attachment receives EOF after
+core/group discovery; the original receipt does not retain the child error
+text, so the cause is not inferred from that result alone.
+
+The original failure preserves unchanged measured inputs, drained owners,
+deleted private sessions/directories and verified owned-cluster absence.
+Subsequent diagnosis and corrected proof remain pending; this attempt does not
+establish attach completion, detach, irreversibility or release qualification.
+
+## Core and ownership checks
+
+The focused core cohort passes 125 cases in 15.50 seconds with a fresh physical
+`/tmp/kuberich-78-core-04` base and independent coverage artifacts. The pure model
+measures 289/289 lines and 108/108 branches; the append adapter measures 37/37
+lines and 10/10 branches. All 29 fixture listeners use owned loopback ports.
+This measurement includes unimported production in the report, but is a focused
+cohort rather than the full production coverage gate.
+
+Review catches and tests the server's omitted `stdinOnce=false` default, an
+invalid-profile receipt becoming a foreign attach, readiness beyond the display
+limit, stale deferred executions, a same-Pod request-retargeting hole, a collector
+racing terminal preparation and a self-close dependency cycle. Monitor and stage
+validation use the owned parser worker. The final service cohort passes 49
+cases in 6.19 seconds with `/tmp/kuberich-78-service-07`; that module measures
+390/391 lines (99.74%) and 71/74 branches (95.95%). The earlier 42-case result
+measured only 59/68 branches (86.76%) and is not a branch-gate pass. No original
+failure or coverage report is relabeled. Ruff and focused strict typing pass.
+
+Verifier safety controls pass 15 cases in 1.06 seconds with
+`/tmp/kuberich-78-proof-01`. They refuse unsafe tools/source/evidence before
+cluster creation and preserve actual failures/cleanup. They do not substitute
+for the pending successful real API/PTY proof.

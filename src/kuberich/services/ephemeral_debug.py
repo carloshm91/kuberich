@@ -434,6 +434,8 @@ class EphemeralDebugService:
                 )
             self.require_current()
             request = terminal.attach.capture(name)
+            terminal.request = request
+            terminal.require_current()
             self._publish(attaching=name, code="attach_prepared")
             self.start()
             return terminal, request
@@ -449,7 +451,8 @@ class EphemeralDebugService:
             return
         try:
             self.require_current()
-            terminal.verify(pod)
+            if terminal.evidence is not None:
+                await parse_owned(partial(terminal.verify, pod))
         except AppError:
             await self._stop_attachment("attachment_identity_changed")
 
@@ -476,6 +479,11 @@ class EphemeralDebugService:
         self._closed = True
         if self._closing is None:
             self._closing = asyncio.create_task(self._stop())
+        caller = asyncio.current_task()
+        if caller is self._terminal or caller in self._jobs:
+            # This task must unwind its own lease before the cleanup child can
+            # drain it. Awaiting that child here would create a dependency cycle.
+            raise asyncio.CancelledError
         await finish_owned(self._closing)
 
     async def close(self) -> None:
@@ -496,6 +504,7 @@ class EphemeralDebugTerminal:
             directory=owner.directory,
         )
         self.evidence: tuple[ContainerInstance, ContainerInstance | None, bytes] | None = None
+        self.request: ShellRequest | None = None
         self.review: EphemeralDebugReview | None = None
         self._started = False
 
@@ -523,12 +532,14 @@ class EphemeralDebugTerminal:
     @asynccontextmanager
     async def stage(self, request: ShellRequest) -> AsyncIterator[ProcessCommand]:
         self.require_current()
+        if request is not self.request:
+            raise AppError("This terminal requires its exact prepared debug attach request.")
         if self._started or self.owner._terminal is not None:
             raise AppError("This debug terminal has already been admitted.")
         self._started = True
         self.owner._terminal = asyncio.current_task()
         try:
-            self.verify(await self.owner._pod())
+            await parse_owned(partial(self.verify, await self.owner._pod()))
             async with self.attach.stage(request) as command:
                 self.require_current()
                 self.owner._publish(code="attached")
