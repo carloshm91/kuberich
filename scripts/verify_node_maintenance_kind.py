@@ -70,7 +70,7 @@ class MaintenanceProxy:
         async with self.upstream.request(
             request.method,
             self.endpoint + request.raw_path,
-            data=body,
+            data=body if body else None,
             headers=headers,
             allow_redirects=False,
         ) as response:

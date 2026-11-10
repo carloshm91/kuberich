@@ -244,6 +244,8 @@ async def test_owned_mutual_tls_forwarder_preserves_conditions_and_postcommit_un
                     assert api.pods == []
                     writes = [item for item in proxy.receipts if item["method"] != "GET"]
                     assert [item["method"] for item in writes] == ["PATCH", "POST"]
+                    assert api.requests[0][3]["Content-Type"] == "application/json-patch+json"
+                    assert api.requests[1][3]["Content-Type"] == "application/json"
                     assert writes[1]["status"] == 201 and writes[1]["normal_grace"]
                     assert writes[1]["preconditions"] == {
                         "uid": "pod-one",
@@ -263,6 +265,47 @@ async def test_owned_mutual_tls_forwarder_preserves_conditions_and_postcommit_un
                     await source.close()
         finally:
             await upstream.close()
+
+
+@pytest.mark.asyncio
+async def test_forwarded_get_discovery_keeps_no_body_or_content_type(tmp_path):
+    from aiohttp import web
+
+    class DiscoveryApi:
+        def __init__(self):
+            self.requests = []
+
+        async def handle(self, request):
+            body = await request.read()
+            self.requests.append(
+                (
+                    request.method,
+                    body,
+                    request.headers.get("Content-Type"),
+                    request.headers.get("Accept"),
+                )
+            )
+            return web.json_response(
+                {"resources": []},
+                status=415 if request.headers.get("Content-Type") or body else 200,
+            )
+
+    api = DiscoveryApi()
+    tls, credentials = certificate(tmp_path, client_auth=True)
+    user = {key: value for key, value in credentials.items() if key.startswith("client-")}
+    cluster = {"certificate-authority-data": credentials["certificate-authority-data"]}
+    async with maintenance_server(api, tls=tls) as endpoint:
+        upstream = KubernetesSession(
+            catalog_fixture(tmp_path, endpoint, user, cluster).select("kuberich-test-one"), 2
+        )
+        await upstream.open()
+        try:
+            async with rehearsal.observed_client(upstream) as (client, proxy):
+                assert await client.get_json("/api/v1") == {"resources": []}
+                assert proxy.receipts == [{"method": "GET", "path": "/api/v1", "status": 200}]
+        finally:
+            await upstream.close()
+    assert api.requests == [("GET", b"", None, "application/json")]
 
 
 @pytest.mark.asyncio
