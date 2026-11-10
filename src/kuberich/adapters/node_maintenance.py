@@ -6,8 +6,14 @@ from dataclasses import dataclass
 from kuberich.adapters.kubernetes import KubernetesSession, decode_json
 from kuberich.adapters.mutations import WriteResponseMetadata, guarded_request
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState, status_result
-from kuberich.domain.node_maintenance import PodReview, eviction_receipt, node_state, retry_delay
-from kuberich.domain.resources import resource_object, resource_record
+from kuberich.domain.node_maintenance import (
+    PodReview,
+    eviction_receipt,
+    node_record,
+    node_state,
+    retry_delay,
+)
+from kuberich.domain.resources import resource_object
 from kuberich.errors import AppError
 
 
@@ -22,7 +28,7 @@ async def patch_node(
     client: KubernetesSession, intent: MutationIntent, authorize: Callable[[], None], desired: bool
 ) -> MutationResult:
     def receipt(body: bytes) -> None:
-        record = resource_record(intent.resource, decode_json(body))
+        record = node_record(intent.resource, decode_json(body))
         if node_state(record, intent.target) is not desired:
             raise AppError("Node patch receipt did not confirm the requested scheduling state.")
 

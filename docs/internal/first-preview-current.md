@@ -9,9 +9,21 @@ cordon/drain/uncordon reviews, server-authoritative policy/v1 eviction, separate
 unmanaged and emptyDir consents, finite retries/cancellation and an independently
 observed final scheduling state. Implementation and focused checks are in
 progress. The owned kind helper now supports an explicitly bounded worker count
-while preserving the single-node default; the early production-service proof
-is prepared for coordinated actual API verification. This preparation does not
-establish delivered node-maintenance behavior or qualify a release.
+while preserving the single-node default. The first actual three-node trial
+fails during PDB recovery; its original evidence and successful cleanup remain
+retained. An HTTP success-code contract omitted 201, which the pinned server's
+create handler uses. The targeted correction passes 133 focused cases and keeps
+exact UID/version guards and uncertain-response handling.
+
+Clean committed `787800cb1a6bcbe834087993ce6f741e938a40a4` then passes all
+four early real API groups in 47.81 seconds: conditional cordon/conflict/uncordon,
+actual PDB 429 followed by same-reviewed-UID/version HTTP 201, original-UID
+absence, replacement capacity on the other worker and explicit fresh uncordon.
+All 308 inputs stay unchanged and all owners/private files/caller state/three
+nodes are cleaned up. See [maintenance acceptance](acceptance/node-maintenance.md)
+for exact source, retained failure and report digest. Expanded fault, storage,
+cancellation and UI cases, full coverage and protected hosted qualification remain
+pending; this early checkpoint does not qualify a release.
 
 ## Node diagnostics delivered in development source — 2026-11-10 UTC
 

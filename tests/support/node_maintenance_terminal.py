@@ -3,12 +3,14 @@
 import copy
 import json
 import threading
-import time
 from contextlib import contextmanager, suppress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
+import yaml
+
 from tests.support.resources import collection, descriptor, legacy_roots
+from tests.support.tables import server_table
 from tests.support.terminal_api import config
 from tests.terminal.pty_support import TerminalSession
 
@@ -138,7 +140,11 @@ class MaintenanceHandler(BaseHTTPRequestHandler):
                 )
             )
         elif parsed.path == "/api/v1/nodes":
-            self.respond({**collection(copy.deepcopy(self.server.node)), "kind": "NodeList"})
+            self.respond(
+                server_table(copy.deepcopy(self.server.node))
+                if "as=Table" in self.headers.get("Accept", "")
+                else {**collection(copy.deepcopy(self.server.node)), "kind": "NodeList"}
+            )
         elif parsed.path == "/api/v1/nodes/owned-maintenance-node":
             self.server.node_requested.set()
             self.server.node_gate.wait(10)
@@ -236,7 +242,10 @@ class MaintenanceHandler(BaseHTTPRequestHandler):
                 pod["metadata"]["deletionTimestamp"] = "2026-11-10T00:00:00Z"
             else:
                 del self.server.pods[name]
-            self.respond({"apiVersion": "v1", "kind": "Status", "status": "Success", "code": 200})
+            self.respond(
+                {"apiVersion": "v1", "kind": "Status", "status": "Success", "code": 201},
+                status=201,
+            )
 
 
 class MaintenanceServer(ThreadingHTTPServer):
@@ -277,11 +286,17 @@ def maintenance_api():
 def terminal_node_maintenance(command, directory, scenario, *, evidence):
     directory = directory.resolve()
     with maintenance_api() as api:
+        api.blocked = scenario != "success"
         kubeconfig = config(
             directory / "maintenance-kubeconfig",
             f"http://127.0.0.1:{api.server_port}",
             {"token": "synthetic-maintenance"},
         )
+        document = yaml.safe_load(kubeconfig.read_text())
+        document["contexts"].append(
+            {"name": "kuberich-maintenance-other", "context": {"cluster": "owned", "user": "owned"}}
+        )
+        kubeconfig.write_text(yaml.safe_dump(document))
         original = kubeconfig.read_bytes()
         invocation = [
             *command,
@@ -294,14 +309,27 @@ def terminal_node_maintenance(command, directory, scenario, *, evidence):
         ]
         with TerminalSession(invocation, directory, size=(120, 36)) as terminal:
             terminal.wait_for_screen("owned-maintenance-node")
+            terminal.wait_for_screen("Live ·")
             terminal.send(b":drain\r")
             terminal.wait_for_screen("Review complete.")
             assert not any(method in {"PATCH", "POST"} for method, *_ in api.requests)
             terminal.send(b"\x1b[Z\r")
-            terminal.wait_for_screen("Refused; waiting to retry")
+            terminal.wait_for_screen(
+                "Original UID absent" if scenario == "success" else "Refused; waiting to retry"
+            )
             assert api.attempted.is_set() and api.node["spec"]["unschedulable"]
             sent = sum(method == "POST" for method, *_ in api.requests)
-            if scenario == "quit":
+            if scenario == "success":
+                terminal.send(b"\x1b")
+                terminal.wait_for_screen("Sort NAME", absent=("Node maintenance ·",))
+                terminal.send(b":uncordon\r")
+                terminal.wait_for_screen("Review complete.")
+                assert api.node["spec"]["unschedulable"]
+                terminal.send(b"\x1b[Z\r")
+                terminal.wait_for_screen("Observed schedulable")
+                terminal.send(b"\x11")
+                terminal.finish()
+            elif scenario == "quit":
                 terminal.send(b"\x11")
                 terminal.finish()
             else:
@@ -311,11 +339,14 @@ def terminal_node_maintenance(command, directory, scenario, *, evidence):
                 terminal.resize(50, 15)
                 terminal.send(b"\x1b")
                 terminal.wait_for_screen("Sort NAME", absent=("Node maintenance ·",))
+                if scenario == "context":
+                    terminal.resize(120, 36)
+                    terminal.send(b":ctx kuberich-maintenance-other\r")
+                    terminal.wait_for_screen("kuberich-maintenance-other")
                 terminal.send(b"\x11")
                 terminal.finish()
             terminal.save_evidence(evidence)
             assert b"synthetic-maintenance" not in terminal.transcript
         assert sent == sum(method == "POST" for method, *_ in api.requests)
-        assert api.node["spec"]["unschedulable"]
+        assert api.node["spec"]["unschedulable"] is (scenario != "success")
         assert kubeconfig.read_bytes() == original
-        time.sleep(0.05)

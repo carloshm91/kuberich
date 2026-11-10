@@ -53,9 +53,42 @@ explicit private kubeconfig and local Docker socket capture. The early scenarios
 are conditional cordon/conflict/uncordon and a managed Deployment blocked by a
 PDB, followed by allowance recovery while the reviewed target Pod version stays
 unchanged, original-UID absence and replacement scheduling on the other worker.
-Actual results, immutable source hashes, failure attempts and verified cleanup
-will be recorded after the coordinated run. No actual cluster result is claimed
-by this preparation record.
+The first clean committed trial, `0979f7aba978b661a2d4c9bab3331521b0364ae5`,
+fails in 45.49 seconds during PDB allowance recovery. Its evidence is retained at
+`artifacts/issue77/early-kind-01/evidence.json`, with the original log and source
+snapshot. Conditional cordon/conflict/uncordon and the actual PDB refusal are
+reached. The original report does not retain the final wire status, so it does
+not prove that specific response value. All three owned nodes are removed and
+client/private-file/source/environment cleanup checks pass.
+
+The initial client accepted only HTTP 200 eviction success. The pinned
+[API create handler](https://github.com/kubernetes/kubernetes/blob/v1.36.4/staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go#L209-L217)
+uses HTTP 201 and fills an otherwise empty Status code; the
+[eviction implementation](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/registry/core/pod/storage/eviction.go#L274-L287)
+returns Status success. An owned HTTP 201 case is retained red before the fix.
+The corrected client accepts only HTTP 200/201 with a validated v1 Status success;
+a supplied body code must exactly match the observed status, while an omitted
+optional code remains valid. Mismatched/invalid receipts stay uncertain and are
+not replayed. Node PATCH still expects HTTP 200. The targeted cohort passes 133
+cases; strict typing and Ruff/format pass. UID/version request bytes stay fixed.
+
+The second clean committed trial, `787800cb1a6bcbe834087993ce6f741e938a40a4`,
+passes all four early real API groups in 47.81 seconds. It observes the actual
+PDB 429 refusal, then HTTP 201 on a second attempt using the same reviewed Pod UID
+and resourceVersion after a second replica restores allowance. The original UID
+is confirmed absent; both replacement UIDs run on the other worker. DaemonSets
+remain, the final drain observation is cordoned, and a separate fresh review
+explicitly uncordons the Node.
+
+All 308 measured inputs stay unchanged. The caller's synthetic kubeconfig
+sentinel, environment and owned kubeconfig are preserved, all service owners
+and private sessions drain, and all three owned nodes are deleted with absence
+verified. Evidence is `artifacts/issue77/early-kind-02/evidence.json`, SHA-256
+`0bdf804328579c209457e859d1ba5af110dc2fe39103374f3ca2c017aeb51de9`.
+Both commands use the verified absolute tools above and fresh evidence paths;
+`candidate.json` records each immutable commit/tree before execution. Later
+source changes require new qualification; these four early groups do not
+establish all issue acceptance criteria or release readiness.
 
 ## Completion limits
 

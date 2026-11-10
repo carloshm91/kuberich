@@ -78,6 +78,7 @@ class CustomLayout:
                 Column(f"c{index + 1}", self.headers[index].type != "string")
                 for index in self.visible
             ),
+            metrics=False,
         )
 
     def label(self, key: str) -> str:

@@ -9,20 +9,24 @@ from kuberich.domain.node_maintenance import (
     DrainOptions,
     MaintenanceMode,
     PodReview,
+    bound_volume,
     consent_blockers,
     eviction_body,
     eviction_receipt,
     matching_pdb,
     matching_pdbs,
     node_patch,
+    node_record,
     node_state,
     pod_facts,
+    pvc_claims,
     retry_delay,
+    volume_locality,
 )
 from kuberich.domain.resources import resource_record
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
-from tests.support.node_maintenance import NODE, PDB, POD, pod
+from tests.support.node_maintenance import NODE, PDB, POD, PV, PVC, MaintenanceApi, pod
 
 TARGET = ResourceTarget(SessionIdentity("synthetic", 1), "", "nodes", None, "node-one", "node-uid")
 
@@ -47,7 +51,7 @@ def pdb():
             "resourceVersion": "rv",
             "generation": 3,
         },
-        "spec": {"selector": {}, "minAvailable": "50%", "maxUnavailable": 1},
+        "spec": {"selector": {}, "minAvailable": "50%"},
         "status": {
             "observedGeneration": 3,
             "disruptionsAllowed": 0,
@@ -109,6 +113,10 @@ def test_node_default_state_and_exact_patch():
     data = node()
     data["spec"]["unschedulable"] = True
     assert node_state(resource_record(NODE, data), TARGET)
+    assert node_record(NODE, data).uid == TARGET.uid
+    data.pop("kind")
+    with pytest.raises(AppError):
+        node_record(NODE, data)
 
 
 @pytest.mark.parametrize(
@@ -154,6 +162,8 @@ def test_eviction_body_contains_only_original_preconditions():
         eviction_body(replace(item.target, name="bad?query"), "rv")
     with pytest.raises(AppError):
         eviction_body(item.target, "")
+    with pytest.raises(AppError):
+        eviction_body(item.target, "x" * 1025)
 
 
 def test_pod_storage_readiness_and_terminal_facts_are_safe():
@@ -171,6 +181,24 @@ def test_pod_storage_readiness_and_terminal_facts_are_safe():
     assert len(storage) == 4 and "private-path" not in repr(storage)
     data["status"] = {}
     assert pod_facts(record(data), TARGET)[2:4] == ("Unknown", None)
+
+
+def test_inline_csi_preview_retains_only_declared_type_and_unknown_portability():
+    data = pod()
+    data["spec"]["volumes"] = [
+        {
+            "name": "inline",
+            "csi": {
+                "driver": "private.example.io",
+                "volumeAttributes": {"credential": "private-value"},
+                "nodePublishSecretRef": {"name": "private-secret"},
+            },
+        }
+    ]
+    facts = pod_facts(record(data), TARGET)
+    assert facts[4] == ("inline: csi; portability unknown",)
+    assert facts[5] is False
+    assert "private" not in repr(facts)
 
 
 @pytest.mark.parametrize(
@@ -281,7 +309,7 @@ def test_pdb_namespace_null_empty_and_all_selector_operators():
     raw["status"] = {}
     raw["metadata"].pop("generation")
     raw["spec"].pop("minAvailable")
-    raw["spec"].pop("maxUnavailable")
+    raw["spec"].pop("maxUnavailable", None)
     assert matching_pdb(resource_record(PDB, raw), item).disruptions_allowed is None
 
 
@@ -304,6 +332,56 @@ def test_pdb_malformed_evidence_blocks_complete_review(section, field, value):
     raw[section][field] = value
     with pytest.raises(AppError):
         matching_pdb(resource_record(PDB, raw), record(pod()))
+
+
+def test_pdb_ambiguous_constraints_and_valid_numeric_max():
+    raw = pdb()
+    raw["spec"]["maxUnavailable"] = 1
+    with pytest.raises(AppError):
+        matching_pdb(resource_record(PDB, raw), record(pod()))
+    raw["spec"].pop("minAvailable")
+    assert matching_pdb(resource_record(PDB, raw), record(pod())).max_unavailable == "1"
+
+
+def test_storage_binding_checks_uid_and_retains_no_paths():
+    api = MaintenanceApi()
+    data = pod()
+    data["spec"]["volumes"] = [
+        {"name": "disk", "persistentVolumeClaim": {"claimName": "claim"}},
+        {"name": "other", "emptyDir": {}},
+    ]
+    assert pvc_claims(record(data)) == (("disk", "claim"),)
+    assert pvc_claims(record(pod())) == ()
+    claim = resource_record(PVC, api.pvc)
+    volume = resource_record(PV, api.pv)
+    assert bound_volume(claim) == "disk"
+    detail = volume_locality(claim, volume)
+    assert "local PV" in detail and "Node affinity" in detail and "private-host-value" not in detail
+    api.pv["spec"] = {
+        "claimRef": {"name": "claim", "namespace": "team", "uid": "claim-uid"},
+        "hostPath": {"path": "/private"},
+    }
+    assert "hostPath PV" in volume_locality(claim, resource_record(PV, api.pv))
+    api.pv["spec"].pop("hostPath")
+    assert "backend portability unknown" in volume_locality(claim, resource_record(PV, api.pv))
+    api.pv["spec"]["claimRef"]["uid"] = "replacement"
+    assert "unverified" in volume_locality(claim, resource_record(PV, api.pv))
+    api.pvc["spec"].pop("volumeName")
+    assert bound_volume(resource_record(PVC, api.pvc)) is None
+
+
+def test_storage_malformed_metadata_fails_without_disclosing_values():
+    api = MaintenanceApi()
+    with pytest.raises(AppError):
+        bound_volume(replace(resource_record(PVC, api.pvc), uid=None))
+    with pytest.raises(AppError):
+        volume_locality(
+            resource_record(PVC, api.pvc), replace(resource_record(PV, api.pv), uid=None)
+        )
+    data = pod()
+    data["spec"]["volumes"] = {}
+    with pytest.raises(AppError):
+        pvc_claims(record(data))
 
 
 @pytest.mark.parametrize(

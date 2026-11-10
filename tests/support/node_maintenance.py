@@ -20,7 +20,13 @@ PDB = ApiResource(
 )
 RS = ApiResource("apps", "v1", "replicasets", "ReplicaSet", True, frozenset({"get", "list"}))
 DS = ApiResource("apps", "v1", "daemonsets", "DaemonSet", True, frozenset({"get", "list"}))
-DISCOVERY = Discovery((NODE, POD, PDB, RS, DS))
+PVC = ApiResource(
+    "", "v1", "persistentvolumeclaims", "PersistentVolumeClaim", True, frozenset({"get", "list"})
+)
+PV = ApiResource(
+    "", "v1", "persistentvolumes", "PersistentVolume", False, frozenset({"get", "list"})
+)
+DISCOVERY = Discovery((NODE, POD, PDB, RS, DS, PVC, PV))
 
 
 def pod(name="one", *, managed=True, emptydir=False, daemonset=False, mirror=False):
@@ -64,6 +70,7 @@ class MaintenanceApi:
         }
         self.pods = [pod()]
         self.pdbs = []
+        self.pdbs_by_namespace = {}
         self.requests = []
         self.reads = []
         self.statuses = {}
@@ -76,15 +83,45 @@ class MaintenanceApi:
         self.patch_mode = "normal"
         self.patch_status = None
         self.read_status = None
+        self.pod_read_status = None
+        self.node_mode = "normal"
         self.owner_status = None
         self.owner_uid = "owner-uid"
+        self.owner_version = "owner-version"
+        self.pvc = {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {
+                "name": "claim",
+                "namespace": "team",
+                "uid": "claim-uid",
+                "resourceVersion": "claim-rv",
+            },
+            "spec": {"volumeName": "disk"},
+        }
+        self.pv = {
+            "apiVersion": "v1",
+            "kind": "PersistentVolume",
+            "metadata": {"name": "disk", "uid": "disk-uid", "resourceVersion": "disk-rv"},
+            "spec": {
+                "claimRef": {"name": "claim", "namespace": "team", "uid": "claim-uid"},
+                "local": {"path": "/private-host-value"},
+                "nodeAffinity": {},
+            },
+        }
+        self.storage_status = None
         self.pdb_status = None
         self.list_mode = "normal"
         self.eviction_supported = True
+        self.discovery_body = None
         self.entered = asyncio.Event()
         self.release = asyncio.Event()
         self.before_patch = None
         self.after_post = None
+        self.after_read = None
+        self.block_node_after_patch = False
+        self.node_entered = asyncio.Event()
+        self.node_release = asyncio.Event()
 
     async def handle(self, request):
         path = request.path
@@ -105,6 +142,8 @@ class MaintenanceApi:
             value = copy.deepcopy(self.node)
             if self.patch_mode == "wrong-state":
                 value["spec"]["unschedulable"] = not value["spec"]["unschedulable"]
+            if self.patch_mode == "missing-kind":
+                value.pop("kind")
             return web.json_response(value)
         if request.method == "POST":
             body = await request.json()
@@ -114,6 +153,12 @@ class MaintenanceApi:
             statuses = self.statuses.get(name, [])
             status = statuses.pop(0) if statuses else 200
             if status != 200:
+                if self.post_mode == "bad-refusal":
+                    return web.Response(
+                        status=status,
+                        text="private-invalid-status",
+                        headers={"Retry-After": self.retry_after},
+                    )
                 return web.json_response(
                     {
                         "apiVersion": "v1",
@@ -153,11 +198,20 @@ class MaintenanceApi:
                 status=self.success_status,
             )
         self.reads.append((path, dict(request.query)))
+        if self.after_read:
+            self.after_read(self, path)
         if path == "/api/v1/nodes/node-one":
+            if self.node_mode == "bad-json":
+                return web.Response(text="private-invalid")
+            if self.block_node_after_patch and any(r[0] == "PATCH" for r in self.requests):
+                self.node_entered.set()
+                await self.node_release.wait()
             return web.json_response(
                 self.node if self.read_status is None else {}, status=self.read_status or 200
             )
         if path == "/api/v1":
+            if self.discovery_body is not None:
+                return web.json_response(self.discovery_body)
             return web.json_response(
                 {
                     "resources": [
@@ -188,7 +242,9 @@ class MaintenanceApi:
                     "items": items,
                 }
             )
-        if path.startswith("/api/v1/namespaces/team/pods/"):
+        if path.startswith("/api/v1/namespaces/") and "/pods/" in path:
+            if self.pod_read_status is not None:
+                return web.json_response({}, status=self.pod_read_status)
             found = next(
                 (p for p in self.pods if p["metadata"]["name"] == path.split("/")[-1]), None
             )
@@ -199,10 +255,14 @@ class MaintenanceApi:
                     "apiVersion": "policy/v1",
                     "kind": "PodDisruptionBudgetList",
                     "metadata": {"resourceVersion": "pdb-list"},
-                    "items": self.pdbs,
+                    "items": self.pdbs_by_namespace.get(path.split("/")[-2], self.pdbs),
                 },
                 status=self.pdb_status or 200,
             )
+        if path == "/api/v1/namespaces/team/persistentvolumeclaims/claim":
+            return web.json_response(self.pvc, status=self.storage_status or 200)
+        if path == "/api/v1/persistentvolumes/disk":
+            return web.json_response(self.pv, status=self.storage_status or 200)
         if "/replicasets/" in path or "/daemonsets/" in path:
             return web.json_response(
                 {
@@ -210,9 +270,9 @@ class MaintenanceApi:
                     "kind": "DaemonSet" if "/daemonsets/" in path else "ReplicaSet",
                     "metadata": {
                         "name": "owner",
-                        "namespace": "team",
+                        "namespace": path.split("/")[-3],
                         "uid": self.owner_uid,
-                        "resourceVersion": "owner-version",
+                        "resourceVersion": self.owner_version,
                     },
                 },
                 status=self.owner_status or 200,
@@ -233,6 +293,7 @@ async def maintenance_api():
         yield f"http://127.0.0.1:{runner.addresses[0][1]}", fixture
     finally:
         fixture.release.set()
+        fixture.node_release.set()
         await runner.cleanup()
 
 

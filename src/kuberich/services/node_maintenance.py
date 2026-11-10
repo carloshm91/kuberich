@@ -25,22 +25,34 @@ from kuberich.domain.node_maintenance import (
     PodProgress,
     PodReview,
     PodState,
+    bound_volume,
     consent_blockers,
     eviction_body,
     matching_pdbs,
     node_patch,
+    node_record,
     node_state,
     pod_facts,
+    pvc_claims,
+    volume_locality,
 )
 from kuberich.domain.read_budget import ReadBudget, ReadBudgetExceeded
 from kuberich.domain.relationships import RelationshipStatus, owner_references
 from kuberich.domain.resource_queries import ResourceQuery
-from kuberich.domain.resources import ApiResource, Discovery, ResourceRecord, resource_object
+from kuberich.domain.resources import (
+    MAX_RESOURCE_BYTES,
+    MAX_RESOURCE_ITEMS,
+    ApiResource,
+    Discovery,
+    ResourceRecord,
+    api_segment,
+    resource_object,
+)
 from kuberich.domain.targets import ResourceTarget
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.mutations import Confirmation
-from kuberich.services.processes import _finish_owned
+from kuberich.services.ownership import finish_owned
 from kuberich.services.resources import ResourceReader, parse_owned
 
 
@@ -70,7 +82,7 @@ class NodeMaintenanceService:
         self._approved: MaintenanceReview | None = None
         self._closed = False
         self._used_review: MaintenanceReview | None = None
-        self._pending = False
+        self._node_write_confirmed = False
         self._jobs: set[asyncio.Task[object]] = set()
         self._progress = MaintenanceProgress(
             (), NodeObservation(NodeState.UNKNOWN, wall_clock()), False
@@ -86,7 +98,7 @@ class NodeMaintenanceService:
 
     @property
     def is_live(self) -> bool:
-        return bool(self.operation_count) or self._pending
+        return bool(self.operation_count)
 
     def require_current(self) -> None:
         self.policy.require(Action.MUTATE)
@@ -108,7 +120,7 @@ class NodeMaintenanceService:
 
     async def _node(self) -> ResourceRecord:
         self.require_current()
-        record = await ResourceReader(self.client).get(self.resource, self.target.name)
+        record = await self._read_node()
         self.require_current()
         state = node_state(record, self.target)
         self._progress = replace(
@@ -120,6 +132,10 @@ class NodeMaintenanceService:
             ),
         )
         return record
+
+    async def _read_node(self) -> ResourceRecord:
+        payload = await self.client.get_json("/api/v1/nodes/" + api_segment(self.target.name))
+        return await parse_owned(partial(node_record, self.resource, payload))
 
     def _pods_resource(self) -> ApiResource:
         r = self.discovery.find("pods", version="v1")
@@ -165,6 +181,111 @@ class NodeMaintenanceService:
                 "The server does not advertise policy/v1 Pod eviction; no fallback is allowed."
             )
 
+    async def _ownership(
+        self,
+        record: ResourceRecord,
+        reader: ResourceReader,
+        cache: dict[tuple[str, str, str | None, str], tuple[str, str] | None],
+    ) -> tuple[str, bool, bool, tuple[str, ...]]:
+        owners = await parse_owned(
+            partial(owner_references, self._pods_resource(), record, self.discovery)
+        )
+        owner, managed, daemonset = "Unmanaged; recreation is not guaranteed", False, False
+        errors = []
+        if any(o.status is not RelationshipStatus.READY for o in owners):
+            errors.append("Controller discovery/identity is unverified; force cannot override it.")
+        controllers = [o for o in owners if o.controller]
+        if len(controllers) > 1:
+            errors.append("Multiple controller references are invalid.")
+        elif controllers and not errors:
+            ref = controllers[0].target
+            descriptor = ref.resource
+            assert descriptor is not None
+            key = descriptor.api_version, descriptor.name, ref.namespace, ref.name
+            try:
+                if key not in cache:
+                    try:
+                        observed = await reader.get(descriptor, ref.name, ref.namespace)
+                        if not observed.uid or not observed.resource_version:
+                            raise AppError("Controller response identity is malformed.")
+                        cache[key] = (observed.uid, observed.resource_version)
+                    except HttpProblem as error:
+                        if error.status != 404:
+                            raise
+                        cache[key] = None
+                identity = cache[key]
+                self.require_current()
+                if identity is not None and identity[0] == ref.uid:
+                    managed = True
+                    owner = f"{descriptor.kind}/{ref.name} (UID verified; recovery not guaranteed)"
+                    daemonset = (descriptor.group, descriptor.name) == ("apps", "daemonsets")
+                else:
+                    owner = "Orphaned controller; recreation is not guaranteed"
+            except (HttpProblem, ConnectionProblem, AppError):
+                errors.append("Controller read is unavailable; ownership remains unverified.")
+        return owner, managed, daemonset, tuple(errors)
+
+    async def _storage_evidence(
+        self,
+        record: ResourceRecord,
+        reader: ResourceReader,
+        cache: dict[tuple[str, str], str],
+    ) -> tuple[str, ...]:
+        evidence = []
+        for volume_name, claim_name in await parse_owned(partial(pvc_claims, record)):
+            key = record.namespace or "", claim_name
+            if key not in cache:
+                try:
+                    pvc = self.discovery.find("persistentvolumeclaims", version="v1")
+                    pv = self.discovery.find("persistentvolumes", version="v1")
+                    if (pvc.kind, pvc.namespaced, pv.kind, pv.namespaced) != (
+                        "PersistentVolumeClaim",
+                        True,
+                        "PersistentVolume",
+                        False,
+                    ):
+                        raise AppError("Storage discovery is invalid.")
+                    claim = await reader.get(pvc, claim_name, record.namespace)
+                    name = await parse_owned(partial(bound_volume, claim))
+                    if name is None:
+                        detail = "PVC is unbound; portability unknown"
+                    else:
+                        volume = await reader.get(pv, name)
+                        detail = await parse_owned(partial(volume_locality, claim, volume))
+                    self.require_current()
+                    cache[key] = detail
+                except (AppError, HttpProblem, ConnectionProblem, ReadBudgetExceeded):
+                    cache[key] = "PVC/PV metadata unavailable; portability unknown"
+            evidence.append(f"{volume_name}: {cache[key]}")
+        return tuple(evidence)
+
+    async def _risk_current(self, pod: PodReview, record: ResourceRecord) -> bool:
+        reader = ResourceReader(self.client, budget=ReadBudget())
+        mirror, _, phase, ready, storage, emptydir = await parse_owned(
+            partial(pod_facts, record, self.target)
+        )
+        owner, managed, daemonset, errors = await self._ownership(record, reader, {})
+        storage += await self._storage_evidence(record, reader, {})
+        return not errors and (
+            owner,
+            managed,
+            daemonset,
+            mirror,
+            phase,
+            ready,
+            storage,
+            emptydir,
+        ) == (
+            pod.owner,
+            pod.managed,
+            pod.daemonset,
+            pod.mirror,
+            pod.phase,
+            pod.ready,
+            pod.storage,
+            pod.emptydir,
+        )
+
     async def _review_pods(
         self, options: DrainOptions
     ) -> tuple[tuple[PodReview, ...], tuple[str, ...]]:
@@ -175,58 +296,27 @@ class NodeMaintenanceService:
         if not pdb_resource.namespaced or pdb_resource.kind != "PodDisruptionBudget":
             raise AppError("Exact policy/v1 PDB discovery is required.")
         pdbs: dict[str, tuple[ResourceRecord, ...]] = {}
+        pdb_count = pdb_bytes = 0
         for namespace in sorted({r.namespace for r in records if r.namespace is not None}):
             snapshot = await reader.list(pdb_resource, namespace)
             self.require_current()
             if not snapshot.collection.complete or snapshot.collection.limited:
                 raise AppError("PDB inventory is incomplete; no drain can be confirmed.")
+            pdb_count += len(snapshot.items)
+            pdb_bytes += sum(record.size_bytes for record in snapshot.items)
+            if pdb_count > MAX_RESOURCE_ITEMS or pdb_bytes > MAX_RESOURCE_BYTES:
+                raise AppError("Combined PDB preview exceeds the retained collection limit.")
             pdbs[namespace] = snapshot.items
-        cache: dict[tuple[str, str, str | None, str], ResourceRecord | None] = {}
+        cache: dict[tuple[str, str, str | None, str], tuple[str, str] | None] = {}
+        storage_cache: dict[tuple[str, str], str] = {}
         result = []
         blockers: list[str] = []
         for record in records:
             mirror, terminating, phase, ready, storage, emptydir = await parse_owned(
                 partial(pod_facts, record, self.target)
             )
-            owners = await parse_owned(
-                partial(owner_references, self._pods_resource(), record, self.discovery)
-            )
-            owner, managed, daemonset = "Unmanaged; recreation is not guaranteed", False, False
-            errors = []
-            if any(o.status is not RelationshipStatus.READY for o in owners):
-                errors.append(
-                    "Controller discovery/identity is unverified; force cannot override it."
-                )
-            controllers = [o for o in owners if o.controller]
-            if len(controllers) > 1:
-                errors.append("Multiple controller references are invalid.")
-            elif controllers and not errors:
-                ref = controllers[0].target
-                descriptor = ref.resource
-                assert descriptor is not None
-                key = descriptor.api_version, descriptor.name, ref.namespace, ref.name
-                try:
-                    if key not in cache:
-                        try:
-                            cache[key] = await reader.get(descriptor, ref.name, ref.namespace)
-                        except HttpProblem as error:
-                            if error.status != 404:
-                                raise
-                            cache[key] = None
-                    observed = cache[key]
-                    self.require_current()
-                    if observed is not None and (not observed.uid or not observed.resource_version):
-                        raise AppError("Controller response identity is malformed.")
-                    if observed is not None and observed.uid == ref.uid:
-                        managed = True
-                        owner = (
-                            f"{descriptor.kind}/{ref.name} (UID verified; recovery not guaranteed)"
-                        )
-                        daemonset = (descriptor.group, descriptor.name) == ("apps", "daemonsets")
-                    else:
-                        owner = "Orphaned controller; recreation is not guaranteed"
-                except (HttpProblem, ConnectionProblem, AppError):
-                    errors.append("Controller read is unavailable; ownership remains unverified.")
+            owner, managed, daemonset, errors = await self._ownership(record, reader, cache)
+            storage += await self._storage_evidence(record, reader, storage_cache)
             target = ResourceTarget(
                 self.target.session, "", "pods", record.namespace, record.name, record.uid or ""
             )
@@ -266,6 +356,7 @@ class NodeMaintenanceService:
         if self.is_live or self.target.uid in self._active.get(self.client, set()):
             raise AppError("Stop and drain the existing Node maintenance operation first.")
         self.intent = self._proof = self._approved = None
+        self._node_write_confirmed = False
         task = self._register()
         try:
             async with asyncio.timeout(min(30, options.timeout_seconds)):
@@ -410,6 +501,17 @@ class NodeMaintenanceService:
                         MutationState.CONFLICT,
                         "Reviewed Pod version changed; no rebase or replay was made.",
                     )
+                if not await self._risk_current(pod, record):
+                    self._pod_progress(
+                        uid,
+                        PodState.STALE,
+                        "Pod ownership/storage risk changed; start a fresh review.",
+                    )
+                    return MutationResult(
+                        MutationState.CONFLICT,
+                        "Reviewed Pod ownership/storage evidence changed; no eviction was sent for it.",
+                    )
+                await self._guard_node()
                 self.require_current()
                 attempt = await evict_pod(self.client, pod, self.require_current, self.wall_clock)
                 count = current.attempts + 1
@@ -423,6 +525,11 @@ class NodeMaintenanceService:
                         http_status=attempt.status,
                     )
                     due[uid] = self.clock() + 1
+                    # Transport drains its receipt parser before returning. If Stop
+                    # raced that validated receipt, retain acceptance and stop now.
+                    task = asyncio.current_task()
+                    if task is not None and task.cancelling():
+                        raise asyncio.CancelledError
                 elif attempt.retry_seconds is not None:
                     due[uid] = self.clock() + attempt.retry_seconds
                     self._pod_progress(
@@ -456,6 +563,42 @@ class NodeMaintenanceService:
                             )
                             del pods[uid]
                             continue
+                        return MutationResult(
+                            MutationState.REJECTED,
+                            "Eviction endpoint unavailable while the original Pod still exists; no DELETE fallback is allowed.",
+                        )
+                    operation = asyncio.current_task()
+                    if state is PodState.UNCERTAIN and (
+                        operation is None or not operation.cancelling()
+                    ):
+                        try:
+                            async with asyncio.timeout(min(5.0, self.client.timeout)):
+                                observed = await self._pod(pod)
+                            self._pod_progress(
+                                uid,
+                                PodState.UNCERTAIN,
+                                "Write outcome remains uncertain; original UID "
+                                + (
+                                    "observed absent."
+                                    if observed is None
+                                    else "still observed present."
+                                ),
+                            )
+                        except (AppError, HttpProblem, ConnectionProblem, TimeoutError):
+                            pass
+                    if (
+                        attempt.result.state
+                        in {
+                            MutationState.CANCELLED,
+                            MutationState.TIMEOUT,
+                            MutationState.UNREACHABLE,
+                        }
+                        and self._node_write_confirmed
+                    ):
+                        return MutationResult(
+                            MutationState.PARTIAL,
+                            "Eviction did not establish another write; confirmed Node scheduling and prior effects remain.",
+                        )
                     return attempt.result
             if pods:
                 wait = min(
@@ -496,12 +639,26 @@ class NodeMaintenanceService:
                             MutationState.CONFLICT,
                             "Node Pod membership/version changed before cordon; prepare a fresh review.",
                         )
+                    if not await self._risk_current(original[pod.uid], pod):
+                        return MutationResult(
+                            MutationState.CONFLICT,
+                            "Pod ownership/storage evidence changed before cordon; prepare a fresh review.",
+                        )
             desired = review.mode is not MaintenanceMode.UNCORDON
             if node_state(record, self.target) is not desired:
                 self.require_current()
                 result = await patch_node(self.client, review.patch, self.require_current, desired)
                 if result.state is not MutationState.SUCCEEDED:
                     return result
+                self._node_write_confirmed = True
+                self._progress = replace(
+                    self._progress,
+                    node=NodeObservation(
+                        NodeState.CORDONED if desired else NodeState.SCHEDULABLE,
+                        self.wall_clock(),
+                        self.target.uid,
+                    ),
+                )
             if review.mode is MaintenanceMode.DRAIN:
                 return await self._drain(review, deadline)
             observed = await self._node()
@@ -521,7 +678,7 @@ class NodeMaintenanceService:
             if not self.current() or self.client.api is None:
                 raise AppError("Captured connection retired.")
             async with asyncio.timeout(min(5.0, self.client.timeout)):
-                record = await ResourceReader(self.client).get(self.resource, self.target.name)
+                record = await self._read_node()
                 if record.uid != self.target.uid:
                     state = NodeState.REPLACED
                 else:
@@ -537,6 +694,17 @@ class NodeMaintenanceService:
             )
         except (AppError, ConnectionProblem, TimeoutError):
             observation = NodeObservation(NodeState.UNKNOWN, self.wall_clock())
+        previous = self._progress.node
+        if observation.state is NodeState.UNKNOWN:
+            observation = replace(
+                observation,
+                last_known_state=previous.state
+                if previous.state is not NodeState.UNKNOWN
+                else previous.last_known_state,
+                last_observed_at=previous.observed_at
+                if previous.state is not NodeState.UNKNOWN
+                else previous.last_observed_at,
+            )
         self._progress = replace(self._progress, node=observation)
 
     def execute(self, confirmation: Confirmation) -> Coroutine[Any, Any, MutationResult]:
@@ -551,7 +719,6 @@ class NodeMaintenanceService:
             return self._blocked()
         self._proof = self._approved = None
         self._used_review = review
-        self._pending = True
         return self._execute(review)
 
     async def _blocked(self) -> MutationResult:
@@ -561,12 +728,15 @@ class NodeMaintenanceService:
         )
 
     async def _execute(self, review: MaintenanceReview) -> MutationResult:
-        self._pending = False
         task = self._register()
         active = self._active.setdefault(self.client, set())
         admitted = False
         try:
             self.require_current()
+            if review is not self.intent:
+                return MutationResult(
+                    MutationState.BLOCKED, "A newer review superseded this unused operation."
+                )
             if self.target.uid in active:
                 return MutationResult(
                     MutationState.BLOCKED, "Another maintenance operation owns this Node."
@@ -578,14 +748,18 @@ class NodeMaintenanceService:
                 result = await self._run(review)
             except asyncio.CancelledError:
                 result = MutationResult(
-                    MutationState.PARTIAL
-                    if any(p.attempts for p in self._progress.pods)
+                    MutationState.UNCERTAIN
+                    if any(p.state is PodState.UNCERTAIN for p in self._progress.pods)
+                    else MutationState.PARTIAL
+                    if self._node_write_confirmed or any(p.attempts for p in self._progress.pods)
                     else MutationState.CANCELLED,
                     "Maintenance stopped; completed evictions remain. Uncordon is a separate reviewed operation.",
                 )
             except TimeoutError:
                 result = MutationResult(
-                    MutationState.PARTIAL,
+                    MutationState.UNCERTAIN
+                    if any(p.state is PodState.UNCERTAIN for p in self._progress.pods)
+                    else MutationState.PARTIAL,
                     "Drain deadline reached; completed or uncertain effects remain.",
                 )
             except HttpProblem as error:
@@ -595,7 +769,9 @@ class NodeMaintenanceService:
                 )
             except ConnectionProblem:
                 result = MutationResult(
-                    MutationState.UNREACHABLE,
+                    MutationState.PARTIAL
+                    if self._node_write_confirmed or any(p.attempts for p in self._progress.pods)
+                    else MutationState.UNREACHABLE,
                     "API observation unavailable; further writes stopped.",
                 )
             except AppError:
@@ -618,10 +794,16 @@ class NodeMaintenanceService:
                 ),
             )
             final = asyncio.create_task(self._final_observation())
-            await _finish_owned(final)
+            await finish_owned(final)
             return MutationResult(
                 result.state,
                 result.message
+                + " Pod UID progress: "
+                + ", ".join(
+                    f"{state.value}={sum(p.state is state for p in self._progress.pods)}"
+                    for state in PodState
+                    if any(p.state is state for p in self._progress.pods)
+                )
                 + " Final Node: "
                 + self._progress.node.state.value
                 + f" (observed at {self._progress.node.observed_at:.3f}).",
@@ -639,8 +821,7 @@ class NodeMaintenanceService:
 
     async def close(self) -> None:
         self._closed = True
-        self._pending = False
         jobs = tuple(task for task in self._jobs if task is not asyncio.current_task())
         for task in jobs:
             task.cancel()
-        await _finish_owned(asyncio.gather(*jobs, return_exceptions=True))
+        await finish_owned(asyncio.gather(*jobs, return_exceptions=True))

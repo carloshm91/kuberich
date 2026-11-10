@@ -51,7 +51,8 @@ class NodeMaintenanceScreen(ModalScreen[None]):
     #node-maintenance-progress { height: auto; max-height: 3; }
     #node-maintenance-feedback { height: auto; max-height: 3; }
     #node-maintenance-buttons { height: 1; }
-    #node-maintenance-buttons Button { height: 1; border: none; min-width: 12; padding: 0 1; }
+    #node-maintenance-buttons Button { height: 1; border: none; min-width: 8; padding: 0 1; }
+    #node-maintenance-cancel { min-width: 12; }
     #node-maintenance-buttons Button:focus { background: $primary; color: $background; }
     """
 
@@ -393,7 +394,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
 
     async def action_back(self) -> None:
         await self.stop_owned()
-        if self.is_mounted:
+        if self.is_active:
             self.dismiss()
 
     async def on_unmount(self) -> None:

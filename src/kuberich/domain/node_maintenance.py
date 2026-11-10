@@ -15,6 +15,7 @@ from kuberich.domain.resources import (
     ResourceRecord,
     api_segment,
     resource_object,
+    resource_record,
     resource_text,
 )
 from kuberich.domain.targets import ResourceTarget
@@ -172,6 +173,13 @@ def node_state(record: ResourceRecord, target: ResourceTarget) -> bool:
     return value
 
 
+def node_record(resource: ApiResource, value: object) -> ResourceRecord:
+    data = resource_object(value)
+    if data.get("apiVersion") != "v1" or data.get("kind") != "Node":
+        raise AppError("Node GET/patch receipt must identify an actual core/v1 Node.")
+    return resource_record(resource, data)
+
+
 def node_patch(
     resource: ApiResource, target: ResourceTarget, record: ResourceRecord, mode: MaintenanceMode
 ) -> MutationIntent:
@@ -200,6 +208,8 @@ def eviction_body(target: ResourceTarget, resource_version: str) -> bytes:
     api_segment(target.name)
     api_segment(target.namespace)
     resource_text(resource_version)
+    if len(resource_version) > 1024 or len(target.uid) > 1024:
+        raise AppError("Eviction identity/version is excessive.")
     return json.dumps(
         {
             "apiVersion": "policy/v1",
@@ -260,7 +270,7 @@ def pod_facts(
     for raw in volumes:
         volume = resource_object(raw)
         name = resource_text(volume.get("name"))
-        for kind in ("emptyDir", "hostPath", "persistentVolumeClaim", "ephemeral"):
+        for kind in ("emptyDir", "hostPath", "persistentVolumeClaim", "ephemeral", "csi"):
             if kind in volume:
                 declaration = resource_object(volume[kind])
                 if kind == "emptyDir" and declaration.get("medium", "") not in ("", "Memory"):
@@ -288,6 +298,50 @@ def consent_blockers(pod: PodReview, options: DrainOptions) -> tuple[str, ...]:
     return tuple(blockers)
 
 
+def pvc_claims(record: ResourceRecord) -> tuple[tuple[str, str], ...]:
+    """Only declared volume/claim names; never retain paths or source contents."""
+    volumes = resource_object(record.manifest.get("spec")).get("volumes", [])
+    if not isinstance(volumes, list) or len(volumes) > 128:
+        raise AppError("Pod volumes are malformed or excessive.")
+    result = []
+    for value in volumes:
+        volume = resource_object(value)
+        if "persistentVolumeClaim" in volume:
+            claim = resource_object(volume["persistentVolumeClaim"])
+            result.append((api_segment(volume.get("name")), api_segment(claim.get("claimName"))))
+    return tuple(result)
+
+
+def bound_volume(claim: ResourceRecord) -> str | None:
+    if not claim.uid or not claim.resource_version:
+        raise AppError("PVC metadata identity is incomplete.")
+    name = resource_object(claim.manifest.get("spec")).get("volumeName")
+    return None if name in (None, "") else api_segment(name)
+
+
+def volume_locality(claim: ResourceRecord, volume: ResourceRecord) -> str:
+    if not volume.uid or not volume.resource_version:
+        raise AppError("PV metadata identity is incomplete.")
+    spec = resource_object(volume.manifest.get("spec"))
+    ref = resource_object(spec.get("claimRef", {}))
+    if (ref.get("uid"), ref.get("namespace"), ref.get("name")) != (
+        claim.uid,
+        claim.namespace,
+        claim.name,
+    ):
+        return "PVC/PV binding is unverified; portability unknown"
+    facts = ["PVC/PV binding UID verified; backend portability unknown"]
+    for key, detail in (
+        ("local", "local PV; data remains local"),
+        ("hostPath", "hostPath PV; data may remain on its host"),
+        ("nodeAffinity", "PV Node affinity constrains placement"),
+    ):
+        if key in spec:
+            resource_object(spec[key])
+            facts.append(detail)
+    return "; ".join(facts)
+
+
 def _integer(value: object) -> int | None:
     if value is None:
         return None
@@ -309,6 +363,8 @@ def _intstr(value: object) -> str | None:
 def matching_pdb(record: ResourceRecord, pod: ResourceRecord) -> PdbReview | None:
     data = record.manifest
     spec = resource_object(data.get("spec"))
+    if spec.get("minAvailable") is not None and spec.get("maxUnavailable") is not None:
+        raise AppError("PDB minAvailable and maxUnavailable cannot both be set.")
     selector = spec.get("selector")
     if selector is None:
         return None

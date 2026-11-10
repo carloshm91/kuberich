@@ -7,10 +7,30 @@ import pytest
 
 from kuberich.domain.custom import CustomLayout
 from kuberich.domain.inspection import REDACTED
-from kuberich.domain.registry import order_resources
+from kuberich.domain.metrics import METRIC_KEYS
+from kuberich.domain.registry import RESOURCE_ALIASES, order_resources
 from kuberich.domain.resources import ServerColumn, ServerRow, resource_record
 from kuberich.errors import AppError
 from tests.support.tables import custom_item, custom_resource
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["nodes", "deployments", "replicasets", "statefulsets", "daemonsets", "jobs", "cronjobs"],
+)
+def test_generic_known_plural_projects_only_metadata_and_server_columns(name):
+    resource = replace(custom_resource(namespaced=False), name=name)
+    headers = (ServerColumn("Name", "string", "name"), ServerColumn("CPU", "number"))
+    record = replace(
+        captured(headers, ("fake-name", 2.5), namespace=None),
+        server=ServerRow(headers, ("fake-name", 2.5), 0),
+    )
+    layout = CustomLayout.build(resource, headers)
+    assert tuple(column.key for column in layout.definition.columns) == ("name", "c2", "age")
+    row = layout.row(record)
+    assert row.name == "one" and row.values[1].text == "2.5" and row.values[1].sort == 2.5
+    standard_keys = {column.key for column in RESOURCE_ALIASES[name].columns}
+    assert set(METRIC_KEYS if name == "nodes" else METRIC_KEYS[:14]) <= standard_keys
 
 
 def observed_clock(monkeypatch):

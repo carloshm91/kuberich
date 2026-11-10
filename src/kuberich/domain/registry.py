@@ -25,6 +25,7 @@ class ResourceDefinition:
     aliases: tuple[str, ...]
     fields: tuple[Column, ...]
     curated: bool = False
+    metrics: bool = True
 
     @property
     def columns(self) -> tuple[Column, ...]:
@@ -37,7 +38,8 @@ class ResourceDefinition:
                     Column(key, key not in {"metrics", "extended"})
                     for key in (METRIC_KEYS if self.name == "nodes" else METRIC_KEYS[:14])
                 )
-                if self.name
+                if self.metrics
+                and self.name
                 in {
                     "deployments",
                     "replicasets",

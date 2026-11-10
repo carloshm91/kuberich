@@ -3,12 +3,36 @@
 import asyncio
 import json
 import sys
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from types import SimpleNamespace
 
 import pytest
 
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.node_maintenance import MaintenanceMode, PodState
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.services.access import AccessPolicy
+from kuberich.services.node_maintenance import NodeMaintenanceService
 from scripts import verify_node_maintenance_kind as rehearsal
+from tests.support.connections import catalog_fixture, certificate
+from tests.support.node_maintenance import DISCOVERY, NODE, MaintenanceApi
+
+
+@asynccontextmanager
+async def maintenance_server(api, tls=None):
+    from aiohttp import web
+
+    app = web.Application()
+    app.router.add_route("*", "/{path:.*}", api.handle)
+    runner = web.AppRunner(app, shutdown_timeout=0.1)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0, ssl_context=tls)
+    await site.start()
+    try:
+        yield f"{'https' if tls else 'http'}://127.0.0.1:{runner.addresses[0][1]}"
+    finally:
+        await runner.cleanup()
 
 
 def arguments(tmp_path, monkeypatch):
@@ -173,3 +197,103 @@ async def test_fixture_wait_observes_success_and_a_real_finite_timeout():
     with pytest.raises(TimeoutError):
         await rehearsal.wait_for(held, seconds=0.01)
     assert rehearsal.VERIFY_SECONDS <= 600
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("drop", [False, True])
+async def test_owned_mutual_tls_forwarder_preserves_conditions_and_postcommit_uncertainty(
+    tmp_path, drop
+):
+    api = MaintenanceApi()
+    api.success_status = 201
+    tls, credentials = certificate(tmp_path, client_auth=True)
+    user = {key: value for key, value in credentials.items() if key.startswith("client-")}
+    cluster = {"certificate-authority-data": credentials["certificate-authority-data"]}
+    async with maintenance_server(api, tls=tls) as endpoint:
+        upstream = KubernetesSession(
+            catalog_fixture(tmp_path, endpoint, user, cluster).select("kuberich-test-one"), 2
+        )
+        await upstream.open()
+        try:
+            async with rehearsal.observed_client(upstream, as_user="owned-reader") as (
+                client,
+                proxy,
+            ):
+                target = ResourceTarget(
+                    SessionIdentity("kuberich-test-one", 1),
+                    "",
+                    "nodes",
+                    None,
+                    "node-one",
+                    "node-uid",
+                )
+                source = NodeMaintenanceService(
+                    client, NODE, target, DISCOVERY, AccessPolicy(False), lambda: True
+                )
+                try:
+                    review = await source.prepare(MaintenanceMode.DRAIN)
+                    if drop:
+                        proxy.drop_uid = review.pods[0].target.uid
+                    result = await source.execute(source.confirm(review))
+                    assert result.state is (
+                        MutationState.UNCERTAIN if drop else MutationState.SUCCEEDED
+                    )
+                    assert source.progress.pods[0].state is (
+                        PodState.UNCERTAIN if drop else PodState.ABSENT
+                    )
+                    assert api.pods == []
+                    writes = [item for item in proxy.receipts if item["method"] != "GET"]
+                    assert [item["method"] for item in writes] == ["PATCH", "POST"]
+                    assert writes[1]["status"] == 201 and writes[1]["normal_grace"]
+                    assert writes[1]["preconditions"] == {
+                        "uid": "pod-one",
+                        "resourceVersion": "opaque/pod-one",
+                    }
+                    assert all(
+                        request[3].get("Impersonate-User") == "owned-reader"
+                        for request in api.requests
+                    )
+                    assert "Authorization" not in json.dumps(proxy.receipts)
+                    if drop:
+                        assert (
+                            writes[1]["owned_fault"] == "post-commit-response-loss"
+                            and proxy.drop_uid is None
+                        )
+                finally:
+                    await source.close()
+        finally:
+            await upstream.close()
+
+
+@pytest.mark.asyncio
+async def test_forwarded_refusal_retains_retry_after_without_exposing_headers(tmp_path):
+    import aiohttp
+    from aiohttp import web
+
+    api = MaintenanceApi()
+    api.statuses["one"] = [429]
+    api.retry_after = "37"
+    async with maintenance_server(api) as endpoint, aiohttp.ClientSession() as upstream:
+        proxy = rehearsal.MaintenanceProxy(upstream, endpoint)
+        app = web.Application()
+        app.router.add_route("*", "/{path:.*}", proxy.handle)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "127.0.0.1", 0)
+        await site.start()
+        try:
+            async with upstream.post(
+                f"http://127.0.0.1:{runner.addresses[0][1]}/api/v1/namespaces/team/pods/one/eviction",
+                json={
+                    "deleteOptions": {
+                        "preconditions": {"uid": "pod-one", "resourceVersion": "opaque/pod-one"}
+                    }
+                },
+                headers={"Authorization": "Bearer synthetic-private-token"},
+            ) as response:
+                await response.read()
+                assert response.status == 429 and response.headers["Retry-After"] == "37"
+            assert "synthetic-private" not in json.dumps(proxy.receipts)
+            assert len(proxy.receipts) == 1
+        finally:
+            await runner.cleanup()
