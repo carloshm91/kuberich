@@ -396,7 +396,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1573,8 +1573,8 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m\u201324h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
-      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m\u201324h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
+      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m–24h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
+      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/cluster-overview.md",
@@ -1688,9 +1688,29 @@
       ],
       "source": "internal/view/node.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Node helper-pod shells and configurable host-mount/image/namespace controls are planned.",
-      "public_status": "planned"
+      "difference": "A01 development source uses one approved digest image and existing namespace with a fixed privileged host PID/IPC/network profile and writable /host mount. Requests/limits and startup/session deadlines are configurable; arbitrary mounts, policy relaxation, scheduler bypass, automatic chroot and SSH are unsupported. Only the successful create receipt establishes a cleanup UID. Unknown creates are never adopted; explicit recovery requires the selected matching connection and namespace UID. Ambiguous bearer-only identities cannot establish reconnect equivalence. Early actual API/PTY/UID-cleanup evidence is retained; full issue and cumulative phase qualification remain separate.",
+      "public_summary": "Development source for 0.5 adds explicitly configured Linux node diagnostic shells with privilege review, bounded sessions, cleanup by Pod UID and local recovery. Published 0.4.0 predates this action.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/container-shell.md",
+        "docs/adr/0043-owned-node-shell-sessions.md",
+        "docs/internal/acceptance/node-shell.md",
+        "src/kuberich/config/node_shell.py",
+        "src/kuberich/domain/node_shell.py",
+        "src/kuberich/domain/node_shell_journal.py",
+        "src/kuberich/adapters/node_shell.py",
+        "src/kuberich/adapters/node_shell_files.py",
+        "src/kuberich/services/node_shell.py",
+        "src/kuberich/services/node_shell_recovery.py",
+        "tests/unit/test_node_shell_config.py",
+        "tests/unit/test_node_shell_domain.py",
+        "tests/unit/test_node_shell_journal.py",
+        "tests/contract/test_node_shell.py",
+        "tests/contract/test_node_shell_files.py",
+        "tests/contract/test_node_shell_recovery.py",
+        "tests/ui/test_node_shell.py",
+        "scripts/verify_node_shell_kind.py"
+      ]
     },
     {
       "id": "ADV02",
@@ -1846,7 +1866,7 @@
       ],
       "source": "https://github.com/derailed/k9s/compare/v0.51.0...7064f96f1e852e71efcb848a483a5b6d4b986f35",
       "status": "planned",
-      "difference": "103 commits/129 changed files indexed; relevant UI/CLI/configuration changes reviewed separately from released behavior. Refresh before stable release.",
+      "difference": "103 commits/129 changed files indexed; relevant UI/CLI/configuration changes reviewed separately from released behavior. Refresh before stable release. A01 development source covers explicit image/namespace/limits and a fixed /host mount; configurable arbitrary host mounts and other post-baseline additions remain separately scoped. No aggregate delta parity is claimed.",
       "public_summary": "Unreleased upstream changes are tracked separately from the pinned baseline. They do not establish delivered KubeRich behavior.",
       "public_status": "planned"
     }

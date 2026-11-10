@@ -1,9 +1,10 @@
 """Captured container exec with private connection material and owned preparation."""
 
 from collections.abc import AsyncIterator, Callable, Mapping
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Protocol
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.schema import shell_arguments
@@ -23,6 +24,17 @@ class ShellRequest:
     command: ProcessCommand
     path: Path
     configuration: str
+
+
+class ShellSession(Protocol):
+    """The captured terminal lease shared by Pod and node diagnostic shells."""
+
+    @property
+    def client(self) -> KubernetesSession: ...
+
+    def require_current(self) -> None: ...
+
+    def stage(self, request: ShellRequest) -> AbstractAsyncContextManager[ProcessCommand]: ...
 
 
 class ShellService:

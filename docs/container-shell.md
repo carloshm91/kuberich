@@ -91,3 +91,101 @@ in the terminal and is not copied into application diagnostic logs.
 Mouse reporting, terminal graphics, and advanced keyboard protocols are not
 implemented inside the remote emulator. For file movement, use
 [file transfers](container-attach-copy.md).
+
+## Diagnose a Linux node (development source)
+
+Development source adds `:node-shell` on a selected Node. Published 0.4.0 does
+not include this action. It creates one temporary diagnostic pod; SSH credentials
+are not used. The shell starts in the diagnostic container, with the node's root
+filesystem at `/host`; KubeRich does not automatically chroot.
+
+This profile grants host root access: the container is privileged, runs as root,
+shares host PID/IPC/network namespaces and mounts `/host` read-write. Container
+limits and the disabled service-account token mount do not make it a sandbox.
+The review shows these effects before creation. Cancel is the default.
+
+### Configure an approved image and namespace
+
+The feature is disabled until explicitly enabled. Select an existing namespace
+whose policies permit this diagnostic profile, and an approved Linux image with
+`/bin/sh` and `/bin/sleep` for the node's architecture. Use its immutable digest:
+
+```yaml
+schema_version: 1
+node_shell:
+  schema_version: 1
+  enabled: true
+  namespace: diagnostics
+  image: registry.example.com/ops/diagnostics@sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+  requests: {cpu: 10m, memory: 32Mi}
+  limits: {cpu: 250m, memory: 128Mi}
+  startup_timeout_seconds: 60
+  session_timeout_seconds: 3600
+```
+
+Replace that fictional image/digest and namespace with reviewed choices, then run
+`kuberich config check`. Reload preferences with `:reload`. Loading preferences
+does not pull images or create pods. Normal kubelet image pulls can occur after
+confirmation. There is no per-dialog image override or fallback image.
+
+Requests must be positive and no greater than limits. CPU is bounded to eight
+cores, memory to 8 GiB, startup to 5–300 seconds and sessions to 60–3600 seconds.
+The initial host mount and privilege profile are fixed, not arbitrary templates.
+Linux and macOS clients can diagnose Linux Nodes; Windows Nodes are unsupported.
+
+### Review, open and return
+
+1. Connect explicitly in write mode, open `:nodes` and select the intended Node.
+2. Enter `:node-shell`. KubeRich reads that Node and the configured namespace,
+   checks their UIDs and performs a strict server create dry-run.
+3. Review the context, Node UID, namespace, image digest, pod name, privileges,
+   host mount, limits and deadlines. Choose **Create and open** deliberately.
+4. Wait for scheduling and startup, then use the existing embedded terminal.
+   `exit` or Ctrl+D returns; Ctrl+] closes locally; Ctrl+C interrupts remotely.
+
+The identity needs Node/namespace reads, pod create/get/delete and permission for
+kubectl's `pods/exec` connect request. Admission, Pod Security and RBAC decisions
+remain authoritative. Denial does not trigger a policy change or weaker profile.
+
+The normal scheduler uses required affinity to the selected Node. KubeRich does
+not set `nodeName`, add tolerations, uncordon or change taints. An unschedulable,
+tainted, unavailable or unreachable node can therefore time out. Image failures
+also stop startup. These failures retain the cleanup outcome separately from
+the actual create result in `:writes`.
+
+On return, KubeRich drains local exec and requests deletion of only the Pod UID
+returned by creation. It confirms absence before discarding the recovery record.
+Accepted deletion, finalizers, denied reads/deletion or a lost connection may leave
+cleanup pending. No force deletion or finalizer removal occurs. A deadline can
+stop a running pod on a healthy kubelet; it does not delete its API object or
+guarantee cleanup on an unreachable node.
+
+### Recover after interruption
+
+Use `:node-shell-recover`, or start with
+`kuberich --command node-shell-recover`, to inspect the private local journal.
+This destination does not automatically connect or authenticate. Close an active
+diagnostic session before recovering its record.
+
+Choose **Inspect** only after explicitly connecting the recorded context. Cleanup
+additionally checks captured connection evidence and the namespace UID, requires
+write mode and presents a separate default-Cancel review. A same-name replacement
+is preserved. Unknown-UID creates cannot be adopted or deleted through recovery,
+even if a later observation looks identical. **Forget** removes only the local
+record after confirmation; it does not change a remote pod or claim cleanup.
+
+Read-only mode allows local listing/inspection but blocks new diagnostic creation,
+exec and recovered deletion. Tightening read-only or disabling the feature during
+an existing session first stops exec; its original lease may still finish cleanup
+of that session's returned UID. Changed image/limits apply to the next review.
+
+Connection matching is routing/trust/configured-identity evidence, not a universal
+cluster identity. Bearer-only or otherwise ambiguous identities are bound to the
+current prepared session; reconnect recovery cannot assume they are equivalent.
+Records contain bounded metadata, never kubeconfig credentials or terminal output.
+Unsafe, corrupt or unavailable journals block new creation until inspected.
+
+Fresh Node and Pod checks reduce replacement races, but scheduling and exec have
+no atomic cross-resource UID precondition. UID-conditioned deletion does protect
+a same-name replacement during cleanup. Linux disposable-cluster and terminal
+tests do not certify every cloud provider or admission policy.

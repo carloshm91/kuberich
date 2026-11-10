@@ -293,6 +293,8 @@ class CommandService:
                 Command.EXPORT,
                 Command.EXPORTS,
                 Command.MANIFESTS,
+                Command.NODE_SHELL,
+                Command.NODE_SHELL_RECOVER,
                 Command.HISTORY,
             }
             and len(parts) != 1

@@ -1,5 +1,40 @@
 # Development checkpoint
 
+## Node diagnostic sessions in progress — 2026-11-10 UTC
+
+A01 #76 is the next unblocked v0.5.0 issue, on `feat/76-node-shell` from
+`6f3e597f5a1a36caa72c09a1193a09097ea2ce23`. The reviewed contract requires
+explicit enablement, a digest-pinned image, an existing namespace, visible
+host-root privileges and returned-UID cleanup. Parallel model/journal, transport
+and UI lanes work within this single issue. The early real-kind create/durable
+UID/embedded PTY/host-namespace/delete/absence proof passes all four contracts in
+33.77 seconds before extensive UI integration. All 300 measured inputs stay
+unchanged, the unrelated sentinel is preserved and private/cluster cleanup passes.
+The expanded owned-kind trial passes 15 real contract groups in 55.06 seconds,
+including policy/RBAC denials, scheduler timeout, interrupted wait/exec, admitted
+profile drift, explicit recovery and post-commit response loss/replacement races.
+All 303 inputs remain unchanged and cleanup passes. Focused models/journal,
+HTTP recovery and public Pilot trials also pass; final
+committed-source terminal/coverage/platform gates remain pending. See
+[acceptance](acceptance/node-shell.md) for exact commands, source hashes and limits.
+
+## Local manifests delivered in development source — 2026-11-10 UTC
+
+[PR #335](https://github.com/carloshm91/kuberich/pull/335) merged normally as
+`6f3e597f5a1a36caa72c09a1193a09097ea2ce23`, with the same tree as qualified
+head `66fdf186a8843c3de28c2ea0856eee2ea47f62b8`. All 27 exact-head application
+quality jobs and app-bound Repository/DCO checks passed; the author email and
+sign-off are preserved. M07 #67 is closed and its roadmap item is Done.
+
+Hosted Linux/Python 3.12 source parts passed 12,716 tests with five skips.
+Production coverage is 38,564/39,128 lines (98.5586%) and 11,512/12,092 branches
+(95.2034%), with 97.74% changed-line coverage. All 121 critical modules pass
+their 100% line/branch gates. The hosted owned-kind verifier passes 58 checks,
+records 293 unchanged measured inputs and confirms owned-cluster deletion.
+Linux 3.13/3.14, macOS 3.12, four native targets and required repository checks
+also pass. Original failed attempts below remain unchanged evidence.
+These source changes do not update published 0.4.0 artifacts or hosting.
+
 ## Local manifest implementation candidate — 2026-11-10 UTC
 
 M07 #67 starts from protected main

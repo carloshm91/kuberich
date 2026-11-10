@@ -80,6 +80,14 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `navigation.views.RESOURCE.sort` | {} |
 | `navigation.views.RESOURCE.sort.descending` | false |
 | `navigation.views.RESOURCE.sort.key` | "name" |
+| `node_shell.enabled` | false |
+| `node_shell.image` | null (before validation) |
+| `node_shell.limits` | No explicit fallback; see task guide |
+| `node_shell.namespace` | null (before validation) |
+| `node_shell.requests` | No explicit fallback; see task guide |
+| `node_shell.schema_version` | 1 |
+| `node_shell.session_timeout_seconds` | 3600 |
+| `node_shell.startup_timeout_seconds` | 60 |
 | `observability.contexts` | {} |
 | `observability.contexts.NAME.history` | null (before validation) |
 | `observability.contexts.NAME.history.api_prefix` | "" |
@@ -154,6 +162,6 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `plugins.locations` | No explicit fallback; see task guide |
 | `plugins.schema_version` | null (before validation) |
 
-The root accepts these versioned extensions: `appearance`, `context_settings`, `forwarding`, `jumps`, `navigation`, `observability`, `plugins`.
+The root accepts these versioned extensions: `appearance`, `context_settings`, `forwarding`, `jumps`, `navigation`, `node_shell`, `observability`, `plugins`.
 Key profiles/actions come from the [key reference](cli-reference.md#additional-navigation-defaults).
 Theme colors and plugin definitions are validated as described in their task guides.

@@ -7,7 +7,7 @@ import pytest
 from kuberich.domain.commands import Command as DomainCommand
 from kuberich.domain.view_actions import ViewState
 from kuberich.errors import AppError
-from kuberich.services.access import AccessPolicy
+from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.command_catalog import (
     COMMAND_CATALOG,
     COMMAND_SPECS,
@@ -50,6 +50,27 @@ def test_read_only_plugin_manifest_classification_remains_after_parsing_and_befo
     assert service.resolve("download") is Command.DOWNLOAD
     assert COMMAND_CATALOG.by_command[Command.DOWNLOAD].read_only_allowed
     assert not COMMAND_CATALOG.by_command[Command.UPLOAD].read_only_allowed
+
+
+def test_node_shell_commands_separate_privileged_creation_from_local_recovery_listing():
+    write = CommandService(AccessPolicy(False))
+    assert write.resolve(":node-shell") is Command.NODE_SHELL
+    assert write.resolve(":node-shell-recover") is Command.NODE_SHELL_RECOVER
+    assert COMMAND_CATALOG.by_command[Command.NODE_SHELL].capabilities == frozenset(
+        {Capability.NODE}
+    )
+    assert COMMAND_CATALOG.policy_for("node-shell") is Action.MUTATE
+    assert COMMAND_CATALOG.policy_for("node-shell-recover") is Action.READ
+    assert (
+        CommandService(AccessPolicy(True)).resolve("node-shell-recover")
+        is Command.NODE_SHELL_RECOVER
+    )
+    with pytest.raises(AppError, match="Read-only mode blocks"):
+        CommandService(AccessPolicy(True)).resolve("node-shell")
+    for command in ("node-shell", "node-shell-recover"):
+        with pytest.raises(AppError, match="without arguments"):
+            write.resolve(command + " extra")
+    assert "node-shell-recover" in suggestions(":node-shell-", (), ())
 
 
 def test_bound_handlers_preserve_scoped_argument_and_refuse_before_handler_lookup():

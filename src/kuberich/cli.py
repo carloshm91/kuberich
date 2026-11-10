@@ -129,7 +129,7 @@ def _parser() -> argparse.ArgumentParser:
         "-c",
         dest="initial_command",
         type=_argument,
-        help="initial terminal command: po, ctx, ns, helm, manifests, pulse, overview, exports, themes, views, about, status, retry, back, forward, help or quit",
+        help="initial terminal command: po, ctx, ns, helm, manifests, node-shell-recover, pulse, overview, exports, themes, views, about, status, retry, back, forward, help or quit",
     )
     parser.add_argument(
         "--screen-dump-dir",
@@ -441,6 +441,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if isinstance(initial, (PluginCommand, InteractionCommand)) or action in {
                 Command.UNAVAILABLE,
                 Command.SHELL,
+                Command.NODE_SHELL,
                 Command.ATTACH,
                 Command.UPLOAD,
                 Command.DOWNLOAD,
@@ -466,7 +467,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Command.RESUME,
             }:
                 raise AppError(
-                    "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, helm, manifests, status, retry, exports, themes, about, help, quit.",
+                    "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, helm, manifests, node-shell-recover, status, retry, exports, themes, about, help, quit.",
                     ExitCode.UNAVAILABLE,
                 )
         log_file = log_location(

@@ -1,5 +1,7 @@
 """Action availability rules for each workspace view."""
 
+from dataclasses import replace
+
 import pytest
 
 from kuberich.domain.curated import READ_ONLY_FAMILIES
@@ -67,7 +69,10 @@ def test_actions_follow_the_current_view(action, view, expected):
 
 
 @pytest.mark.parametrize(
-    "action", sorted(TABLE_ACTIONS - {"configuration_data", "port_forward", "open_relationship"})
+    "action",
+    sorted(
+        TABLE_ACTIONS - {"configuration_data", "port_forward", "open_relationship", "node_shell"}
+    ),
 )
 def test_table_actions_pause_while_a_modal_or_input_has_focus(action):
     assert action_available(action, ViewState("pods"))
@@ -145,3 +150,25 @@ def test_authorization_keeps_navigation_and_explicit_object_open_without_resourc
     if action in TABLE_ACTIONS:
         assert not action_available(action, ViewState("authorization", modal=True))
         assert not action_available(action, ViewState("authorization", typing=True))
+
+
+@pytest.mark.parametrize("generic", [False, True])
+def test_node_shell_requires_exact_core_node_descriptor(generic):
+    node = ApiResource("", "v1", "nodes", "Node", False, frozenset())
+    assert action_available("node_shell", ViewState("nodes"))
+    assert action_available("node_shell", ViewState("nodes", generic=generic, descriptor=node))
+    for field, value in (
+        ("group", "other.example"),
+        ("version", "v2"),
+        ("name", "pods"),
+        ("kind", "Other"),
+        ("namespaced", True),
+    ):
+        descriptor = replace(node, **{field: value})
+        assert not action_available(
+            "node_shell", ViewState("nodes", generic=generic, descriptor=descriptor)
+        )
+    assert not action_available("node_shell", ViewState("nodes", generic=True))
+    assert not action_available("node_shell", ViewState("nodes", modal=True, descriptor=node))
+    assert not action_available("node_shell", ViewState("nodes", typing=True, descriptor=node))
+    assert not action_available("node_shell", ViewState("pods", descriptor=node))

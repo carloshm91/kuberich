@@ -228,6 +228,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.helm_tools --directory",
         "scripts.verify_helm_kind",
         "scripts.verify_manifests_kind",
+        "scripts.verify_node_shell_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
@@ -251,7 +252,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 23
+    assert len(cluster_steps) == 24
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(
@@ -269,6 +270,8 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "artifacts/helm/**" in upload["with"]["path"].splitlines()
     assert "artifacts/manifests/**" in upload["with"]["path"].splitlines()
     assert "uv run mypy --strict scripts/verify_manifests_kind.py" in commands
+    assert "artifacts/node-shell/**" in upload["with"]["path"].splitlines()
+    assert "uv run mypy --strict scripts/verify_node_shell_kind.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
         in commands
@@ -288,6 +291,13 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in manifests["run"]
     assert "--docker /usr/bin/docker" in manifests["run"]
     assert "--evidence artifacts/manifests/evidence.json" in manifests["run"]
+    node_shell = next(
+        step for step in cluster_steps if "python -m scripts.verify_node_shell_kind" in step["run"]
+    )
+    assert '--kind "$RUNNER_TEMP/kuberich-kind"' in node_shell["run"]
+    assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in node_shell["run"]
+    assert "--docker /usr/bin/docker" in node_shell["run"]
+    assert "--evidence artifacts/node-shell/evidence.json" in node_shell["run"]
 
 
 @pytest.mark.parametrize(

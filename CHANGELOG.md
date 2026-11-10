@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Open configured Linux node diagnostic shells with privilege review, bounded sessions, cleanup by Pod UID and explicit local recovery ([#76](https://github.com/carloshm91/kuberich/issues/76)).
+
 - Browse and edit local manifests, render Kustomize and review server dry-runs before guarded apply/delete with per-resource outcomes ([#67](https://github.com/carloshm91/kuberich/issues/67)).
 
 - Browse Helm releases in a native workspace, inspect status, notes, supplied/computed values, manifests and revision history with redacted defaults and explicit disclosure ([#66](https://github.com/carloshm91/kuberich/issues/66)).

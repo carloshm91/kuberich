@@ -13,6 +13,7 @@ class Field(TypedDict):
 # These are parser entry points, not a duplicate catalogue of accepted fields.
 # Each field and its fallback expression is read from its production declaration.
 PARSERS = (
+    ("config/node_shell.py", "parse_node_shell", {"value": "node_shell"}),
     (
         "config/navigation.py",
         "parse_navigation",

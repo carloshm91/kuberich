@@ -173,7 +173,7 @@ class WorkspaceNavigation:
     def initialize(
         self, initial: ResolvedCommand, apply: Callable[[ResolvedCommand], None]
     ) -> None:
-        if initial in {Command.EXPORTS, Command.MANIFESTS}:
+        if initial in {Command.EXPORTS, Command.MANIFESTS, Command.NODE_SHELL_RECOVER}:
             apply(initial)
             return
         context = self.sessions.request.context or self.sessions.catalog.current
