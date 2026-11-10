@@ -230,8 +230,7 @@ def test_bounded_prefix_hash_and_read_mutation(files, tmp_path, monkeypatch):
 def test_scan_bound_and_disappeared_entry(files, tmp_path, monkeypatch):
     for index in range(4):
         (tmp_path / str(index)).write_text("safe")
-    monkeypatch.setattr(artifact_files, "MAX_ENTRIES", 2)
-    scan = files.scan(root(files, tmp_path), cancel=threading.Event())
+    scan = files.scan(root(files, tmp_path), max_entries=2, cancel=threading.Event())
     assert scan.limited and len(scan.refs) == 2
     original = os.stat
 
@@ -241,7 +240,7 @@ def test_scan_bound_and_disappeared_entry(files, tmp_path, monkeypatch):
         return original(name, **kwargs)
 
     monkeypatch.setattr(os, "stat", disappeared)
-    assert files.scan(root(files, tmp_path), cancel=threading.Event()).skipped == 2
+    assert files.scan(root(files, tmp_path), max_entries=2, cancel=threading.Event()).skipped == 2
 
 
 @pytest.mark.parametrize("point", ["before", "write", "fsync", "changed", "link"])

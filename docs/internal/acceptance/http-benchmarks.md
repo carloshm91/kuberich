@@ -253,3 +253,14 @@ boundary and deterministic worker identifiers. Production, proof inputs and
 native runtime bytes remain unchanged. Focused distributed verification and a
 fresh ordinary exact-head matrix must qualify the correction; the original
 hosted run remains failed.
+
+The second ordinary matrix, run `42915273798`, passes 4,553 Fast cases before
+an existing artifact-scan test fails. That test replaces the module's hard
+maximum after the new public `max_entries` argument has captured its default,
+so the original 2,048-entry default correctly exceeds the patched two-entry
+hard maximum and is refused. Completed job `130176048520` and its same exact
+behavior-step failure remain retained. A focused run reproduces the refusal.
+The test now passes the public two-entry budget to both scans, preserving its
+limited/two-reference and two-disappeared-entry assertions. Separate controls
+still cover the original default, explicit smaller budgets and invalid limits.
+No production limit or code changes; a fresh exact-head matrix remains required.
