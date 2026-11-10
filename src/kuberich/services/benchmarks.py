@@ -290,7 +290,10 @@ class BenchmarkService:
                         )
                     results = []
                     for raw in items:
-                        pod = resource_object(raw)
+                        # Kubernetes list items may omit their TypeMeta. The
+                        # already-validated outer v1 PodList supplies only absent
+                        # fields; conflicting explicit descriptors still fail.
+                        pod = {"apiVersion": "v1", "kind": "Pod", **resource_object(raw)}
                         meta = resource_object(pod.get("metadata"))
                         labels = resource_object(meta.get("labels", {}))
                         if not selector_matches(selector, labels):
