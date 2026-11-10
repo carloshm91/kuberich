@@ -236,3 +236,20 @@ also reject duration + final wait beyond that budget. The exact actual report
 is retained as a synthetic, value-free fixture with roundtrip and over-budget
 controls; a real HTTP contract exercises the same busy-worker boundary. No
 load limit, process deadline or latency gate is raised.
+
+## Retained first hosted collection failure
+
+The first ordinary PR matrix, run `42914512810`, fails Fast tests before
+executing behavior because the saved-record rejection parameters generate a
+random uppercase UUID during collection. Independent xdist workers therefore
+collect different test identifiers. The completed job `130173471871` and its
+exact failed step, `Run every unit, contract and UI test before the full
+qualification`, remain retained; downstream matrix jobs are skipped and the
+aggregate correctly fails.
+
+A focused two-worker run reproduces that collection failure. The rejection
+case now uses a fixed uppercase UUID, preserving the same noncanonical-record
+boundary and deterministic worker identifiers. Production, proof inputs and
+native runtime bytes remain unchanged. Focused distributed verification and a
+fresh ordinary exact-head matrix must qualify the correction; the original
+hosted run remains failed.

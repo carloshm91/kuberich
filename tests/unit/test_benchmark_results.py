@@ -5,7 +5,7 @@ from copy import deepcopy
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
@@ -198,7 +198,7 @@ def test_result_roundtrip_has_no_replayable_endpoint_or_request_secrets():
         (("run_id",), None),
         (("run_id",), {}),
         (("run_id",), "bad"),
-        (("run_id",), str(uuid4()).upper()),
+        (("run_id",), "64FB938B-0897-4204-AC9C-01F5D3723D42"),
         (("finished_at",), "2026-11-09T00:00:00Z"),
         (("target", "context"), "bad\n"),
         (("target", "context"), "\ud800"),
