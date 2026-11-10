@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Cordon, drain and uncordon a selected Node with disruption-aware progress, separate data-loss consents and explicit final scheduling observations ([#77](https://github.com/carloshm91/kuberich/issues/77)).
+
 - Open configured Linux node diagnostic shells with privilege review, bounded sessions, cleanup by Pod UID and explicit local recovery ([#76](https://github.com/carloshm91/kuberich/issues/76)).
 
 - Browse and edit local manifests, render Kustomize and review server dry-runs before guarded apply/delete with per-resource outcomes ([#67](https://github.com/carloshm91/kuberich/issues/67)).

@@ -18,6 +18,7 @@ from kuberich.config.forwarding import ForwardPreferences
 from kuberich.domain.forward_presets import annotation_preset, resolve_mappings
 from kuberich.domain.interactions import RangeSelection
 from kuberich.domain.metrics import MetricsSnapshot
+from kuberich.domain.node_maintenance import MaintenanceMode
 from kuberich.domain.operations import MAX_BATCH, ResourceAction
 from kuberich.domain.port_forwards import suggested_port
 from kuberich.domain.targets import SessionIdentity
@@ -59,6 +60,7 @@ class OperationContext:
     metrics: MetricsSnapshot | None = None
     discovery: Discovery | None = None
     revision: int = 0
+    live: bool = True
 
 
 class ResourceOperations:
@@ -107,7 +109,12 @@ class ResourceOperations:
         self._auto_forward_contexts: set[str] = set()
         from kuberich.config.node_shell import NodeShellSettings
         from kuberich.services.node_shell import NodeShellManager
+        from kuberich.ui.node_maintenance_actions import NodeMaintenanceActions
         from kuberich.ui.node_shell_actions import NodeShellActions
+
+        self.node_maintenance = NodeMaintenanceActions(
+            host, capture, context, policy, mutations, self.notice
+        )
 
         self.node_shells = NodeShellActions(
             host,
@@ -123,6 +130,13 @@ class ResourceOperations:
             connection if connection is not None else lambda: None,
             session_current,
         )
+
+    def open_node_maintenance(self, mode: MaintenanceMode) -> None:
+        self.node_maintenance.open(mode)
+
+    def observe_node_operations(self) -> None:
+        self.node_shells.observe()
+        self.node_maintenance.observe()
 
     def open_node_shell(self) -> None:
         self.node_shells.open()
@@ -636,6 +650,7 @@ class ResourceOperations:
             self.port_forwards(identity)
 
     async def close_for_client(self, client: KubernetesSession) -> None:
+        await self.node_maintenance.close_for_client(client)
         await self.node_shells.close_for_client(client)
         from kuberich.ui.configuration_data import ConfigurationScreen
         from kuberich.ui.containers import ContainerScreen

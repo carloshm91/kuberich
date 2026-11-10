@@ -7,6 +7,7 @@ from textual.app import App
 
 from kuberich.config.forwarding import ForwardPreferences
 from kuberich.domain.interactions import RangeSelection
+from kuberich.domain.node_maintenance import MaintenanceMode
 from kuberich.domain.operations import ResourceAction
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.domain.view_routes import ViewRoute
@@ -15,6 +16,7 @@ from kuberich.services.mutations import MutationManager
 from kuberich.services.port_forwards import ForwardManager
 from kuberich.services.processes import ProcessRunner
 from kuberich.ui.chrome import WorkspaceChrome
+from kuberich.ui.node_maintenance_actions import NodeMaintenanceActions
 from kuberich.ui.resource_operations import OperationContext, ResourceOperations
 from kuberich.ui.target_capture import CapturedResource
 from tests.support.pods import pod, snapshot
@@ -79,3 +81,35 @@ def test_batch_prunes_only_after_policy_and_initial_capture(blocked):
         assert statuses == ["Filter this view to at most 100 rows before choosing a delete batch."]
     assert captures == ([] if blocked == "policy" else [None])
     assert processes.active_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("blocked", ["readonly", "stale", "closed", "missing"])
+async def test_node_maintenance_guards_before_capture_or_preparation(blocked):
+    policy = AccessPolicy(read_only=blocked == "readonly")
+    captures, notices = [], []
+    context = OperationContext(
+        WorkspaceChrome(lambda: ("owned", "owned", "owned", "team", "Live"), "test"),
+        ("nodes",),
+        ("sh",),
+        {},
+        Path("/"),
+        ViewRoute.pods(),
+        False,
+        live=blocked != "stale",
+    )
+
+    def capture(uid):
+        captures.append(uid)
+        return None
+
+    owner = NodeMaintenanceActions(
+        App(), capture, lambda: context, policy, MutationManager(), notices.append
+    )
+    if blocked == "closed":
+        await owner.close()
+    owner.open(MaintenanceMode.DRAIN)
+    assert captures == ([None] if blocked == "missing" else [])
+    assert owner.retained_count == 0
+    if blocked != "missing":
+        assert len(notices) == 1

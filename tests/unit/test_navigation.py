@@ -35,6 +35,9 @@ def test_aliases_share_one_readonly_initial_and_interactive_parser(alias, comman
     if command in {
         Command.SHELL,
         Command.NODE_SHELL,
+        Command.CORDON,
+        Command.DRAIN,
+        Command.UNCORDON,
         Command.ATTACH,
         Command.UPLOAD,
         Command.PORT_FORWARD,
@@ -80,12 +83,12 @@ def test_completions_are_literal_bounded_case_preserving_and_deduplicated():
     assert suggestions("c", (), ()) == (
         "context",
         "contexts",
+        "cordon",
         "ctx",
         "cj",
         "clusterrole",
         "clusterrolebindings",
         "clusterroles",
-        "cm",
     )
     assert suggestions("ct", (), ()) == ("ctx",)
     assert suggestions("cl", (), ()) == (

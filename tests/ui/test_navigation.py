@@ -61,8 +61,8 @@ async def test_completion_commands_multiple_choices_tab_focus_and_literal_small_
     async with app.run_test(size=size) as pilot:
         await pilot.press("colon", "c")
         await pilot.pause()
-        assert app.command_input.choices[:3] == ("context", "contexts", "ctx")
-        assert "cm" in app.command_input.choices
+        assert app.command_input.choices[:4] == ("context", "contexts", "cordon", "ctx")
+        assert "cj" in app.command_input.choices
         assert app.command_input.value == "c"
         assert app.command_input.inline_completion == "context"
         assert "context" in app.command_input.render_line(0).text
@@ -71,7 +71,7 @@ async def test_completion_commands_multiple_choices_tab_focus_and_literal_small_
         await pilot.press("right")
         assert app.command_input.value == "c"  # Right edits; Tab accepts.
         assert app.query_one("#resource-view").region == frame
-        await pilot.press("down", "down", "tab")
+        await pilot.press("down", "down", "down", "tab")
         assert app.command_input.value == "ctx" and app.focused is app.command_input
         assert not app.command_input.inline_completion
         await pilot.press("enter")

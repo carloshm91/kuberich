@@ -103,10 +103,57 @@ and reset its start time. Check these effects before Confirm.
 ## Recover from a conflict or uncertain write
 
 Every action binds its review to the selected target and change. Input edits
-invalidate it; Confirm can be used once. No automatic retry follows a rejected,
-interrupted, or lost write response. Inspect current state before another review.
+invalidate it; Confirm can be used once. A drain can retry an explicitly refused
+429 eviction within its deadline. Accepted, interrupted or uncertain writes are
+not replayed. Conflicts require a fresh review. Inspect current state before retrying.
 `:writes` keeps recent results for this application session, not a persistent
 audit log. See [edit and change resources](editing.md) for shared result meanings.
+
+## Maintain a Node in development source
+
+Development source for 0.5 adds `:cordon`, `:drain` and `:uncordon` on one selected
+Node. Published 0.4.0 predates these commands. Check the context and Node identity,
+prepare the review and choose Confirm separately. Read-only mode blocks them.
+Node diagnostics settings are not required for these API operations.
+
+Cordon prevents ordinary new scheduling. Uncordon makes scheduling available;
+it always needs a new review. Both use the selected Node UID and version, so a
+changed or replaced Node requires another review. An already matching state
+needs no write. Cordon does not move existing Pods or prevent manually bound Pods.
+
+Drain first reviews Pods across **all namespaces** on that Node, regardless of
+your workspace namespace or filter. Review controller identity, phase/readiness,
+matching disruption budgets and declared storage. Incomplete or denied Pod,
+controller or PDB safety reads block confirmation. Unavailable PVC/PV metadata
+is shown as unknown storage portability. The operation needs Node GET/PATCH,
+cluster-wide Pod LIST, Pod/controller GET, relevant namespace PDB LIST and
+`pods/eviction` CREATE.
+
+| Separate choice | Effect |
+| --- | --- |
+| Force | Permit eviction of checked unmanaged/orphaned Pods; recreation is not guaranteed |
+| Delete emptyDir data | Accept loss of checked emptyDir data, including memory-backed volumes |
+| Leave DaemonSet Pods running | Acknowledge that verified DaemonSet Pods remain |
+
+Choices start unchecked. A Pod with both unmanaged and emptyDir risks needs both
+consents. Force never bypasses disruption budgets. Mirror/static Pods remain;
+the host need not become empty. Other storage declarations can have unknown
+portability; drain does not migrate storage or promise replacement capacity.
+
+Set a finite timeout of 1–3,600 seconds; the default is 300. Kubernetes decides
+whether each policy/v1 eviction is allowed. A refused 429 can wait and retry,
+while other checked Pods progress. If a Pod version changes, review again.
+Acceptance remains **absence pending** until the checked Pod UID is absent;
+normal grace periods and finalizers remain in effect. No direct Pod DELETE,
+finalizer removal, PDB change or zero-grace fallback is available here.
+
+**Stop drain**, Escape or leaving the context stops new writes and waits
+for work to finish. Completed evictions remain. Stopping never uncordons the
+Node. Final status reports freshly observed cordoned/schedulable, absent,
+replaced or unknown state with an observation time. A lost response can leave
+the write uncertain. External uncordon stops further evictions; new Pods on the
+Node need a fresh review. Node checks and Pod evictions are separate API calls,
+so another actor can change scheduling between them.
 
 ## Browse Helm releases in development source
 

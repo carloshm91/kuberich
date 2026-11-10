@@ -396,7 +396,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1573,8 +1573,8 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m–24h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
-      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
+      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m\u201324h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
+      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m\u201324h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/cluster-overview.md",
@@ -1720,9 +1720,23 @@
       ],
       "source": "internal/view/drain_dialog.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Reviewed cordon, uncordon and drain with disruption constraints and explicit overrides are planned.",
-      "public_status": "planned"
+      "difference": "A02 development source binds one captured Node to conditional cordon/drain/uncordon reviews. The fixed all-namespace Pod set uses policy/v1 eviction with UID/version preconditions, independent unmanaged/emptyDir consents, explicit DaemonSet acknowledgement and mirror retention. Only refused 429 attempts retry under a finite deadline; accepted/uncertain writes never replay. Stop preserves partial progress and separately observed scheduling; uncordon is deliberate. Controller/PDB/storage metadata does not guarantee replacement capacity or portability. Actual issue and cumulative phase qualification remain separate.",
+      "public_summary": "Development source for 0.5 adds selected-Node cordon, disruption-aware drain and separate uncordon with explicit consents and final scheduling observations. Published 0.4.0 predates these actions.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/workloads.md",
+        "docs/adr/0013-reviewed-conditional-writes.md",
+        "docs/internal/acceptance/node-maintenance.md",
+        "src/kuberich/domain/node_maintenance.py",
+        "src/kuberich/adapters/node_maintenance.py",
+        "src/kuberich/services/node_maintenance.py",
+        "src/kuberich/ui/node_maintenance.py",
+        "tests/unit/test_node_maintenance.py",
+        "tests/contract/test_node_maintenance.py",
+        "tests/ui/test_node_maintenance.py",
+        "scripts/verify_node_maintenance_kind.py",
+        "tests/quality/test_node_maintenance_kind.py"
+      ]
     },
     {
       "id": "ADV03",

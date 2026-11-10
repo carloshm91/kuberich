@@ -14,6 +14,10 @@ an automatic retry after a lost response.
   Confirm. Use UID/resourceVersion tests or deletion preconditions at the server boundary.
 - Keep strict editor dry-run separate from Apply. Do not follow redirects, refresh-and-replay
   authentication, or blindly retry writes. Report uncertain outcomes explicitly.
+- Node drain fixes one complete reviewed Pod UID/version set. Only an explicitly
+  refused 429 eviction can retry the same request under one finite deadline;
+  accepted or ambiguous writes are never replayed. A fresh review is required
+  after identity/version changes. Final Node scheduling is observed separately.
 
 ## Consequences
 
@@ -21,6 +25,8 @@ an automatic retry after a lost response.
   dependent deletion.
 - Batches have independent item outcomes rather than rollback. HPA/source-history checks and
   later changes remain separate cross-resource requests, not atomic transactions.
+- Stopping drain preserves accepted effects and never automatically uncordons.
+  The Node check and Pod eviction remain separate requests with a cross-resource race.
 
 ## Source and related decisions
 
@@ -33,5 +39,7 @@ measurements.
 - [src/kuberich/services/mutations.py](../../src/kuberich/services/mutations.py)
 - [src/kuberich/services/workloads.py](../../src/kuberich/services/workloads.py)
 - [src/kuberich/services/operations.py](../../src/kuberich/services/operations.py)
+- [src/kuberich/domain/node_maintenance.py](../../src/kuberich/domain/node_maintenance.py)
+- [src/kuberich/services/node_maintenance.py](../../src/kuberich/services/node_maintenance.py)
 
 Related: [0007](0007-active-view-generations.md), [0022](0022-default-redaction-and-explicit-disclosure.md).

@@ -1,5 +1,71 @@
 # Development checkpoint
 
+## Node maintenance corrected candidate — 2026-11-10 UTC
+
+A02 #77 is implemented in [PR #337](https://github.com/carloshm91/kuberich/pull/337)
+from protected main `7c8c7cb1595a3609c2d6a5748087d53917ce9af8`.
+Corrected clean candidate `25382a4dc1dd592890f58f70ff0e1ba1323b180f` passes all
+13 actual three-node kind groups in 85.48 seconds, with 308 unchanged measured
+inputs and verified owner/private-file/caller-state/cluster cleanup. Report
+SHA-256: `bb6695b6dc21d2761c1d8cfc7af7f96d466ae12ced9e77471ca971d3b3d520d8`.
+
+The source adds selected-Node cordon, disruption-aware drain and deliberately
+confirmed uncordon. Actual checks cover fixed UID/version eviction, PDB
+refusal/recovery, finalizers, independent consents, real DaemonSet/static-mirror
+retention, partial Stop, RBAC, lost receipts, replacements, new arrivals and
+external uncordon. No production requests occur after the stopped operation's
+actual retry deadline. Provider/network certification remains separate.
+
+The tested verifier invocation uses a fresh evidence path:
+
+```sh
+uv run python -m scripts.verify_node_maintenance_kind \
+  --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind \
+  --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl \
+  --docker /usr/bin/docker \
+  --evidence artifacts/issue77/full-kind-06/evidence.json
+```
+
+Independent cross-review reproduces and fixes interrupted 429-cleanup retries,
+contradictory final-success reporting and stale details after an empty re-review.
+The scoped core cohort passes 194 cases and navigation/maintenance Pilot passes
+51. Fresh source/installed PTY verification passes eight cases in 39.94 seconds;
+all 304 wheel runtime files match corrected source. Two hosted Fast failures
+from outdated `:c` expectations remain retained (UI and authorization grammar).
+The corrected command cohort passes 408 cases; seven additional completion unit
+files pass 491 cases. A later 403 regression fixes an empty label on a blocked inventory; all 19
+maintenance Pilot cases pass. The superseded third CI run is cancelled before
+its matrices; fresh 06/03 evidence above binds the corrected runtime.
+See all earlier failed and successful trials in
+[maintenance acceptance](acceptance/node-maintenance.md).
+
+All four native builds and all Linux source parts pass on `d167143`. A macOS
+part exposes an older 30 ms first-response assumption in an aggregate-log test;
+a controlled HTTP regression reproduces it and the corrected verifier cohorts
+pass 47 cases. Application files and real deadlines remain unchanged.
+
+Full production/changed-line coverage, all 125 critical modules and the complete
+27-job protected exact-head PR pipeline remain pending. Published packages remain
+0.4.0; these source changes publish no tags, artifacts or hosting.
+
+## Node diagnostics delivered in development source — 2026-11-10 UTC
+
+[PR #336](https://github.com/carloshm91/kuberich/pull/336) merged normally as
+`7c8c7cb1595a3609c2d6a5748087d53917ce9af8`, with tree
+`b933a47765ce4564e81236da22002e974b5352a2`, matching qualified head
+`168e981`. A01 #76 is closed and Done. Exact-head Application quality run
+`42782817463` passes all 27 selected jobs; app-bound Repository checks `15368`
+and DCO `1861` pass. The canonical production measurement covers 297 modules:
+40,291/40,904 lines (98.5014%) and 11,916/12,532 branches (95.0846%), with
+97.19% changed-line coverage. All 124 critical modules meet 100% lines and
+applicable branches.
+
+The actual node-shell verifier passes all 16 groups with 303 unchanged measured
+inputs, preserved sentinel identity and verified process/private-file/cluster
+cleanup. Exact commands and retained original failures are in
+[node-shell acceptance](acceptance/node-shell.md). These source changes publish
+no artifacts or hosting; the published package remains 0.4.0.
+
 ## Node diagnostic implementation candidate — 2026-11-10 UTC
 
 A01 #76 is the next unblocked v0.5.0 issue, on `feat/76-node-shell` from

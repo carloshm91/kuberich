@@ -50,6 +50,7 @@ KIND_SCENARIOS = (
     ("helm", "verify_helm_kind", False),
     ("manifests", "verify_manifests_kind", True),
     ("node-shell", "verify_node_shell_kind", True),
+    ("node-maintenance", "verify_node_maintenance_kind", True),
 )
 
 
@@ -232,7 +233,7 @@ def cluster_stages(
                     ),
                     *(
                         ("--docker", "/usr/bin/docker")
-                        if name in {"manifests", "node-shell"}
+                        if name in {"manifests", "node-shell", "node-maintenance"}
                         else ()
                     ),
                     "--evidence",
@@ -250,6 +251,7 @@ def cluster_stages(
                             "helm",
                             "manifests",
                             "node-shell",
+                            "node-maintenance",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),

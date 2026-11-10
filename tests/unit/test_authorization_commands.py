@@ -200,7 +200,7 @@ def test_incomplete_programmatic_question_is_rejected_and_ambiguous_alias_is_not
 
 
 def test_command_completion_keeps_existing_priorities_and_exposes_authorization_grammar():
-    assert suggestions("c", (), ())[:3] == ("context", "contexts", "ctx")
+    assert suggestions("c", (), ())[:4] == ("context", "contexts", "cordon", "ctx")
     assert suggestions("rbac ", (), ())[:3] == (
         "rbac bindings",
         "rbac roles",
