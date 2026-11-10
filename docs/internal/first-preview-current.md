@@ -57,6 +57,12 @@ verification remains pending. Source checks also catch benchmark deep-link
 mapping and document-enrollment expectations; the corrected guide/site cohort
 passes 202 cases. The fixture changes a captured kind/native-runtime input, so
 earlier receipts remain historical and fresh complete hosted evidence is required.
+The completed macOS source parts also expose a Linux-only path in a PID test
+fixture and a Darwin runtime field added inside the Python fault helper. The
+portable fixture passes 16 controlled cases. Exact three-process launch
+environment assertions retain the credential/proxy boundary while recognizing
+only that later Darwin observation; 60 related cases and the full private-access
+audit pass. Actual macOS success and complete protected delivery remain pending.
 
 ## Ephemeral debugging verified candidate — 2026-11-10 UTC
 

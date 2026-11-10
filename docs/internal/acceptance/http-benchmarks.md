@@ -338,3 +338,28 @@ fixture is one of the 331 owned-kind inputs, and native runtime separately
 binds its source hash. Earlier kind/native-runtime receipts therefore remain
 historical for that fixture. Fresh complete hosted kind, native and platform
 evidence must bind the corrected inputs before protected delivery.
+
+The completed macOS source parts also expose two test-host assumptions. The
+native-adapter fixture tries Linux's `/bin/true` path to obtain a reaped child
+PID; it now uses the current explicit interpreter with isolated startup and an
+empty environment. The original three-second wait and all PID/journal refusal
+assertions remain. A controlled missing-path case reproduces the old failure,
+then all 16 adapter cases pass under that same control in 0.71 seconds.
+
+The Python fault helper can acquire `__CF_USER_TEXT_ENCODING` inside Darwin's
+CoreFoundation runtime. Apple's pinned [encoding key](https://github.com/apple-oss-distributions/CF/blob/dc54c6bb1c1e5e0b9486c1d26dd5bef110b20bf3/CFStringDefaultEncoding.h#L45)
+and [encoding initialization](https://github.com/apple-oss-distributions/CF/blob/dc54c6bb1c1e5e0b9486c1d26dd5bef110b20bf3/CFStringEncodings.c#L895-L951)
+document that historical implementation; the hosted child observation shows
+the current test-host behavior. The contract now observes the real public OS
+launch boundary and requires exactly the fixed PATH, LANG and LC_ALL fields for
+all three processes. Parent encoding, proxy, kubeconfig and provider canaries
+must not reach them. Only Darwin permits that single extra key in the child's
+later observation; the production environment whitelist is unchanged.
+
+All 60 related contract/domain cases pass in 9.63 seconds. Controlled actual
+processes reproduce the old observation failure, accept the simulated Darwin
+runtime addition, reject it on Linux and reject a supplied credential even if
+the child removes it before reporting. These controls are not Darwin runtime
+qualification. Ruff, formatting and the full private-access audit pass. The
+completed original matrix remains failed, and the integrated correction still
+requires its own complete ordinary protected matrix.

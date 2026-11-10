@@ -4,6 +4,7 @@ import json
 import os
 import socket
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -110,7 +111,7 @@ def fixture(tmp_path, monkeypatch):
                 path = source / "artifacts/terminal" / (name + suffix)
                 path.with_suffix(".json").write_text(json.dumps(receipt))
                 path.with_suffix(".ansi").write_bytes(b"synthetic terminal receipt")
-            process = subprocess.Popen(["/bin/true"])
+            process = subprocess.Popen([sys.executable, "-I", "-S", "-c", "pass"], env={})
             process.wait(timeout=3)
             path = directory / "benchmark-forward.json"
             with socket.socket() as listener:
