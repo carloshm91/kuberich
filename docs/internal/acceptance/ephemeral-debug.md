@@ -548,3 +548,30 @@ Original control source, logs and JUnit remain under
 `artifacts/issue78/plugin-notice-fix-01/`. The production input change requires
 fresh frozen real-kind debug, installed-feature and inspection evidence before
 another complete exact-head hosted matrix can qualify delivery.
+
+### Rebound evidence after plugin refusal correction
+
+Frozen `35e60f080885751c4069bf4600ce12263c5dc15b` passes all 16 actual
+debug groups in 47.13 seconds and all seven actual inspection groups in 36.99
+seconds, with complete ownership/private-file/caller-state/cluster cleanup and
+all 318/313 respective inputs unchanged. The two cluster trials run sequentially.
+The fresh installed-feature cohort passes four cases in 25.89 seconds; all 309
+wheel runtime files match the frozen source. Exact commands are:
+
+```sh
+uv run --no-sync python -m scripts.verify_ephemeral_debug_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl --docker /usr/bin/docker --evidence artifacts/issue78/full-kind-05/evidence.json
+uv run --no-sync pytest tests/packaging/test_distribution.py -k installed_ephemeral_debug -q --basetemp=/tmp/kuberich-78-installed-03 --junitxml=artifacts/issue78/installed-03.xml
+uv run --no-sync python -m scripts.verify_container_inspection_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --docker /usr/bin/docker --evidence artifacts/issue78/container-inspection-fix-02/evidence.json
+```
+
+Debug report SHA-256 is
+`59da4582cc99cfb611bb5b4bd58b20ef1210ab26900c6b88f64ff286c82fca73`;
+inspection report SHA-256 is
+`71c0547f1fe0c19f1c845a2e9ffed934098a5ab5d61bc056d901eb1028dd95b9`.
+The fresh wheel SHA-256 is
+`369b3d42e323057bb61a537cce7da2d3f9d3b0b504e8a30b71cf7d2bbf912bfa`.
+Original logs, reports, wheel, sdist and runtime-byte comparison remain under
+`artifacts/issue78/full-kind-05/`, `container-inspection-fix-02/`, `installed-03/`
+and `control/`. Whole-checkout Ruff, formatting, private-access validation and
+strict plugin-controller typing pass. Complete exact-head hosted qualification
+and protected merge remain required; no artifacts or hosting are published.

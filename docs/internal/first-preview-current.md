@@ -58,6 +58,13 @@ pass, including notice retirement on an actual namespace change. Fresh real,
 installed and full hosted evidence must bind this production correction before
 delivery; original failures remain retained.
 
+Frozen plugin correction `35e60f0` subsequently passes all 16 actual debug groups
+(47.13 seconds), four fresh installed cases (25.89 seconds) and seven actual
+inspection groups (36.99 seconds), with all measured inputs stable and cleanup
+verified. All 309 wheel runtime files match source. Exact commands and report
+digests are in [debugging acceptance](acceptance/ephemeral-debug.md). A complete
+new exact-head hosted matrix and protected merge still remain required.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as
