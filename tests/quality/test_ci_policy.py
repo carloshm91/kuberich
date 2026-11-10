@@ -245,10 +245,13 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert set(gate["needs"]) == {"plan", "fast", "tests", "application", "standalone"}
     assert gate["steps"][-1]["run"] == "python3 -m scripts.check_quality_gate"
     linux_tools = next(
-        step for step in application["steps"] if "apt-get install" in step.get("run", "")
+        step
+        for step in application["steps"]
+        if "scripts.ci_apt" in step.get("run", "") and "mypy" not in step["run"]
     )
     assert linux_tools["if"] == "${{ matrix.os == 'ubuntu-24.04' }}"
     assert "openssh-server tmux" in linux_tools["run"]
+    assert linux_tools["timeout-minutes"] == 6
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
@@ -272,6 +275,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "uv run mypy --strict scripts/verify_manifests_kind.py" in commands
     assert "artifacts/node-shell/**" in upload["with"]["path"].splitlines()
     assert "uv run mypy --strict scripts/verify_node_shell_kind.py" in commands
+    assert "uv run mypy --strict scripts/ci_apt.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
         in commands
@@ -298,6 +302,41 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in node_shell["run"]
     assert "--docker /usr/bin/docker" in node_shell["run"]
     assert "--evidence artifacts/node-shell/evidence.json" in node_shell["run"]
+
+
+def test_linux_package_setup_keeps_every_tool_and_a_finite_step_deadline():
+    workflow = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
+    expected = {
+        "fast": "xclip xvfb",
+        "tests": "openssh-server tmux xclip xvfb",
+        "application": "openssh-server tmux xclip xvfb",
+        "standalone": "gcc libc6-dev binutils",
+    }
+    for name, packages in expected.items():
+        steps = [
+            step
+            for step in workflow["jobs"][name]["steps"]
+            if "python -m scripts.ci_apt" in step.get("run", "")
+        ]
+        assert len(steps) == 1
+        step = steps[0]
+        assert step["timeout-minutes"] == 6
+        assert step["run"].splitlines()[0] == "uv run python -m scripts.ci_apt " + packages
+        assert "continue-on-error" not in step
+    assert "sudo install -d -m 0755 /run/sshd" in (
+        next(
+            step["run"]
+            for step in workflow["jobs"]["tests"]["steps"]
+            if "python -m scripts.ci_apt" in step.get("run", "")
+        )
+    )
+    assert "docker version" in (
+        next(
+            step["run"]
+            for step in workflow["jobs"]["standalone"]["steps"]
+            if "python -m scripts.ci_apt" in step.get("run", "")
+        )
+    )
 
 
 @pytest.mark.parametrize(

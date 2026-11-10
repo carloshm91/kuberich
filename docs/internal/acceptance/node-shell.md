@@ -188,6 +188,27 @@ catalog and launch cohort passes 301 cases in 2.21 seconds. No production code,
 threshold, exclusion or skip changes. The original hosted log and checksum-verified
 JUnit artifact remain retained; its blocked matrix is not a platform pass.
 
+The second hosted run, `42763394040` at
+`ca7f9926d15ea27313032e58293990c1495b4eb7`, passes Fast (10,530 tests, one
+skip), 15 of 16 source parts and three of four native targets. The remaining
+Linux source/native jobs stall during package preparation, before testing or
+building, with repeated Azure Ubuntu mirror failures. After approximately 25
+minutes the run is cancelled; its logs and successful partial results remain
+retained. The application coverage aggregation never runs, so this attempt does
+not qualify the complete matrix or production coverage.
+
+The CI-only bootstrap now selects the architecture-appropriate official HTTPS
+Ubuntu mirror when the image supplies its known mirror list. An absent list
+retains the image's sources. APT signature/TLS checks and the original package
+closure remain intact. Strict index updates, effective Acquire timeouts/retries
+and root-owned GNU timeout process groups bound preparation; failures propagate.
+This addresses the [upstream runner mirror stall](https://github.com/actions/runner-images/issues/14594)
+using the [documented effective Acquire keys](https://github.com/actions/runner-images/pull/14643).
+No local APT or system configuration is changed during verification. All 149
+fake-bootstrap, workflow-policy and qualification contracts pass in 8.63 seconds;
+the additional helper passes strict typing. All platform/test/coverage gates are
+retained for a fresh complete hosted run.
+
 The protected PR must pass complete exact-head hosted source/platform/native,
 production/critical/changed-line coverage and app-bound repository/DCO gates.
 No version bump, tag, package publication, hosting deployment or DNS change is

@@ -32,6 +32,14 @@ correctly refuses it. The rejection inventory is corrected; all 301 navigation,
 catalog and launch cases pass. The original hosted failure remains retained and
 the complete matrix must pass on the corrected head before merge.
 
+The second run passes Fast (10,530 tests, one skip), 15 source parts and three
+native targets, then is cancelled after two Linux jobs stall about 25 minutes
+fetching APT indexes. Their original logs remain retained. A CI-only bootstrap
+now uses official architecture-matched HTTPS mirrors, bounded privileged commands
+and strict failures, preserving the package closure and every qualification gate.
+All 149 focused bootstrap/workflow/qualification contracts pass. A fresh complete
+hosted matrix is required; partial results do not qualify production coverage.
+
 ## Local manifests delivered in development source — 2026-11-10 UTC
 
 [PR #335](https://github.com/carloshm91/kuberich/pull/335) merged normally as
