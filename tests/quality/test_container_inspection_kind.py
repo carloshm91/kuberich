@@ -152,6 +152,64 @@ async def test_positive_values_keep_a_current_snapshot_without_reloads(tmp_path)
 
 
 @pytest.mark.asyncio
+async def test_status_only_update_during_initial_restricted_index_explains_stale_failure(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        api.statuses[SECRET_PATH] = 403
+        original_spec = copy.deepcopy(api.records[POD_PATH]["spec"])
+
+        def update_status(api, path):
+            if path == SECRET_PATH:
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = "status-only-version-2"
+                api.records[POD_PATH]["status"]["phase"] = "Running"
+
+        api.before_response = update_status
+        receipts = []
+        with verification.inspection_receipts(receipts), pytest.raises(AppError) as failure:
+            await service.index()
+        assert str(failure.value) == STALE_MESSAGE
+        assert [(item["path"], item["status"]) for item in receipts] == [
+            (POD_PATH, 200),
+            (CONFIG_PATH, 200),
+            (SECRET_PATH, 403),
+            (POD_PATH, 200),
+        ]
+        assert api.records[POD_PATH]["metadata"]["uid"] == service.target.uid == POD_UID
+        assert api.records[POD_PATH]["spec"] == original_spec
+        assert service.snapshot is None and service.operation_count == 0
+
+
+@pytest.mark.asyncio
+async def test_positive_value_reload_handles_status_churn_inside_its_fresh_index(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        snapshot = await service.index()
+        before = len(api.requests)
+        api.records[POD_PATH]["metadata"]["resourceVersion"] = "status-before-disclosure"
+
+        def update_status_during_reload(api, path):
+            if len(api.requests) == before + 3:
+                assert path == CONFIG_PATH
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = "status-during-index"
+                api.records[POD_PATH]["status"]["phase"] = "Running"
+
+        api.before_response = update_status_during_reload
+        reloads = []
+        index_reloads = []
+        latest, values = await verification.positive_values(
+            service,
+            snapshot,
+            {"LITERAL": "synthetic-literal"},
+            phase="status-during-positive-reload",
+            reloads=reloads,
+            index_reloads=index_reloads,
+        )
+        assert values == {"LITERAL": "synthetic-literal"}
+        assert latest.pod.uid == POD_UID and latest.pod.resource_version == "status-during-index"
+        assert service.snapshot_current(latest.id) and service.operation_count == 0
+        assert len(reloads) == len(index_reloads) == 1
+        assert index_reloads[0]["state"] == "completed"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("failure", ["wrong-value", "unresolved", "invalid-pod", "replacement"])
 async def test_positive_values_do_not_hide_wrong_unresolved_invalid_or_replaced_objects(
     tmp_path, failure
@@ -179,7 +237,8 @@ async def test_positive_values_do_not_hide_wrong_unresolved_invalid_or_replaced_
             )
         assert service.target.uid == POD_UID and service.operation_count == 0
         if failure == "replacement":
-            assert service.snapshot is None and len(api.requests) - before == 2
+            assert service.snapshot is None and len(api.requests) - before == 4
+            assert all(path == POD_PATH for _, path, _ in api.requests[before:])
             assert len(reloads) == 1 and reloads[0]["state"] == "started"
         else:
             assert not reloads and service.snapshot_current(snapshot.id)
@@ -323,6 +382,184 @@ async def test_positive_values_exhaustion_is_finite_without_disclosing_old_value
         assert len(api.requests) - before == 11 and len(reloads) == 2
         assert all(item["state"] == "completed" for item in reloads)
         assert service.snapshot is None and service.operation_count == 0
+
+
+@pytest.mark.asyncio
+async def test_positive_index_reloads_only_unpublished_stale_binding_and_keeps_denied_source(
+    tmp_path,
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        api.statuses[SECRET_PATH] = 403
+        original_spec = copy.deepcopy(api.records[POD_PATH]["spec"])
+        source_reads = 0
+
+        def update_once(api, path):
+            nonlocal source_reads
+            if path == SECRET_PATH:
+                source_reads += 1
+                if source_reads == 1:
+                    api.records[POD_PATH]["metadata"]["resourceVersion"] = "status-version-2"
+                    api.records[POD_PATH]["status"]["phase"] = "Running"
+
+        api.before_response = update_once
+        reloads = []
+        snapshot = await verification.positive_index(
+            service, phase="restricted-index", reloads=reloads
+        )
+        assert snapshot.pod.uid == POD_UID and snapshot.pod.resource_version == "status-version-2"
+        assert api.records[POD_PATH]["spec"] == original_spec
+        assert (
+            next(item.state for item in snapshot.sources if item.ref.kind == "Secret")
+            == "forbidden"
+        )
+        assert service.snapshot_current(snapshot.id) and len(api.requests) == 8
+        assert reloads == [
+            {
+                "phase": "restricted-index",
+                "container_family": "containers",
+                "attempt": 1,
+                "reason": "index-stale-binding",
+                "state": "completed",
+                "snapshot": str(snapshot.id),
+                "resource_version": "status-version-2",
+            }
+        ]
+        assert "inspection-private" not in json.dumps(reloads)
+        api.before_response = None
+        assert await verification.selected(service, snapshot, "LITERAL") == "synthetic-literal"
+
+
+@pytest.mark.asyncio
+async def test_positive_index_stable_snapshot_does_not_reload(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        reloads = []
+        snapshot = await verification.positive_index(service, phase="stable-index", reloads=reloads)
+        assert service.snapshot_current(snapshot.id) and not reloads and len(api.requests) == 4
+
+
+@pytest.mark.asyncio
+async def test_positive_index_continuous_churn_exhausts_existing_budget_without_a_snapshot(
+    tmp_path,
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        versions = 0
+
+        def update_each_index(api, path):
+            nonlocal versions
+            if path == SECRET_PATH:
+                versions += 1
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = f"churning-{versions}"
+
+        api.before_response = update_each_index
+        reloads = []
+        with pytest.raises(AppError) as failure:
+            await verification.positive_index(service, phase="churning-index", reloads=reloads)
+        assert str(failure.value) == STALE_MESSAGE
+        assert len(api.requests) == 12 and len(reloads) == verification.POSITIVE_RELOAD_LIMIT == 2
+        assert all(item["state"] == "stale" for item in reloads)
+        assert service.snapshot is None and service.operation_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["replacement", "denied", "malformed"])
+async def test_positive_index_never_adopts_replacement_or_reloads_denial_or_invalid_pod(
+    tmp_path, failure
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        if failure == "replacement":
+            api.records[POD_PATH]["metadata"]["uid"] = "same-name-replacement"
+        elif failure == "denied":
+            api.statuses[POD_PATH] = 403
+        else:
+            api.payloads[POD_PATH] = b'{"kind":"Pod","metadata":{}}'
+        reloads = []
+        with pytest.raises(AppError):
+            await verification.positive_index(service, phase="must-refuse-index", reloads=reloads)
+        assert service.snapshot is None and service.target.uid == POD_UID
+        assert service.operation_count == 0 and all(path == POD_PATH for _, path, _ in api.requests)
+        assert len(api.requests) == (3 if failure == "replacement" else 1)
+        assert len(reloads) == (2 if failure == "replacement" else 0)
+
+
+@pytest.mark.asyncio
+async def test_positive_index_does_not_reload_exact_stale_when_a_snapshot_is_still_current(
+    tmp_path, monkeypatch
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        snapshot = await service.index()
+
+        async def unexplained_stale():
+            raise AppError(STALE_MESSAGE)
+
+        monkeypatch.setattr(service, "index", unexplained_stale)
+        reloads = []
+        with pytest.raises(AppError) as failure:
+            await verification.positive_index(service, phase="unexplained-index", reloads=reloads)
+        assert str(failure.value) == STALE_MESSAGE
+        assert service.snapshot_current(snapshot.id) and not reloads and len(api.requests) == 4
+
+
+@pytest.mark.asyncio
+async def test_positive_index_rechecks_target_before_retrying_exact_stale(tmp_path, monkeypatch):
+    async with positive_source(tmp_path) as (service, api, current):
+        index = service.index
+
+        def change_version(api, path):
+            if path == SECRET_PATH:
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = "status-version-2"
+
+        api.before_response = change_version
+
+        async def retired_target():
+            try:
+                return await index()
+            except AppError:
+                current[0] = False
+                raise
+
+        monkeypatch.setattr(service, "index", retired_target)
+        reloads = []
+        with pytest.raises(AppError, match="target is unavailable"):
+            await verification.positive_index(service, phase="retired-index", reloads=reloads)
+        assert service.snapshot is None and not reloads and len(api.requests) == 4
+
+
+@pytest.mark.asyncio
+async def test_positive_index_refuses_unrelated_error_without_automatic_reads(
+    tmp_path, monkeypatch
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        error = AppError("An unrelated owned fixture refusal.")
+
+        async def refused():
+            raise error
+
+        monkeypatch.setattr(service, "index", refused)
+        reloads = []
+        with pytest.raises(AppError) as failure:
+            await verification.positive_index(service, phase="refused-index", reloads=reloads)
+        assert failure.value is error and not reloads and not api.requests
+
+
+@pytest.mark.asyncio
+async def test_positive_index_cancellation_drains_held_owned_read(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        api.held_paths.add(POD_PATH)
+        reloads = []
+        operation = asyncio.create_task(
+            verification.positive_index(service, phase="cancel-index", reloads=reloads)
+        )
+        try:
+            await asyncio.wait_for(api.started.wait(), 5)
+            operation.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await operation
+            assert service.operation_count == 0 and not reloads
+            assert len(api.requests) == 1
+        finally:
+            api.release.set()
+            operation.cancel()
+            await asyncio.gather(operation, return_exceptions=True)
 
 
 def test_fixture_declares_real_ordered_sources_secret_storage_and_each_container_family():
