@@ -406,7 +406,11 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                             {
                                 "name": "app",
                                 "image": SHELL_IMAGE,
-                                "command": ["/bin/sleep", "600"],
+                                "command": [
+                                    "/bin/sh",
+                                    "-c",
+                                    "trap 'exit 0' USR1; while :; do sleep 1; done",
+                                ],
                             }
                         ],
                     },
@@ -714,6 +718,12 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                 previous_count = (await manifest())["status"]["containerStatuses"][0][
                     "restartCount"
                 ]
+                progress["fixture_target_trigger"] = {
+                    "signal": "USR1",
+                    "registered_pid1_handler": True,
+                    "restart_count_before": previous_count,
+                    "returncode": None,
+                }
                 try:
                     await asyncio.to_thread(
                         run_owned,
@@ -726,15 +736,17 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                             "--container=app",
                             "workload",
                             "--",
-                            "/bin/sh",
-                            "-c",
-                            "kill -9 1",
+                            "/bin/kill",
+                            "-USR1",
+                            "1",
                         ],
                         delegated_environment,
                         20,
                     )
+                    progress["fixture_target_trigger"]["returncode"] = 0
                 except subprocess.CalledProcessError as error:
                     assert error.returncode in {1, 137}
+                    progress["fixture_target_trigger"]["returncode"] = error.returncode
 
                 async def restarted() -> bool:
                     pod = await manifest()
@@ -758,8 +770,15 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
             finally:
                 task.cancel()
                 await asyncio.gather(task, return_exceptions=True)
+            restarted_pod = await manifest()
             progress["target_restart"] = {
-                "same_pod_uid": (await manifest())["metadata"]["uid"] == uid,
+                "same_pod_uid": restarted_pod["metadata"]["uid"] == uid,
+                "restart_count_before": previous_count,
+                "restart_count_after": next(
+                    item["restartCount"]
+                    for item in restarted_pod["status"]["containerStatuses"]
+                    if item["name"] == "app"
+                ),
                 "local_attachment_cancelled": True,
                 "old_review_refused": True,
             }
