@@ -264,3 +264,22 @@ The test now passes the public two-entry budget to both scans, preserving its
 limited/two-reference and two-disappeared-entry assertions. Separate controls
 still cover the original default, explicit smaller budgets and invalid limits.
 No production limit or code changes; a fresh exact-head matrix remains required.
+
+The third ordinary matrix, run `42916552917`, passes 6,904 Fast cases before
+two existing UI assertions fail in completed job `130180458863`. The public
+read-only test still expects the old hint without benchmarks; its corrected
+literal retains the zero-write and unchanged-history assertions. The Node
+maintenance test claims to exercise confirmation without a UI observation,
+but a current workspace observation can stop the owner before the queued
+button message. Its disabled button and zero writes are correct; the old
+feedback assertion incorrectly depends on that scheduling order.
+
+A controlled observer-first run reproduces the original Node assertion. The
+effect-guard test now isolates the public observation callback and keeps the
+real queued button press, policy refusal and zero-write checks. A separate
+observer-first case requires stopped, drained ownership and no writes. The
+controlled corrected case passes, and all 24 related UI cases pass with four
+workers in 11.22 seconds. Production and the retained kind/native proof inputs
+remain unchanged. Original job logs and the authenticated failed artifact/XML
+remain retained. A fresh complete local Fast selection and ordinary exact-head
+matrix remain required; the original hosted failure stays failed.
