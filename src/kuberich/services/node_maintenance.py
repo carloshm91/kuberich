@@ -515,7 +515,12 @@ class NodeMaintenanceService:
                 self.require_current()
                 attempt = await evict_pod(self.client, pod, self.require_current, self.wall_clock)
                 count = current.attempts + 1
-                # Publish the receipt before another await can observe cancellation.
+                retry = (
+                    attempt.result.state is MutationState.REJECTED
+                    and attempt.status == 429
+                    and attempt.retry_seconds is not None
+                )
+                # Publish the final attempt result before another await can observe Stop.
                 if attempt.result.state is MutationState.ACCEPTED:
                     self._pod_progress(
                         uid,
@@ -525,12 +530,8 @@ class NodeMaintenanceService:
                         http_status=attempt.status,
                     )
                     due[uid] = self.clock() + 1
-                    # Transport drains its receipt parser before returning. If Stop
-                    # raced that validated receipt, retain acceptance and stop now.
-                    task = asyncio.current_task()
-                    if task is not None and task.cancelling():
-                        raise asyncio.CancelledError
-                elif attempt.retry_seconds is not None:
+                elif retry:
+                    assert attempt.retry_seconds is not None
                     due[uid] = self.clock() + attempt.retry_seconds
                     self._pod_progress(
                         uid,
@@ -553,53 +554,57 @@ class NodeMaintenanceService:
                         attempts=count,
                         http_status=attempt.status,
                     )
-                    if attempt.status == 404:
-                        observed = await self._pod(pod)
-                        if observed is None:
-                            self._pod_progress(
-                                uid,
-                                PodState.ABSENT,
-                                "Original UID absent after 404; no eviction credited.",
-                            )
-                            del pods[uid]
-                            continue
-                        return MutationResult(
-                            MutationState.REJECTED,
-                            "Eviction endpoint unavailable while the original Pod still exists; no DELETE fallback is allowed.",
+                # Transport can consume cancellation while draining response/parser
+                # cleanup. Every receipt branch must stop before any further request.
+                task = asyncio.current_task()
+                if task is not None and task.cancelling():
+                    raise asyncio.CancelledError
+                if attempt.result.state is MutationState.ACCEPTED or retry:
+                    continue
+                if attempt.status == 404:
+                    observed = await self._pod(pod)
+                    if observed is None:
+                        self._pod_progress(
+                            uid,
+                            PodState.ABSENT,
+                            "Original UID absent after 404; no eviction credited.",
                         )
-                    operation = asyncio.current_task()
-                    if state is PodState.UNCERTAIN and (
-                        operation is None or not operation.cancelling()
-                    ):
-                        try:
-                            async with asyncio.timeout(min(5.0, self.client.timeout)):
-                                observed = await self._pod(pod)
-                            self._pod_progress(
-                                uid,
-                                PodState.UNCERTAIN,
-                                "Write outcome remains uncertain; original UID "
-                                + (
-                                    "observed absent."
-                                    if observed is None
-                                    else "still observed present."
-                                ),
-                            )
-                        except (AppError, HttpProblem, ConnectionProblem, TimeoutError):
-                            pass
-                    if (
-                        attempt.result.state
-                        in {
-                            MutationState.CANCELLED,
-                            MutationState.TIMEOUT,
-                            MutationState.UNREACHABLE,
-                        }
-                        and self._node_write_confirmed
-                    ):
-                        return MutationResult(
-                            MutationState.PARTIAL,
-                            "Eviction did not establish another write; confirmed Node scheduling and prior effects remain.",
+                        del pods[uid]
+                        continue
+                    return MutationResult(
+                        MutationState.REJECTED,
+                        "Eviction endpoint unavailable while the original Pod still exists; no DELETE fallback is allowed.",
+                    )
+                if attempt.result.state is MutationState.UNCERTAIN:
+                    try:
+                        async with asyncio.timeout(min(5.0, self.client.timeout)):
+                            observed = await self._pod(pod)
+                        self._pod_progress(
+                            uid,
+                            PodState.UNCERTAIN,
+                            "Write outcome remains uncertain; original UID "
+                            + (
+                                "observed absent."
+                                if observed is None
+                                else "still observed present."
+                            ),
                         )
-                    return attempt.result
+                    except (AppError, HttpProblem, ConnectionProblem, TimeoutError):
+                        pass
+                if (
+                    attempt.result.state
+                    in {
+                        MutationState.CANCELLED,
+                        MutationState.TIMEOUT,
+                        MutationState.UNREACHABLE,
+                    }
+                    and self._node_write_confirmed
+                ):
+                    return MutationResult(
+                        MutationState.PARTIAL,
+                        "Eviction did not establish another write; confirmed Node scheduling and prior effects remain.",
+                    )
+                return attempt.result
             if pods:
                 wait = min(
                     max(0.0, min(due[uid] for uid in pods) - self.clock()),
@@ -795,6 +800,21 @@ class NodeMaintenanceService:
             )
             final = asyncio.create_task(self._final_observation())
             await finish_owned(final)
+            expected = (
+                NodeState.SCHEDULABLE
+                if review.mode is MaintenanceMode.UNCORDON
+                else NodeState.CORDONED
+            )
+            if (
+                result.state is MutationState.SUCCEEDED
+                and self._progress.node.state is not expected
+            ):
+                result = MutationResult(
+                    MutationState.PARTIAL,
+                    "The final Node observation does not establish completion of the requested "
+                    + review.mode.value
+                    + ". Completed effects remain; no rollback was performed.",
+                )
             return MutationResult(
                 result.state,
                 result.message

@@ -123,9 +123,11 @@ needs no write. Cordon does not move existing Pods or prevent manually bound Pod
 
 Drain first reviews Pods across **all namespaces** on that Node, regardless of
 your workspace namespace or filter. Review controller identity, phase/readiness,
-matching disruption budgets and declared storage. Incomplete or denied safety
-reads block confirmation. The operation needs Node GET/PATCH, cluster-wide Pod
-LIST, Pod/controller GET, relevant namespace PDB LIST and `pods/eviction` CREATE.
+matching disruption budgets and declared storage. Incomplete or denied Pod,
+controller or PDB safety reads block confirmation. Unavailable PVC/PV metadata
+is shown as unknown storage portability. The operation needs Node GET/PATCH,
+cluster-wide Pod LIST, Pod/controller GET, relevant namespace PDB LIST and
+`pods/eviction` CREATE.
 
 | Separate choice | Effect |
 | --- | --- |
@@ -145,7 +147,7 @@ Acceptance remains **absence pending** until the checked Pod UID is absent;
 normal grace periods and finalizers remain in effect. No direct Pod DELETE,
 finalizer removal, PDB change or zero-grace fallback is available here.
 
-**Stop drain**, Escape or leaving the context stops further requests and waits
+**Stop drain**, Escape or leaving the context stops new writes and waits
 for work to finish. Completed evictions remain. Stopping never uncordons the
 Node. Final status reports freshly observed cordoned/schedulable, absent,
 replaced or unknown state with an observation time. A lost response can leave

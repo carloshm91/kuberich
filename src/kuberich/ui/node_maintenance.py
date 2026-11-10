@@ -231,6 +231,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
             return
         self.table.clear()
         self._rows.clear()
+        self.detail.update("")
         for pod in review.pods:
             target = pod.target
             row = (
@@ -254,6 +255,11 @@ class NodeMaintenanceScreen(ModalScreen[None]):
     def selection_changed(self) -> None:
         pod = self.selected_pod()
         if pod is None:
+            self.detail.update(
+                "The current complete reviewed Node inventory is empty."
+                if self.review is not None and not self.review.pods
+                else ""
+            )
             return
         target = pod.target
         lines = [

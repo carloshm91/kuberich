@@ -770,3 +770,138 @@ async def test_real_total_deadline_preserves_accepted_uid_without_replay(tmp_pat
         assert source.progress.pods[0].state is PodState.ACCEPTED
         assert source.progress.node.state is NodeState.CORDONED
         assert len(api.requests) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stop", ["cancel", "deadline"])
+async def test_429_response_cleanup_interruption_never_admits_another_pod_post(
+    tmp_path, monkeypatch, stop
+):
+    import aiohttp
+
+    entered, release = asyncio.Event(), asyncio.Event()
+    original = aiohttp.ClientResponse.wait_for_close
+
+    async def wait_for_close(response):
+        await original(response)
+        if response.method == "POST" and response.status == 429:
+            # Exercise the public cleanup await used by ClientResponse.__aexit__.
+            entered.set()
+            await release.wait()
+
+    monkeypatch.setattr(aiohttp.ClientResponse, "wait_for_close", wait_for_close)
+    async with maintenance_source(tmp_path) as (source, api, _):
+        api.pods.append(pod("two"))
+        api.statuses["one"] = [429, 200]
+        review = await source.prepare(MaintenanceMode.DRAIN, DrainOptions(timeout_seconds=1))
+        work = asyncio.create_task(source.execute(source.confirm(review)))
+        try:
+            await asyncio.wait_for(entered.wait(), 2)
+            if stop == "cancel":
+                work.cancel()
+            result = await asyncio.wait_for(work, 3)
+        finally:
+            release.set()
+            if not work.done():
+                work.cancel()
+                await asyncio.gather(work, return_exceptions=True)
+        assert [
+            request[2]["metadata"]["name"] for request in api.requests if request[0] == "POST"
+        ] == ["one"]
+        assert result.state is MutationState.UNCERTAIN
+        assert source.progress.pods[0].state is PodState.UNCERTAIN
+        assert source.progress.pods[0].retry_at is None
+        assert source.progress.pods[1].state is PodState.NOT_SENT
+        assert source.progress.node.state is NodeState.CORDONED
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["uncordon", "replacement", "unavailable"])
+async def test_success_is_reconciled_with_newer_node_observation_after_final_inventory(
+    tmp_path, change
+):
+    async with maintenance_source(tmp_path) as (source, api, _):
+        review = await source.prepare(MaintenanceMode.DRAIN)
+
+        def during_final_inventory(api, path):
+            if (
+                path == "/api/v1/pods"
+                and not api.pods
+                and any(request[0] == "POST" for request in api.requests)
+            ):
+                if change == "uncordon":
+                    api.node["spec"]["unschedulable"] = False
+                elif change == "replacement":
+                    api.node["metadata"]["uid"] = "replacement-node-uid"
+                else:
+                    api.read_status = 503
+
+        api.after_read = during_final_inventory
+        result = await source.execute(source.confirm(review))
+        assert result.state is MutationState.PARTIAL
+        assert source.progress.pods[0].state is PodState.ABSENT
+        assert (
+            source.progress.node.state
+            is {
+                "uncordon": NodeState.SCHEDULABLE,
+                "replacement": NodeState.REPLACED,
+                "unavailable": NodeState.UNKNOWN,
+            }[change]
+        )
+        assert "same Node observed cordoned" not in result.message
+        assert [request[0] for request in api.requests] == ["PATCH", "POST"]
+
+
+@pytest.mark.asyncio
+async def test_pending_stop_after_definitive_429_cleanup_retains_refusal_without_next_write(
+    tmp_path, monkeypatch
+):
+    import aiohttp
+
+    original = aiohttp.ClientResponse.wait_for_close
+
+    async def wait_for_close(response):
+        await original(response)
+        if response.method == "POST" and response.status == 429:
+            operation = asyncio.current_task()
+            assert operation is not None
+            operation.cancel()
+
+    monkeypatch.setattr(aiohttp.ClientResponse, "wait_for_close", wait_for_close)
+    async with maintenance_source(tmp_path) as (source, api, _):
+        api.pods.append(pod("two"))
+        api.statuses["one"] = [429, 200]
+        review = await source.prepare(MaintenanceMode.DRAIN)
+        result = await source.execute(source.confirm(review))
+        assert result.state is MutationState.PARTIAL
+        assert [
+            request[2]["metadata"]["name"] for request in api.requests if request[0] == "POST"
+        ] == ["one"]
+        first, second = source.progress.pods
+        assert first.http_status == 429 and first.attempts == 1
+        assert first.state is PodState.NOT_SENT and first.retry_at is None
+        assert second.state is PodState.NOT_SENT and second.attempts == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", [MaintenanceMode.CORDON, MaintenanceMode.UNCORDON])
+async def test_final_node_observation_must_match_each_scheduling_operation(tmp_path, mode):
+    async with maintenance_source(tmp_path) as (source, api, _):
+        api.node["spec"]["unschedulable"] = mode is MaintenanceMode.UNCORDON
+        review = await source.prepare(mode)
+        reads_after_patch = []
+
+        def change_after_successful_scheduling_read(api, path):
+            if path == "/api/v1/nodes/node-one" and api.requests:
+                reads_after_patch.append(path)
+                if len(reads_after_patch) == 2:
+                    api.node["spec"]["unschedulable"] = mode is MaintenanceMode.UNCORDON
+
+        api.after_read = change_after_successful_scheduling_read
+        result = await source.execute(source.confirm(review))
+        assert result.state is MutationState.PARTIAL
+        assert "does not establish completion" in result.message
+        assert source.progress.node.state is (
+            NodeState.CORDONED if mode is MaintenanceMode.UNCORDON else NodeState.SCHEDULABLE
+        )
+        assert len(api.requests) == 1

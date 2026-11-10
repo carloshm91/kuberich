@@ -94,6 +94,11 @@ async def evict_pod(
         result = MutationResult(
             MutationState.ACCEPTED, "Eviction accepted; original UID absence is pending."
         )
-    return EvictionAttempt(
-        result, delay[0] if delay else None, metadata[0].status if metadata else None
+    # A refusal parser can finish before response-context cleanup is cancelled.
+    # Its hint is eligible only after the complete attempt established refusal.
+    retry = (
+        delay[0]
+        if delay and result.state is MutationState.REJECTED and metadata[0].status == 429
+        else None
     )
+    return EvictionAttempt(result, retry, metadata[0].status if metadata else None)

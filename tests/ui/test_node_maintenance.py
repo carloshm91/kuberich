@@ -362,7 +362,8 @@ async def test_failed_final_read_shows_unknown_with_aged_last_known_cordon(tmp_p
 
 @pytest.mark.asyncio
 async def test_empty_inventory_and_overlapping_stale_pdb_evidence_remain_explicit(tmp_path):
-    async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
+    async with maintenance_app(tmp_path) as (app, api), app.run_test():
+        api.pods["workload"]["spec"]["volumes"] = [{"name": "cache", "emptyDir": {}}]
         api.extra_pdbs = [
             {
                 "apiVersion": "policy/v1",
@@ -394,17 +395,27 @@ async def test_empty_inventory_and_overlapping_stale_pdb_evidence_remain_explici
         details = str(screen.detail.content)
         assert "Multiple matching PDBs" in details and "status unknown/stale" in details
         assert "AlwaysAllow" in details and "maxUnavailable 20%" in details
-        await pilot.press("escape")
+        assert "workload-uid" in details and "other-pdb-uid" in details
+        assert "cache: emptyDir" in details
+        previous = screen.review
         api.pods.clear()
-        empty = await review(app)
-        assert (
-            empty.review is not None
-            and empty.review.pods == ()
-            and not empty.confirm_button.disabled
+        screen.review_button.press()
+        await wait_for(
+            lambda: screen.review is not None and screen.review is not previous and not screen.busy
         )
-        assert empty.table.row_count == 0
-        empty.confirm_button.press()
-        await wait_for(lambda: empty.finished)
+        assert app.screen is screen
+        assert (
+            screen.review is not None
+            and screen.review.pods == ()
+            and not screen.confirm_button.disabled
+        )
+        assert screen.table.row_count == 0
+        details = str(screen.detail.content)
+        assert "current complete reviewed Node inventory is empty" in details
+        for obsolete in ("workload-uid", "other-pdb-uid", "AlwaysAllow", "cache: emptyDir"):
+            assert obsolete not in details
+        screen.confirm_button.press()
+        await wait_for(lambda: screen.finished)
         assert api.node["spec"]["unschedulable"]
         assert not any(method == "POST" for method, *_ in api.requests)
 
