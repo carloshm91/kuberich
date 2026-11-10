@@ -1,6 +1,6 @@
 # 0043: Own privileged node diagnostics through returned Pod identity
 
-Status: in implementation; real API, UI and complete protected gates remain pending.
+Status: implemented; complete platform/coverage gates are enforced by the protected PR.
 
 ## Context
 

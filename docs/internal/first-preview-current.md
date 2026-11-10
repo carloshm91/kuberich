@@ -1,6 +1,6 @@
 # Development checkpoint
 
-## Node diagnostic sessions in progress — 2026-11-10 UTC
+## Node diagnostic implementation candidate — 2026-11-10 UTC
 
 A01 #76 is the next unblocked v0.5.0 issue, on `feat/76-node-shell` from
 `6f3e597f5a1a36caa72c09a1193a09097ea2ce23`. The reviewed contract requires
@@ -14,8 +14,16 @@ The expanded owned-kind trial passes 15 real contract groups in 55.06 seconds,
 including policy/RBAC denials, scheduler timeout, interrupted wait/exec, admitted
 profile drift, explicit recovery and post-commit response loss/replacement races.
 All 303 inputs remain unchanged and cleanup passes. Focused models/journal,
-HTTP recovery and public Pilot trials also pass; final
-committed-source terminal/coverage/platform gates remain pending. See
+HTTP recovery and public Pilot trials also pass. Final committed verifier
+`f898c5bbd200bf363dca4e73744066d14fac04b3` passes all 16 real contract groups,
+including actual producer SIGKILL and explicit recovery in a fresh certificate
+session. Its 303 inputs stay unchanged, the sentinel survives, and every owned
+process/private directory/cluster is cleaned up. Nine source CLI scenarios and
+both fresh-wheel entry points pass (11 cases, 47.34 seconds), with all 299 runtime
+files byte-identical to the later verifier candidate. The focused cohort passes
+866 cases and 97.19% changed-line coverage; full production coverage is separate.
+Startup passes hard contracts and retains its advisory 600 ms UI timing miss.
+Complete protected exact-head source/coverage/platform/native gates remain pending. See
 [acceptance](acceptance/node-shell.md) for exact commands, source hashes and limits.
 
 ## Local manifests delivered in development source — 2026-11-10 UTC

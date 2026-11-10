@@ -10,8 +10,9 @@ Implementation starts from protected main
 The predecessor manifest PR passed its 27 exact-head quality jobs and app-bound
 Repository/DCO gates before normal signed-off squash. That evidence does not
 qualify the new node-shell behavior. Planning and implementation are separate;
-early actual API and focused model/filesystem/service/UI trials pass. Complete
-frozen-source terminal, production coverage and protected gates remain pending.
+actual API, model/filesystem/service/UI, committed-source and installed terminal
+trials pass. Complete exact-head production coverage/platform/native/protected
+gates remain required before merge. Local evidence does not replace them.
 
 ## Reviewed boundaries
 
@@ -117,9 +118,66 @@ Local recovery fsync failures propagate after lease drainage. In particular,
 unlink followed by failed directory fsync cannot truthfully promise that the
 record was retained; the application reports a durability failure instead.
 
-## Qualification still required
+## Committed-source and installed qualification
 
-Final committed inputs, a fresh real-kind denial/timeout/interruption/admission/
-proxy/recovery trial, source/installed PTYs and complete exact-head hosted
-source/platform/native/production/critical/changed-line gates remain required.
-No version bump, tag, package, hosting deployment or DNS change is authorized.
+Committed candidate `f898c5bbd200bf363dca4e73744066d14fac04b3` passes all
+16 real-kind contract groups in 59.78 seconds, with 303 measured inputs unchanged.
+`artifacts/issue76/committed-kind-01/candidate.json` records its clean commit/tree
+before execution. The additional case terminates an actual certificate-only
+producer with SIGKILL after creation and durable UID capture, reaps its process,
+then loads the legitimate journal in a new certificate-backed SDK session.
+Connection evidence matches; explicit inspection/review/confirmation deletes only
+that UID and confirms absence before removing the record. The sentinel survives.
+Fresh-session cleanup, process reaping and owned-cluster absence all pass.
+Report SHA-256:
+`285d9238851528b14bb86d54bdda3c7a94ac99c9565eb53e0851e34f218e2d09`.
+Fixture teardown removes only its contained crash-left private directory after
+reaping; this does not claim automatic global credential-file cleanup after SIGKILL.
+
+The exact command is `.venv/bin/python -m scripts.verify_node_shell_kind` with
+the verified absolute tool paths described above, `--docker /usr/bin/docker` and
+fresh `--evidence artifacts/issue76/committed-kind-01/evidence.json`.
+
+`.venv/bin/pytest tests/terminal/test_node_shell.py tests/packaging/test_distribution.py::test_installed_node_shell_owns_uid_cleanup_and_restores_terminal -q -x --basetemp=/tmp/kuberich-76-pty-installed-03`
+passes all 11 cases in 47.34 seconds (use a fresh physical temporary path for another
+trial): nine source CLI scenarios and both installed
+console/module entry points outside the checkout. Source scenarios cover normal
+and repeated return, Unicode, resize, Ctrl+C/Ctrl+], quit/SIGTERM, missing helper,
+missing shell and exec connection loss. Actual termios, alternate screen/cursor
+restoration, process reaping, UID deletion, journal/private connection removal and
+unchanged owned kubeconfig are asserted. The frozen measured head is
+`7623dd8879d6117cabad8c6e4fec1709a4745b46`; its trusted local wheel SHA-256 is
+`12fc97df3a9d23bb62ff4e007e85eb172ca791fd86e42772e93261573047d466`.
+All 299 current runtime files match that wheel byte-for-byte at the later
+committed verifier head; `candidate-association-01.json` retains this comparison.
+The unchanged package version is 0.4.0 for this unpublished feature candidate.
+
+The original installed trials remain failed: the first fixture compared an entire
+DELETE URL instead of separately validating the exact Pod path and Strict query.
+The second assumed a closed-status phrase could not wrap at 80 columns. Corrected
+checks retain the same deadlines, UID/effect/cleanup/restoration requirements.
+Timestamped failure ANSI/JSON and both original logs remain retained. A real
+review-text redaction issue found in those frames is corrected: the explicit
+token-automount-disabled posture remains visible and passes two public UI cases.
+
+The final focused source/contract/Pilot/legacy/docs/CI cohort passes 866 cases in
+143.56 seconds. Its diagnostic changed-line profile covers 1,729/1,779 executable
+lines (97.19%); it is not whole-production coverage. Actual workflow strict types
+pass 351 source targets. All three newly enrolled critical modules reach 100%
+lines and branches; the complete current inventory contains 124 modules.
+
+`.venv/bin/python -m scripts.check_startup --output artifacts/issue76/startup-frozen-01`
+passes all hard contracts and strict negative controls. Offline/import latency
+targets pass. The five actual UI frames measure 1,061.58–1,089.73 ms against the
+unchanged 600 ms target, retained as an advisory miss for 0.x. No RSS/import/frame/
+deadline/cleanup contract or timing limit was weakened. Its measured commit is
+the same terminal head above; all 303 startup input hashes still match the later
+verifier candidate. Startup report SHA-256:
+`f19517a73816877648e257564f48c340669f7e9c38f7a738624c43f802d8a394`.
+
+## Protected qualification still required
+
+The protected PR must pass complete exact-head hosted source/platform/native,
+production/critical/changed-line coverage and app-bound repository/DCO gates.
+No version bump, tag, package publication, hosting deployment or DNS change is
+authorized by these feature trials. Real provider certification remains opt-in.
