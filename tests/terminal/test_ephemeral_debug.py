@@ -6,6 +6,41 @@ import pytest
 
 from tests.support.ephemeral_debug_terminal import terminal_ephemeral_debug
 
+DELAYED_ROW_ENTRY = r"""
+import json,os,sys
+from pathlib import Path
+from textual.widgets import Button,DataTable
+from kuberich.cli import main
+post=DataTable.post_message
+def delayed(self,message):
+ if isinstance(message,DataTable.RowHighlighted) and message.row_key.value=='debug-real-cli':
+  button=self.screen.query_one('#debug-attach',Button)
+  button.proof_row_pending=True;button.disabled=True
+  def deliver():
+   button.proof_row_pending=False
+   with Path(os.environ['DEBUG_ROW_AUDIT']).open('a') as output:output.write('delivered\n')
+   post(self,message)
+  self.set_timer(.5,deliver)
+  return True
+ return post(self,message)
+def pending(self,value):return value or getattr(self,'proof_row_pending',False)
+Button.validate_disabled=pending
+DataTable.post_message=delayed
+sys.exit(main())
+"""
+
+ACTIVE_ATTACH_ENTRY = r"""
+import sys
+from textual.widgets import Button
+from kuberich.cli import main
+initialize=Button.__init__
+def active(self,*args,**kwargs):
+ initialize(self,*args,**kwargs)
+ if self.id=='debug-attach':self.active_effect_duration=1
+Button.__init__=active
+sys.exit(main())
+"""
+
 
 @pytest.mark.parametrize(
     "scenario",
@@ -36,8 +71,9 @@ def test_ephemeral_debug_cli_restores_and_keeps_remote_outcome_independent(tmp_p
     )
 
 
+@pytest.mark.parametrize("entry", ["module", "delayed-row"])
 def test_owned_kind_cli_driver_selects_its_new_row_and_reaps_the_exec_wrapper(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, entry
 ):
     from tests.support.ephemeral_debug_terminal import debug_api, terminal_real_ephemeral_debug
     from tests.support.terminal_api import config
@@ -68,8 +104,11 @@ def test_owned_kind_cli_driver_selects_its_new_row_and_reaps_the_exec_wrapper(
         )
         binary.chmod(0o700)
         monkeypatch.setenv("DEBUG_CONTROL_URL", endpoint)
+        monkeypatch.setenv("DEBUG_ROW_AUDIT", str(tmp_path / "row-delivery.txt"))
         result = terminal_real_ephemeral_debug(
-            [sys.executable, "-m", "kuberich"],
+            [sys.executable, "-m", "kuberich"]
+            if entry == "module"
+            else [sys.executable, "-c", DELAYED_ROW_ENTRY],
             tmp_path / "driver",
             kubeconfig,
             "kuberich-test-pty",
@@ -82,3 +121,14 @@ def test_owned_kind_cli_driver_selects_its_new_row_and_reaps_the_exec_wrapper(
             "debug-old",
             "debug-real-cli",
         ]
+        if entry == "delayed-row":
+            assert (tmp_path / "row-delivery.txt").read_text() == "delivered\n"
+
+
+def test_repeat_attach_waits_for_the_existing_button_active_effect(tmp_path):
+    terminal_ephemeral_debug(
+        [sys.executable, "-c", ACTIVE_ATTACH_ENTRY],
+        tmp_path,
+        "repeat",
+        evidence="ephemeral-debug-active-effect",
+    )

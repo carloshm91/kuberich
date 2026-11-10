@@ -224,6 +224,20 @@ def debug_api():
 
 def fill_debug_review(terminal, name):
     """Edit the visible supported form through actual terminal keys."""
+    deadline = time.monotonic() + 15
+    while True:
+        enabled, focused = (
+            debug_button_cell(terminal, "Review"),
+            debug_button_cell(terminal, "Cancel"),
+        )
+        if enabled is not None and focused is not None and enabled != focused:
+            break
+        terminal.read(0.1)
+        assert terminal.completion is None and time.monotonic() < deadline
+    terminal.debug_button_styles = {
+        "enabled": enabled,
+        "focused": focused,
+    }
     terminal.send(b"\x1b[Z" * 8 + SHELL_IMAGE.encode())
     terminal.send(b"\t\x01\x0b" + name.encode() + b'\t\x01\x0b["/bin/sh"]\tapp\t\t\t\t\r')
 
@@ -240,6 +254,50 @@ def click_terminal_text(terminal, text, *, contains=None):
     column = value.index(text) + max(1, len(text) // 2)
     terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode())
     terminal.read(0.1)
+
+
+def debug_button_position(terminal, label):
+    siblings = (
+        ("Review", "Add permanently")
+        if label in {"Review", "Add permanently"}
+        else ("Attach", "Cancel")
+    )
+    rows = [
+        (index, row)
+        for index, row in enumerate(terminal.screen.display)
+        if all(value in row for value in siblings)
+    ]
+    if not rows:
+        return None
+    assert len(rows) == 1, rows
+    row, value = rows[0]
+    return value.index(label) + len(label) // 2, row
+
+
+def debug_button_cell(terminal, label):
+    position = debug_button_position(terminal, label)
+    if position is None:
+        return None
+    column, row = position
+    cell = terminal.screen.buffer[row][column]
+    return cell.fg, cell.bg, cell.bold, cell.reverse
+
+
+def activate_debug_attach(terminal):
+    """Click once after enabled/non-active paint; focus before releasing if needed."""
+    styles = terminal.debug_button_styles
+    deadline = time.monotonic() + 15
+    while debug_button_cell(terminal, "Attach") not in styles.values():
+        terminal.read(0.1)
+        assert terminal.completion is None and time.monotonic() < deadline
+    position = debug_button_position(terminal, "Attach")
+    assert position is not None
+    column, row = position
+    terminal.send(f"\x1b[<0;{column + 1};{row + 1}M".encode())
+    while debug_button_cell(terminal, "Attach") != styles["focused"]:
+        terminal.read(0.1)
+        assert terminal.completion is None and time.monotonic() < deadline
+    terminal.send(f"\x1b[<0;{column + 1};{row + 1}m".encode())
 
 
 def wait_debug_row(terminal, name, state):
@@ -296,7 +354,7 @@ def terminal_real_ephemeral_debug(
         # Select the newly added row explicitly; existing sessions remain in the table.
         wait_debug_row(terminal, "debug-real-cli", "running")
         click_terminal_text(terminal, "debug-real-cli", contains="running")
-        click_terminal_text(terminal, "Attach")
+        activate_debug_attach(terminal)
         terminal.wait_for_screen("Ephemeral debug attach")
         deadline = time.monotonic() + 20
         next_probe = 0.0
@@ -455,7 +513,7 @@ def terminal_ephemeral_debug(command, directory, scenario, *, evidence):
                                     terminal.wait_for_screen(
                                         "Local closure does not establish remote"
                                     )
-                                    terminal.send(b"\x1b[Z\r")
+                                    activate_debug_attach(terminal)
                                     terminal.wait_for_screen("OWNED DEBUG ATTACH READY")
                                     terminal.send(b"\x1d")
                                     terminal.wait_for_screen("Ephemeral debugging")

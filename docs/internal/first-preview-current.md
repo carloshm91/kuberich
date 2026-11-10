@@ -21,6 +21,12 @@ independent focused coverage and original failures are in
 coverage, critical-module/platform qualification and protected delivery remain
 pending. Published packages remain 0.4.0; no publication is performed here.
 
+The second hosted attempt passes Fast, repository/DCO checks and all four native
+builds, but fails two Python 3.14 terminal interactions and an outdated workflow
+inventory assertion. Its remaining jobs are cancelled. The original failed
+receipts remain retained; controlled interaction correction and a fresh complete
+exact-head matrix are required before this candidate can merge.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as

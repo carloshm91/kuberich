@@ -287,3 +287,77 @@ bootstrap/qualification cohort passes 124 cases in 8.30 seconds, plus Ruff,
 formatting and strict typing. Actual hosted setup and the complete exact-head
 matrix must pass on the corrected head before delivery; local argv contracts
 do not establish mirror throughput or erase the first failure.
+
+## Second hosted attempt
+
+Quality run `42834983234` measures head
+`3c33a86dad28d5f666b24953cbdc7d6ff0e0e82a`. Fast passes 10,986 cases
+with one skip in 478.45 seconds; its signed APT indexes finish without translation
+downloads. Repository checks and DCO pass, as do all four native build jobs.
+These partial successes do not qualify the cancelled overall run.
+
+Python 3.14 source part two fails two terminal cases after 3,214 passes and one
+skip: immediate repeated attachment and the real-kind CLI driver's owned-HTTP
+preflight. Both original transcripts stop before a new attach worker is admitted;
+neither records a new shell heading or an attach error. Cleanup succeeds. The
+original archive has SHA-256
+`30401adb117dd254fa58b670d33e3f9eeec4a52157f2f87a1cac7f38261fa5cd`
+and is retained at `artifacts/issue78/hosted-original/python314-part2.zip`.
+An isolated Python 3.14 run with branch instrumentation reproduces the driver
+failure. Corrected interaction evidence remains required; a passing unchanged
+retry would not establish a correction.
+
+Python 3.13 and 3.14 source part three each pass 3,696 cases and fail the same
+workflow-inventory assertion: the newly enrolled verifier makes 26 cluster
+steps, while the older test still expects 25. The correction retains all previous
+steps, adds explicit debug-verifier/argv/artifact assertions and changes that
+exact expected count. No production behavior or gate threshold changes.
+The corrected CI-policy/qualification/debug-verifier cohort passes 115 cases
+in 9.91 seconds with `/tmp/kuberich-78-ci-enrollment-02`. The first invocation
+uses a nonexistent test filename and collects no tests; its original log remains
+retained rather than counted as a verification result.
+Original logs are retained as `control/hosted-py313-part3-01.log` and
+`control/hosted-py314-part3-01.log` under `artifacts/issue78/`.
+
+The remaining run is cancelled after these concrete failures; cancelled or
+uncollected profiles are not counted as passing. A fresh exact-head full matrix,
+independent whole-production coverage and protected checks remain required.
+
+## Controlled terminal synchronization correction
+
+The driver previously treated a single terminal read after row selection as a
+readiness barrier. The visible cursor can move before queued RowHighlighted
+delivery enables Attach, so its immediate click is discarded. Reattachment also
+assumed a fixed focus position and could activate during Textual's existing
+200 ms button animation, when Button suppresses another press. The owned event
+trace and public-framework controls establish these pre-admission paths; no
+service or application change is needed for this correction.
+
+The corrected helper calibrates ordinary/focused button cells from the actual
+fixture frame, rejects absent/partial footers and waits for enabled, non-active
+paint. It sends one mouse down, observes focused paint when necessary, then one
+mouse up. It keeps the existing 15-second deadline and all child/process/private
+file/terminal restoration assertions. Ordinary initial keyboard attachments
+remain covered. No action is retried and no timeout is increased.
+
+Two concise framework-only controls delay row-message delivery by 500 ms and
+extend the existing button effect to one second. Restoring the old fast click
+fails both controls in 37.48 seconds, with complete cleanup; original JUnit is
+`artifacts/issue78/proof-ci/negative-22.xml`. Corrected Python 3.14 with branch
+instrumentation passes four cases in 17.82 seconds:
+
+```sh
+UV_PROJECT_ENVIRONMENT=/tmp/kuberich-78-proof-py314-env COVERAGE_FILE=/tmp/kuberich-78-proof-23.coverage uv run --python 3.14 --locked pytest tests/terminal/test_ephemeral_debug.py -k 'repeat or owned_kind_cli_driver' --basetemp=/tmp/kuberich-78-proof-23 -n 2 --cov=kuberich --cov-branch --cov-report= --junitxml=artifacts/issue78/proof-ci/tests-23.xml
+```
+
+The full Python 3.12 source terminal cohort passes all 18 cases in 77.34 seconds:
+
+```sh
+COVERAGE_FILE=/tmp/kuberich-78-proof-24.coverage uv run --no-sync pytest tests/terminal/test_ephemeral_debug.py --basetemp=/tmp/kuberich-78-proof-24 -n 4 --junitxml=artifacts/issue78/proof-ci/tests-24.xml
+```
+
+Both source files remain byte-identical across final verification. Ruff and
+formatting pass; the isolated Python 3.14 environment does not replace the
+checkout's Python 3.12 environment. Documentation contracts pass 27 cases in
+26.46 seconds. Fresh real-kind/installed evidence must bind the changed helper,
+and the complete exact-head hosted matrix remains pending.

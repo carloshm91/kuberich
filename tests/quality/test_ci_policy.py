@@ -230,6 +230,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_manifests_kind",
         "scripts.verify_node_shell_kind",
         "scripts.verify_node_maintenance_kind",
+        "scripts.verify_ephemeral_debug_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
@@ -256,7 +257,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 25
+    assert len(cluster_steps) == 26
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(
@@ -278,6 +279,17 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "uv run mypy --strict scripts/verify_node_shell_kind.py" in commands
     assert "artifacts/node-maintenance/**" in upload["with"]["path"].splitlines()
     assert "uv run mypy --strict scripts/verify_node_maintenance_kind.py" in commands
+    assert "artifacts/ephemeral-debug/**" in upload["with"]["path"].splitlines()
+    assert "uv run mypy --strict scripts/verify_ephemeral_debug_kind.py" in commands
+    ephemeral_debug = next(
+        step
+        for step in cluster_steps
+        if "python -m scripts.verify_ephemeral_debug_kind" in step["run"]
+    )
+    assert '--kind "$RUNNER_TEMP/kuberich-kind"' in ephemeral_debug["run"]
+    assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in ephemeral_debug["run"]
+    assert "--docker /usr/bin/docker" in ephemeral_debug["run"]
+    assert "--evidence artifacts/ephemeral-debug/evidence.json" in ephemeral_debug["run"]
     assert "uv run mypy --strict scripts/ci_apt.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
