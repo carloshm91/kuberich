@@ -52,6 +52,7 @@ KIND_SCENARIOS = (
     ("node-shell", "verify_node_shell_kind", True),
     ("node-maintenance", "verify_node_maintenance_kind", True),
     ("ephemeral-debug", "verify_ephemeral_debug_kind", True),
+    ("benchmarks", "verify_benchmarks_kind", True),
 )
 
 
@@ -173,6 +174,7 @@ def cluster_stages(
 ) -> list[Stage]:
     diagnostic_tools = output / "diagnostic-tools"
     helm_tools = output / "helm-tools"
+    benchmark_tools = output / f"kind-{repetition}-benchmark-tools"
     stages = [
         Stage(
             f"kind-{repetition}-diagnostic-tools",
@@ -196,6 +198,18 @@ def cluster_stages(
                 "scripts.helm_tools",
                 "--directory",
                 str(helm_tools),
+            ),
+        ),
+        Stage(
+            f"kind-{repetition}-benchmark-tools",
+            (
+                "uv",
+                "run",
+                "python",
+                "-m",
+                "scripts.benchmark_tools",
+                "--directory",
+                str(benchmark_tools),
             ),
         ),
         *[
@@ -233,9 +247,20 @@ def cluster_stages(
                         else ()
                     ),
                     *(
+                        ("--vegeta", str(benchmark_tools / "vegeta"))
+                        if name == "benchmarks"
+                        else ()
+                    ),
+                    *(
                         ("--docker", "/usr/bin/docker")
                         if name
-                        in {"manifests", "node-shell", "node-maintenance", "ephemeral-debug"}
+                        in {
+                            "manifests",
+                            "node-shell",
+                            "node-maintenance",
+                            "ephemeral-debug",
+                            "benchmarks",
+                        }
                         else ()
                     ),
                     "--evidence",
@@ -255,6 +280,7 @@ def cluster_stages(
                             "node-shell",
                             "node-maintenance",
                             "ephemeral-debug",
+                            "benchmarks",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),

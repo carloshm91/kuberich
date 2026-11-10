@@ -36,6 +36,17 @@ jobs:
           python-version: '3.12'
           enable-cache: true
       - run: uv sync --locked --group dev
+      - name: Prepare the pinned optional HTTP benchmark test tool
+        run: |
+          retain_benchmark_receipt() {
+            if [ -f "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" ]; then
+              mkdir -p artifacts/benchmarks/tool-provenance
+              cp "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" artifacts/benchmarks/tool-provenance/prepared-provenance.json
+            fi
+          }
+          trap retain_benchmark_receipt EXIT
+          uv run python -m scripts.benchmark_tools --directory "$RUNNER_TEMP/kuberich-benchmark-tools"
+          printf 'KUBERICH_TEST_VEGETA=%s\n' "$RUNNER_TEMP/kuberich-benchmark-tools/vegeta" >> "$GITHUB_ENV"
       - name: Reject private test dependencies on application implementation
         run: uv run python scripts/check_private_access.py
       - name: Install the owned X11 clipboard test tools
@@ -83,6 +94,17 @@ jobs:
           enable-cache: true
       - name: Install the locked development environment
         run: uv sync --locked --group dev
+      - name: Prepare the pinned optional HTTP benchmark test tool
+        run: |
+          retain_benchmark_receipt() {
+            if [ -f "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" ]; then
+              mkdir -p artifacts/benchmarks/tool-provenance
+              cp "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" artifacts/benchmarks/tool-provenance/prepared-provenance.json
+            fi
+          }
+          trap retain_benchmark_receipt EXIT
+          uv run python -m scripts.benchmark_tools --directory "$RUNNER_TEMP/kuberich-benchmark-tools"
+          printf 'KUBERICH_TEST_VEGETA=%s\n' "$RUNNER_TEMP/kuberich-benchmark-tools/vegeta" >> "$GITHUB_ENV"
       - name: Install real terminal transport test tools on Linux
         if: ${{ matrix.os == 'ubuntu-24.04' }}
         timeout-minutes: 6
@@ -163,6 +185,7 @@ jobs:
           uv run mypy --strict scripts/verify_node_shell_kind.py
           uv run mypy --strict scripts/verify_node_maintenance_kind.py
           uv run mypy --strict scripts/verify_ephemeral_debug_kind.py
+          uv run mypy --strict scripts/benchmark_tools.py scripts/verify_benchmarks_kind.py
           uv run mypy --strict scripts/ci_apt.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification
@@ -277,6 +300,18 @@ jobs:
       - name: Verify irreversible ephemeral additions and owned attach sessions
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_ephemeral_debug_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --docker /usr/bin/docker --evidence artifacts/ephemeral-debug/evidence.json
+      - name: Verify reviewed HTTP benchmarks actual load results and cancellation
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
+        run: |
+          retain_benchmark_receipt() {
+            if [ -f "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" ]; then
+              mkdir -p artifacts/benchmarks/tool-provenance
+              cp "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" artifacts/benchmarks/tool-provenance/prepared-provenance.json
+            fi
+          }
+          trap retain_benchmark_receipt EXIT
+          uv run python -m scripts.benchmark_tools --directory "$RUNNER_TEMP/kuberich-benchmark-tools"
+          uv run python -m scripts.verify_benchmarks_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --vegeta "$RUNNER_TEMP/kuberich-benchmark-tools/vegeta" --docker /usr/bin/docker --evidence artifacts/benchmarks/evidence.json
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
@@ -327,6 +362,7 @@ jobs:
             artifacts/node-shell/**
             artifacts/node-maintenance/**
             artifacts/ephemeral-debug/**
+            artifacts/benchmarks/**
             artifacts/quickstart/*
             artifacts/startup/**
           if-no-files-found: error
@@ -357,6 +393,17 @@ jobs:
           enable-cache: true
       - name: Install locked native verification and build tools
         run: uv sync --locked --group dev --group standalone
+      - name: Prepare the pinned optional HTTP benchmark test tool
+        run: |
+          retain_benchmark_receipt() {
+            if [ -f "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" ]; then
+              mkdir -p "$KUBERICH_NATIVE_DIR/benchmark-tool-provenance"
+              cp "$RUNNER_TEMP/kuberich-benchmark-tools/prepared-provenance.json" "$KUBERICH_NATIVE_DIR/benchmark-tool-provenance/prepared-provenance.json"
+            fi
+          }
+          trap retain_benchmark_receipt EXIT
+          uv run python -m scripts.benchmark_tools --directory "$RUNNER_TEMP/kuberich-benchmark-tools"
+          printf 'KUBERICH_TEST_VEGETA=%s\n' "$RUNNER_TEMP/kuberich-benchmark-tools/vegeta" >> "$GITHUB_ENV"
       - name: Install the Linux native compiler and inspection tools
         if: ${{ startsWith(matrix.target, 'linux-') }}
         timeout-minutes: 6
@@ -388,6 +435,7 @@ jobs:
             artifacts/standalone/${{ matrix.target }}/candidate/*.json
             artifacts/standalone/${{ matrix.target }}/candidate/build-original.log
             artifacts/standalone/${{ matrix.target }}/runtime/*
+            artifacts/standalone/${{ matrix.target }}/benchmark-tool-provenance/*
             artifacts/standalone/${{ matrix.target }}/owned-kind-shell.json
             artifacts/terminal/*
           if-no-files-found: error
