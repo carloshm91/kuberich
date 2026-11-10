@@ -41,8 +41,8 @@ options:
   --readonly            block mutations, shell, attach and plugins
   --write               override the configured read-only preference for this session
   --command, -c INITIAL_COMMAND
-                        initial terminal command: po, ctx, ns, helm, pulse, overview, exports,
-                        themes, views, about, status, retry, back, forward, help or quit
+                        initial terminal command: po, ctx, ns, helm, manifests, pulse, overview,
+                        exports, themes, views, about, status, retry, back, forward, help or quit
   --screen-dump-dir SCREEN_DUMP_DIR
                         initial local export directory; created privately only on Save
   --headless            hide the application header

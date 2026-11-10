@@ -31,6 +31,8 @@ class ProcessPurpose(Enum):
     CLIPBOARD = auto()
     HELM_READ = auto()
     HELM_MUTATE = auto()
+    MANIFEST_RENDER = auto()
+    MANIFEST_PREVIEW = auto()
 
     @property
     def action(self) -> Action:
@@ -46,6 +48,8 @@ class ProcessPurpose(Enum):
             ProcessPurpose.CLIPBOARD: Action.READ,
             ProcessPurpose.HELM_READ: Action.READ,
             ProcessPurpose.HELM_MUTATE: Action.MUTATE,
+            ProcessPurpose.MANIFEST_RENDER: Action.READ,
+            ProcessPurpose.MANIFEST_PREVIEW: Action.MUTATE,
         }[self]
 
 

@@ -7,7 +7,13 @@ from difflib import unified_diff
 from typing import Any
 
 import yaml
-from yaml.events import AliasEvent, CollectionEndEvent, CollectionStartEvent
+from yaml.events import (
+    AliasEvent,
+    CollectionEndEvent,
+    CollectionStartEvent,
+    DocumentStartEvent,
+    ScalarEvent,
+)
 from yaml.nodes import MappingNode, Node
 
 from kuberich.domain.inspection import document, redacted
@@ -85,6 +91,53 @@ def parse_manifest(data: bytes) -> dict[str, Any]:
         return value
     except (yaml.YAMLError, ValueError, TypeError, UnicodeError, RecursionError):
         # Parser exceptions can include the source line and sensitive values.
+        raise AppError("Invalid manifest YAML or JSON-compatible UTF-8 values.") from None
+
+
+def parse_manifest_documents(
+    data: bytes, *, max_bytes: int, max_documents: int
+) -> tuple[dict[str, Any], ...]:
+    """Parse an explicitly bounded stream without exposing parser source excerpts."""
+    if (
+        not isinstance(data, bytes)
+        or type(max_bytes) is not int
+        or type(max_documents) is not int
+        or not 1 <= max_bytes <= 8 * MAX_EDIT_BYTES
+        or not 1 <= max_documents <= 256
+        or not 1 <= len(data) <= max_bytes
+    ):
+        raise AppError("Manifest stream must be nonempty and within its byte/document limits.")
+    try:
+        text = data.decode("utf-8")
+        depth = documents = 0
+        empty_documents: set[int] = set()
+        for count, event in enumerate(yaml.parse(text, Loader=yaml.SafeLoader)):
+            if isinstance(event, AliasEvent):
+                raise AppError("Manifest YAML aliases are not supported.")
+            if isinstance(event, DocumentStartEvent):
+                documents += 1
+            if isinstance(event, CollectionStartEvent):
+                depth += 1
+            elif isinstance(event, CollectionEndEvent):
+                depth -= 1
+            if (
+                isinstance(event, ScalarEvent)
+                and depth == 0
+                and event.value == ""
+                and event.tag is None
+                and event.style is None
+            ):
+                empty_documents.add(documents - 1)
+            if depth > 64 or count >= 100000 or documents > max_documents:
+                raise AppError("Manifest stream exceeds its nesting, event or document limit.")
+        values = tuple(
+            resource_object(value)
+            for index, value in enumerate(yaml.load_all(text, Loader=_EditLoader))
+            if index not in empty_documents
+        )
+        json.dumps(values, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        return values
+    except (yaml.YAMLError, ValueError, TypeError, UnicodeError, RecursionError):
         raise AppError("Invalid manifest YAML or JSON-compatible UTF-8 values.") from None
 
 

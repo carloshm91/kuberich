@@ -145,8 +145,9 @@ the selected CronJob template. The schedule and concurrency policy do not govern
 **partial** — ConfigMap and Secret keys have explicit reveal/copy and editing. Version 0.4 also
 traces container environment sources and image facts; values require fresh disclosure.
 ### Local manifest directories, YAML edit, apply/delete and Kustomize
-**planned** — Local manifest directories, apply/delete workflows and Kustomize integration are
-planned.
+**partial** — Development source for 0.5 adds local manifest browsing/editing, local Kustomize
+rendering and reviewed server validation before apply/delete, with explicit per-resource partial and
+uncertain outcomes. Published 0.4.0 predates this workflow.
 ### Helm list/status/notes/values/all-values/manifest/history
 **partial** — Development source for 0.5 adds Helm release browsing, status, notes,
 supplied/computed values, manifests and revision history with an optional supported CLI. Published

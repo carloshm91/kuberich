@@ -129,6 +129,11 @@ COMMAND_SPECS = (
         "Browse saved local artifacts without starting a cluster connection.",
     ),
     _spec(
+        Command.MANIFESTS,
+        ("manifests",),
+        "Browse local YAML, explicitly render Kustomize, edit local files and review guarded apply/delete.",
+    ),
+    _spec(
         Command.RBAC,
         ("rbac",),
         "Browse declared subjects, bindings and roles; accepts an explicit scope.",

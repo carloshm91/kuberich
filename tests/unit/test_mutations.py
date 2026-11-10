@@ -289,3 +289,14 @@ def test_invalid_or_excessive_existing_annotations_are_rejected(annotations):
 )
 def test_status_outcomes_are_distinct_and_no_unknown_success_is_inferred(status, state):
     assert status_result(status).state is state
+
+
+def test_absent_address_cannot_enter_existing_uid_conditional_patch_contract():
+    from kuberich.domain.targets import ResourceAddress
+
+    resource, target, _ = selection()
+    address = ResourceAddress(
+        target.session, target.group, target.resource, target.namespace, target.name
+    )
+    with pytest.raises(AppError, match="existing captured resource UID"):
+        mutation_path(resource, address)

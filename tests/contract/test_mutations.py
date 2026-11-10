@@ -210,3 +210,26 @@ async def test_immediate_shutdown_and_repeated_start_consume_only_one_confirmati
         third = manager.start(source, source.confirm(intent))
         await manager.close()
         assert (await manager.wait(third)).state is MutationState.CANCELLED
+
+
+@pytest.mark.asyncio
+async def test_cancel_one_owned_job_retains_uncertain_result_and_leaves_client_usable(tmp_path):
+    async with source_fixture(tmp_path) as (source, api, _):
+        manager = MutationManager()
+        prepared = await source.prepare_annotation("first", "private-write")
+        api.mode = "stall"
+        identity = manager.start(source, source.confirm(prepared))
+        await api.entered.wait()
+        result = await manager.cancel(identity)
+        assert result.state is MutationState.UNCERTAIN
+        assert (await manager.cancel(identity)) == result
+        assert manager.active_count == 0
+        assert manager.records[-1].result == result
+        assert "private-write" not in repr(manager.records)
+        api.mode = "normal"
+        prepared = await source.prepare_annotation("next", "private-next")
+        next_identity = manager.start(source, source.confirm(prepared))
+        assert (await manager.wait(next_identity)).state is MutationState.SUCCEEDED
+        with pytest.raises(AppError, match="no longer retained"):
+            await manager.cancel(uuid4())
+        await manager.close()

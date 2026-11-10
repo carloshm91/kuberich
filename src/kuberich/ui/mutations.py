@@ -30,7 +30,7 @@ def result_text(result: MutationResult) -> Text:
     for target, item in result.items:
         content.append_text(
             safe_text(
-                f"\n{target.namespace or '(cluster)'}/{target.name} · UID {target.uid}\n"
+                f"\n{target.namespace or '(cluster)'}/{target.name} · UID {target.uid or 'new name / no UID captured'}\n"
                 + item.state.value
                 + ": "
                 + item.message,
@@ -246,7 +246,7 @@ class MutationHistoryScreen(ModalScreen[None]):
             )
             content.append_text(
                 safe_text(
-                    f"{target.session.context} · {target.namespace or '(cluster)'} · {target.resource}/{target.name}\nUID {target.uid}\n{state}: ",
+                    f"{target.session.context} · {target.namespace or '(cluster)'} · {target.resource}/{target.name}\nUID {target.uid or 'new name / no UID captured'}\n{state}: ",
                     multiline=True,
                 )
             )

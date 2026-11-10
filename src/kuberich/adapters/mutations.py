@@ -69,6 +69,7 @@ async def guarded_request(
     accepted: tuple[int, ...],
     receipt: Callable[[bytes], MutationResult | None],
     dry_run: bool = False,
+    error_receipt: Callable[[int, bytes], MutationResult] | None = None,
 ) -> MutationResult:
     """No redirects, 401 refresh/replay, HTTP retries or raw server error exposure.
 
@@ -111,13 +112,22 @@ async def guarded_request(
             ) as response:
                 if response.status not in accepted:
                     # Do not read arbitrary Status bodies into errors/history.
-                    refusal = status_result(response.status)
+                    if error_receipt is None:
+                        refusal = status_result(response.status)
+                    else:
+                        failure = bytearray()
+                        async for chunk in response.content.iter_chunked(16384):
+                            failure.extend(chunk)
+                            if len(failure) > 65536:
+                                failure.clear()
+                                break
+                        refusal = error_receipt(response.status, bytes(failure))
                     return (
                         MutationResult(
                             MutationState.REJECTED
                             if refusal.state is MutationState.UNCERTAIN
                             else refusal.state,
-                            "Server validation refused; no apply was sent.",
+                            refusal.message + " Server validation refused; no apply was sent.",
                         )
                         if dry_run
                         else refusal

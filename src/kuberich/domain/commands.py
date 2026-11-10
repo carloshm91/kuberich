@@ -22,6 +22,7 @@ class Command(Enum):
     POPEYE = auto()
     EXPORT = auto()
     EXPORTS = auto()
+    MANIFESTS = auto()
     RBAC = auto()
     CAN_I = auto()
     WHO_CAN = auto()

@@ -1,6 +1,46 @@
 # Development checkpoint
 
-## Helm implementation in progress — 2026-11-09 UTC
+## Local manifest implementation in progress — 2026-11-10 UTC
+
+M07 #67 starts from protected main
+`e11236e0a108c4ff4bf79a119648a02bc9a61bdc` on `feat/67-local-manifests`.
+Source, parser, filesystem, renderer, editor and cluster batch contracts are
+implemented; public UI and complete candidate verification are in progress.
+These source changes are not part of the published 0.4.0 packages.
+
+Before extensive UI work, the actual owned-kind create/update/managed-key-removal
+proof passed 14 checks with an unrelated live key preserved, unchanged UID,
+version changes only on real writes, non-persisting dry-runs, unchanged measured
+inputs and verified private-file/cluster cleanup. A first failed preview receipt
+required a narrow correction for a generated dry-run object without a persistent
+resourceVersion. Both attempts and their original outcomes remain retained.
+See [local manifest acceptance](acceptance/local-manifests.md).
+
+An independent public service regression found that cancellation during
+post-delete observation could allow the next deletion. The corrected direct
+and `MutationManager.cancel` paths pass independently: the first actual accepted
+result remains visible, the next item is unsent and only one write occurs.
+Focused source/API/UI/real-editor terminal cases pass, but counts overlap and
+do not replace full production coverage, installed trials or required hosted CI.
+
+The early exploratory command is retained in the issue checkout:
+`uv run --locked python -m artifacts.issue67.early_apply_proof --kind VERIFIED_KIND --kubectl VERIFIED_KUBECTL --output FRESH_REPORT`.
+It uses an explicit owned cluster and is limited to initial API merge semantics;
+it is not a completed feature or release qualification. The final supported
+verifier and reproducible commands are being added with the implementation.
+
+## Helm delivered in development source — 2026-11-10 UTC
+
+[PR #334](https://github.com/carloshm91/kuberich/pull/334) merged as
+`e11236e0a108c4ff4bf79a119648a02bc9a61bdc`, after all 27 current-head quality
+jobs and the app-bound Repository/DCO checks passed. The squash tree exactly
+matches the qualified issue head. Author email is `carloshm91@gmail.com` and the
+sign-off is preserved. M06 #66 is closed and its roadmap item is Done.
+The final hosted Helm report passes four version/storage combinations and
+64 checks with owned-cluster deletion verified. Linux/Python 3.12 production
+coverage is 98.6171% lines / 95.4634% branches, changed lines 98.96%, and all
+119 then-critical modules satisfy their 100% gates. No release or hosting was
+published by the feature merge; phase qualification remains separate.
 
 The maintainer started v0.5.0 with M06 #66 on `feat/66-helm-releases`, based on
 protected main `eee30e4d1a595fa15f54449d6b0c5026e74869ce`. No new version/tag,

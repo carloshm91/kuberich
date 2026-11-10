@@ -4,7 +4,7 @@ import asyncio
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 from uuid import UUID, uuid4
 from weakref import WeakSet
 
@@ -20,7 +20,7 @@ from kuberich.domain.mutations import (
     mutation_path,
 )
 from kuberich.domain.resources import ApiResource, ResourceRecord, resource_record
-from kuberich.domain.targets import ResourceTarget
+from kuberich.domain.targets import MutationTarget, ResourceAddress, ResourceTarget
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.processes import _finish_owned
@@ -37,9 +37,19 @@ class WriteIntent(Protocol):
     def effects(self) -> tuple[str, ...]: ...
 
 
+@runtime_checkable
+class BatchWriteIntent(WriteIntent, Protocol):
+    """Optional immutable identity metadata; no request/source owners are retained."""
+
+    @property
+    def targets(self) -> tuple[MutationTarget, ...]: ...
+
+
 class MutationSource(Protocol):
     client: KubernetesSession
-    target: ResourceTarget
+
+    @property
+    def target(self) -> MutationTarget: ...
 
     @property
     def intent(self) -> WriteIntent | None: ...
@@ -166,9 +176,10 @@ class MutationService:
 @dataclass(frozen=True)
 class MutationRecord:
     identity: UUID
-    target: ResourceTarget
+    target: MutationTarget
     effects: tuple[str, ...]
     result: MutationResult | None
+    targets: tuple[MutationTarget, ...] = ()
 
 
 class MutationManager:
@@ -198,30 +209,82 @@ class MutationManager:
         intent = source.intent
         if intent is None:
             raise AppError("Prepare and confirm a mutation first.")
+        targets = tuple(intent.targets) if isinstance(intent, BatchWriteIntent) else ()
+        if targets and (
+            len(targets) > 100
+            or any(
+                not isinstance(target, (ResourceTarget, ResourceAddress))
+                or target.session != source.target.session
+                for target in targets
+            )
+        ):
+            raise AppError("Batch history requires bounded identities from the captured session.")
         identity = uuid4()
         while len(self._records) >= 32:
             oldest = next(key for key in self._records if key not in self._live)
             del self._records[oldest]
-        self._records[identity] = MutationRecord(identity, source.target, intent.effects, None)
+        self._records[identity] = MutationRecord(
+            identity, source.target, intent.effects, None, targets
+        )
         task = asyncio.create_task(source.execute(confirmation))
         self._live[identity] = source.client, task
         task.add_done_callback(lambda completed: self._completed(identity, completed))
         return identity
 
     def _completed(self, identity: UUID, task: asyncio.Task[MutationResult]) -> None:
+        if identity not in self._live:
+            return
         old = self._records[identity]
         if task.cancelled():
             result = MutationResult(
-                MutationState.CANCELLED, "Cancelled before operation entry; no write started."
+                MutationState.CANCELLED,
+                "Cancelled before operation entry; no write started.",
+                tuple(
+                    (
+                        target,
+                        MutationResult(
+                            MutationState.CANCELLED,
+                            "Unsent: cancelled before operation entry; no write request started.",
+                        ),
+                    )
+                    for target in old.targets
+                ),
             )
         elif task.exception() is not None:
             result = MutationResult(
                 MutationState.UNCERTAIN,
                 "Unexpected write failure. Inspect the object before another change.",
+                tuple(
+                    (
+                        target,
+                        MutationResult(
+                            MutationState.UNCERTAIN,
+                            "Outcome unknown after unexpected failure; inspect before a new review.",
+                        ),
+                    )
+                    for target in old.targets
+                ),
             )
         else:
             result = task.result()
-        self._records[identity] = MutationRecord(identity, old.target, old.effects, result)
+            if old.targets and not result.items and result.state is MutationState.BLOCKED:
+                result = MutationResult(
+                    result.state,
+                    result.message,
+                    tuple(
+                        (
+                            target,
+                            MutationResult(
+                                MutationState.BLOCKED,
+                                "Unsent: exact confirmation was not admitted.",
+                            ),
+                        )
+                        for target in old.targets
+                    ),
+                )
+        self._records[identity] = MutationRecord(
+            identity, old.target, old.effects, result, old.targets
+        )
         self._live.pop(identity, None)
 
     async def wait(self, identity: UUID) -> MutationResult:
@@ -238,6 +301,8 @@ class MutationManager:
             except Exception:
                 # Completion retains a safe uncertain result, never the raw error.
                 pass
+            if active[1].done():
+                self._completed(identity, active[1])
         result = self._records[identity].result
         assert result is not None
         return result
@@ -247,6 +312,15 @@ class MutationManager:
             if not task.done():
                 task.cancel()
         await _finish_owned(asyncio.gather(*tasks, return_exceptions=True))
+
+    async def cancel(self, identity: UUID) -> MutationResult:
+        """Stop and drain one registered job without retiring its client."""
+        if identity not in self._records:
+            raise AppError("That mutation result is no longer retained.")
+        active = self._live.get(identity)
+        if active is not None:
+            await self._drain((active[1],))
+        return await self.wait(identity)
 
     async def stop_for_client(self, client: KubernetesSession) -> None:
         self._retired.add(client)

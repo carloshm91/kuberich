@@ -24,6 +24,12 @@ browsing. This is not in published 0.4.0 packages. Read the optional prerequisit
 and [Helm inspection and rollback](workloads.md#browse-helm-releases-in-development-source)
 before using it. Metric `:history` and workload `:rollback` retain their meanings.
 
+Use `:manifests` in development source to inspect local YAML/JSON, edit private
+drafts and explicitly render local Kustomize sources before reviewed apply/delete.
+`--command manifests` opens the local browser without a cluster connection;
+cluster changes require a connected context and separate server validation.
+See [local manifests](workloads.md#local-manifests-and-kustomize-in-development-source).
+
 Use `:export` for a reviewed local capture and `:exports`
 for saved artifacts. `--command exports` opens that browser without connecting;
 Back remains disconnected until an explicit context selection or retry. See
