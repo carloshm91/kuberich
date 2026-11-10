@@ -377,7 +377,7 @@ async def verify_extended(
     review = await source.prepare(
         MaintenanceMode.DRAIN,
         DrainOptions(
-            force=True, delete_emptydir_data=True, leave_daemonsets=True, timeout_seconds=30
+            force=True, delete_emptydir_data=True, leave_daemonsets=True, timeout_seconds=4
         ),
     )
     assert not review.blockers
@@ -391,11 +391,19 @@ async def verify_extended(
     }
     operation = asyncio.create_task(source.execute(source.confirm(review)))
     tasks.append(operation)
-    await wait_for(
-        lambda: state(source, operation, local.metadata.uid, PodState.RETRYING), seconds=15
+    await finish(source, operation, "both-consents-pdb-refusal-deadline", MutationState.PARTIAL)
+    refused = next(item for item in source.progress.pods if item.uid == local.metadata.uid)
+    assert refused.attempts >= 1 and refused.http_status == 429
+    independent_uids = {
+        item.target.uid
+        for item in review.pods
+        if not item.retained and item.target.uid != local.metadata.uid
+    }
+    assert independent_uids and all(
+        item.state in {PodState.ACCEPTED, PodState.TERMINATING, PodState.ABSENT}
+        for item in source.progress.pods
+        if item.uid in independent_uids
     )
-    operation.cancel()
-    await finish(source, operation, "both-consents-pdb-refusal-stop", MutationState.PARTIAL)
     assert (
         await core.read_namespaced_pod(local.metadata.name, NAMESPACE)
     ).metadata.uid == local.metadata.uid
@@ -424,9 +432,25 @@ async def verify_extended(
     )
 
     async def partial() -> bool:
-        return await state(
+        observed = await state(
             source, operation, independent.metadata.uid, PodState.ABSENT
         ) and await state(source, operation, blocked.metadata.uid, PodState.RETRYING)
+        now = time.monotonic()
+        return observed and all(
+            item.state
+            in {
+                PodState.ABSENT,
+                PodState.SKIPPED,
+                PodState.ACCEPTED,
+                PodState.TERMINATING,
+                PodState.RETRYING,
+            }
+            and (
+                item.state is not PodState.RETRYING
+                or (item.retry_at is not None and item.retry_at > now + 1)
+            )
+            for item in source.progress.pods
+        )
 
     await wait_for(partial, seconds=15)
     retry_at = next(
