@@ -175,6 +175,7 @@ show_contexts = true
 [tool.kuberich.coverage]
 # Extend this reviewed list when deterministic security/state decisions are added.
 critical_modules = [
+    "src/kuberich/domain/node_maintenance.py",
     "src/kuberich/config/node_shell.py",
     "src/kuberich/domain/node_shell.py",
     "src/kuberich/domain/node_shell_journal.py",

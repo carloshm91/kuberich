@@ -1,5 +1,36 @@
 # Development checkpoint
 
+## Node maintenance implementation candidate — 2026-11-10 UTC
+
+A02 #77 starts from protected main
+`7c8c7cb1595a3609c2d6a5748087d53917ce9af8` on
+`feat/77-node-maintenance`. Its reviewed scope is one captured Node, explicit
+cordon/drain/uncordon reviews, server-authoritative policy/v1 eviction, separate
+unmanaged and emptyDir consents, finite retries/cancellation and an independently
+observed final scheduling state. Implementation and focused checks are in
+progress. The owned kind helper now supports an explicitly bounded worker count
+while preserving the single-node default; the early production-service proof
+is prepared for coordinated actual API verification. This preparation does not
+establish delivered node-maintenance behavior or qualify a release.
+
+## Node diagnostics delivered in development source — 2026-11-10 UTC
+
+[PR #336](https://github.com/carloshm91/kuberich/pull/336) merged normally as
+`7c8c7cb1595a3609c2d6a5748087d53917ce9af8`, with tree
+`b933a47765ce4564e81236da22002e974b5352a2`, matching qualified head
+`168e981`. A01 #76 is closed and Done. Exact-head Application quality run
+`42782817463` passes all 27 selected jobs; app-bound Repository checks `15368`
+and DCO `1861` pass. The canonical production measurement covers 297 modules:
+40,291/40,904 lines (98.5014%) and 11,916/12,532 branches (95.0846%), with
+97.19% changed-line coverage. All 124 critical modules meet 100% lines and
+applicable branches.
+
+The actual node-shell verifier passes all 16 groups with 303 unchanged measured
+inputs, preserved sentinel identity and verified process/private-file/cluster
+cleanup. Exact commands and retained original failures are in
+[node-shell acceptance](acceptance/node-shell.md). These source changes publish
+no artifacts or hosting; the published package remains 0.4.0.
+
 ## Node diagnostic implementation candidate — 2026-11-10 UTC
 
 A01 #76 is the next unblocked v0.5.0 issue, on `feat/76-node-shell` from

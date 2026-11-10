@@ -62,6 +62,7 @@ from kuberich.domain.navigation import (
     NavigationHistory,
     NavigationState,
 )
+from kuberich.domain.node_maintenance import MaintenanceMode
 from kuberich.domain.operations import MAX_BATCH, ResourceAction
 from kuberich.domain.processes import ProcessStatus
 from kuberich.domain.pulse import PulseScope
@@ -500,7 +501,7 @@ class KubeRichApp(App[None]):
                 else None
             ),
         )
-        self.live_preferences.node_shell_changed = self.operations.node_shells.observe
+        self.live_preferences.node_shell_changed = self.operations.observe_node_operations
         from platformdirs import user_state_path
 
         from kuberich.adapters.artifact_files import ArtifactFiles
@@ -613,6 +614,15 @@ class KubeRichApp(App[None]):
                 Command.SHELL: self.action_shell,
                 Command.NODE_SHELL: self.operations.open_node_shell,
                 Command.NODE_SHELL_RECOVER: self.operations.open_node_shell_recovery,
+                Command.CORDON: partial(
+                    self.operations.open_node_maintenance, MaintenanceMode.CORDON
+                ),
+                Command.DRAIN: partial(
+                    self.operations.open_node_maintenance, MaintenanceMode.DRAIN
+                ),
+                Command.UNCORDON: partial(
+                    self.operations.open_node_maintenance, MaintenanceMode.UNCORDON
+                ),
                 Command.ATTACH: self.action_attach,
                 Command.UPLOAD: self.action_upload,
                 Command.DOWNLOAD: self.action_download,
@@ -957,7 +967,7 @@ class KubeRichApp(App[None]):
         self.navigator.connect(context, scope=scope, remember=remember, authenticate=authenticate)
 
     def _observation_changed(self) -> None:
-        self.operations.node_shells.observe()
+        self.operations.observe_node_operations()
         self.metric_history.observe(self.workspace.store.observation)
         self.plugins.refresh()
         self.plugins.manager.invalidate()
@@ -1085,6 +1095,7 @@ class KubeRichApp(App[None]):
             await self.clipboard_queue.close()
             await self.live_preferences.close()
             await self.plugins.close()
+            await self.operations.node_maintenance.close()
             await self.operations.node_shells.close()
             await self.mutations.close()
             await self.forwards.close()
@@ -1764,7 +1775,12 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        from kuberich.ui.node_maintenance import NodeMaintenanceScreen
         from kuberich.ui.node_shell import NodeShellRecoveryScreen, NodeShellScreen
+
+        if isinstance(self.screen, NodeMaintenanceScreen):
+            await self.screen.action_back()
+            return
 
         if isinstance(self.screen, (NodeShellScreen, NodeShellRecoveryScreen)):
             await self.screen.action_back()

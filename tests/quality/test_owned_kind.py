@@ -16,16 +16,17 @@ from scripts.owned_kind import (
     local_endpoint,
     owned_cluster,
     run_owned,
+    verified_nodes,
     verify_config,
 )
 
 
-def node(name="kuberich-test-owned"):
+def node(name="kuberich-test-owned", role="control-plane", identity="owned-node-id"):
     return {
-        "Id": "owned-node-id",
+        "Id": identity,
         "Config": {
             "Image": NODE_IMAGE,
-            "Labels": {"io.x-k8s.kind.cluster": name, "io.x-k8s.kind.role": "control-plane"},
+            "Labels": {"io.x-k8s.kind.cluster": name, "io.x-k8s.kind.role": role},
         },
         "NetworkSettings": {"Ports": {"6443/tcp": [{"HostIp": "127.0.0.1", "HostPort": "43431"}]}},
     }
@@ -146,17 +147,25 @@ else:
  if args[0]=='version': print('kind v0.33.0 fixture')
  elif args[0]=='create':
   name=args[args.index('--name')+1];path=Path(args[args.index('--kubeconfig')+1])
-  state.write_text(json.dumps([node(name)]));data=config(name)
+  nodes=[node(name)];data=config(name)
   if os.environ.get('OWNED_FAULT')=='config': data['clusters'][0]['cluster']['server']='https://foreign:443'
   path.write_text(yaml.safe_dump(data))
   if '--config' in args:
    setup=yaml.safe_load(Path(args[args.index('--config')+1]).read_text())
-   kubelet=yaml.safe_load(setup['nodes'][0]['kubeadmConfigPatches'][0])
-   if os.environ.get('OWNED_KUBELET_FAULT')=='period': kubelet['crashLoopBackOff']['maxContainerRestartPeriod']='300s'
-   if os.environ.get('OWNED_KUBELET_FAULT')=='gate': kubelet['featureGates']['KubeletCrashLoopBackOffMax']=False
-   if os.environ.get('OWNED_KUBELET_FAULT')=='sync': kubelet['syncFrequency']='1m'
-   if os.environ.get('OWNED_KUBELET_FAULT')=='malformed': kubelet=None
-   state.with_suffix('.kubelet.yaml').write_text(yaml.safe_dump(kubelet))
+   nodes.extend(node(name,'worker','worker-'+str(i)) for i in range(len(setup['nodes'])-1))
+   if 'kubeadmConfigPatches' in setup['nodes'][0]:
+    kubelet=yaml.safe_load(setup['nodes'][0]['kubeadmConfigPatches'][0])
+    if os.environ.get('OWNED_KUBELET_FAULT')=='period': kubelet['crashLoopBackOff']['maxContainerRestartPeriod']='300s'
+    if os.environ.get('OWNED_KUBELET_FAULT')=='gate': kubelet['featureGates']['KubeletCrashLoopBackOffMax']=False
+    if os.environ.get('OWNED_KUBELET_FAULT')=='sync': kubelet['syncFrequency']='1m'
+    if os.environ.get('OWNED_KUBELET_FAULT')=='malformed': kubelet=None
+    state.with_suffix('.kubelet.yaml').write_text(yaml.safe_dump(kubelet))
+  membership=os.environ.get('OWNED_MEMBERSHIP')
+  if membership=='partial-worker': nodes=nodes[-1:]
+  if membership=='partial-control-plane': nodes=nodes[:1]
+  if membership=='foreign': nodes[-1]['Config']['Labels']['io.x-k8s.kind.cluster']='foreign'
+  if membership=='reversed': nodes.reverse()
+  state.write_text(json.dumps(nodes))
   if os.environ.get('OWNED_FAULT')=='create': sys.exit(1)
  elif args[0]=='delete':
   if os.environ.get('OWNED_SECOND_CANCEL'): os.kill(os.getppid(),15)
@@ -333,6 +342,129 @@ def test_replaced_node_is_never_deleted(fake_kind):
         replacement[0]["Id"] = "foreign-replacement-id"
         state.write_text(json.dumps(replacement))
     assert json.loads(state.read_text())[0]["Id"] == "foreign-replacement-id"
+    assert all(json.loads(line)[1][0] != "delete" for line in calls.read_text().splitlines())
+
+
+def test_multinode_endpoint_binds_control_plane_independent_of_listing_order(tmp_path):
+    workers = [node(role="worker", identity=f"worker-{i}") for i in (2, 1)]
+    for worker in workers:
+        worker["NetworkSettings"]["Ports"] = {}
+    nodes = [workers[0], node(), workers[1]]
+    path = tmp_path / "generated"
+    path.write_text(yaml.safe_dump(config()))
+    assert verify_config(path, "kuberich-test-owned", nodes, worker_count=2) == (
+        "kind-kuberich-test-owned"
+    )
+    assert verified_nodes(nodes, "kuberich-test-owned", worker_count=2) == (
+        "owned-node-id",
+        "worker-1",
+        "worker-2",
+    )
+    nodes[1]["NetworkSettings"]["Ports"]["6443/tcp"][0]["HostPort"] = "9999"
+    with pytest.raises(ValueError, match="endpoint"):
+        verify_config(path, "kuberich-test-owned", nodes, worker_count=2)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "missing-worker",
+        "extra-worker",
+        "extra-control-plane",
+        "duplicate",
+        "image",
+        "role",
+        "labels",
+        "config",
+        "id",
+    ],
+)
+def test_multinode_membership_refuses_incomplete_foreign_or_ambiguous_nodes(fault):
+    nodes = [
+        node(),
+        node(role="worker", identity="worker-1"),
+        node(role="worker", identity="worker-2"),
+    ]
+    if fault == "missing-worker":
+        nodes.pop()
+    elif fault == "extra-worker":
+        nodes.append(node(role="worker", identity="worker-3"))
+    elif fault == "extra-control-plane":
+        nodes.append(node(identity="other-control-plane"))
+    elif fault == "duplicate":
+        nodes[-1]["Id"] = nodes[0]["Id"]
+    elif fault == "image":
+        nodes[-1]["Config"]["Image"] = "unverified:latest"
+    elif fault == "role":
+        nodes[-1]["Config"]["Labels"]["io.x-k8s.kind.role"] = "other"
+    elif fault == "labels":
+        nodes[-1]["Config"]["Labels"] = None
+    elif fault == "config":
+        nodes[-1]["Config"] = None
+    else:
+        nodes[-1]["Id"] = ""
+    with pytest.raises(ValueError):
+        verified_nodes(nodes, "kuberich-test-owned", worker_count=2, require_complete=True)
+
+
+def test_multinode_creation_verifies_generated_roles_and_order_independent_cleanup(
+    fake_kind, monkeypatch
+):
+    kind, docker, state, calls = fake_kind
+    monkeypatch.setenv("OWNED_MEMBERSHIP", "reversed")
+    with owned_cluster(str(kind), docker=str(docker), worker_count=2) as cluster:
+        assert cluster.node_ids == ("owned-node-id", "worker-0", "worker-1")
+        assert cluster.worker_count == 2
+        records = [json.loads(line) for line in calls.read_text().splitlines()]
+        creation = next(row for row in records if row[0] == "kind" and row[1][0] == "create")
+        path = Path(creation[1][creation[1].index("--config") + 1])
+        assert yaml.safe_load(path.read_text())["nodes"] == [
+            {"role": "control-plane"},
+            {"role": "worker"},
+            {"role": "worker"},
+        ]
+        state.write_text(json.dumps(list(reversed(json.loads(state.read_text())))))
+    assert json.loads(state.read_text()) == [] and not path.exists()
+
+
+@pytest.mark.parametrize("worker_count", [-1, 5, True, 2.5, "2"])
+def test_invalid_worker_count_cannot_contact_docker(fake_kind, worker_count):
+    kind, docker, state, calls = fake_kind
+    with (
+        pytest.raises(ValueError, match="worker count"),
+        owned_cluster(str(kind), docker=str(docker), worker_count=worker_count),
+    ):
+        pytest.fail("invalid topology must not yield")
+    assert not calls.exists() and json.loads(state.read_text()) == []
+
+
+@pytest.mark.parametrize("membership", ["partial-worker", "partial-control-plane"])
+@pytest.mark.parametrize("create_failed", [False, True])
+def test_partial_multinode_creation_cleans_only_verified_owned_members(
+    fake_kind, monkeypatch, membership, create_failed
+):
+    kind, docker, state, calls = fake_kind
+    monkeypatch.setenv("OWNED_MEMBERSHIP", membership)
+    if create_failed:
+        monkeypatch.setenv("OWNED_FAULT", "create")
+    expected = subprocess.CalledProcessError if create_failed else ValueError
+    with pytest.raises(expected), owned_cluster(str(kind), docker=str(docker), worker_count=2):
+        pytest.fail("incomplete topology cannot authorize fixtures")
+    assert json.loads(state.read_text()) == []
+    assert any(json.loads(line)[1][0] == "delete" for line in calls.read_text().splitlines())
+
+
+@pytest.mark.parametrize("replacement", [False, True])
+def test_multinode_cleanup_refuses_foreign_or_replaced_worker(fake_kind, monkeypatch, replacement):
+    kind, docker, state, calls = fake_kind
+    if not replacement:
+        monkeypatch.setenv("OWNED_MEMBERSHIP", "foreign")
+        monkeypatch.setenv("OWNED_FAULT", "create")
+    with pytest.raises(ValueError), owned_cluster(str(kind), docker=str(docker), worker_count=2):
+        members = json.loads(state.read_text())
+        members[-1]["Id"] = "replacement-worker-id"
+        state.write_text(json.dumps(members))
+    assert json.loads(state.read_text())
     assert all(json.loads(line)[1][0] != "delete" for line in calls.read_text().splitlines())
 
 

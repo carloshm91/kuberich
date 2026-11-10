@@ -229,6 +229,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_helm_kind",
         "scripts.verify_manifests_kind",
         "scripts.verify_node_shell_kind",
+        "scripts.verify_node_maintenance_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
@@ -255,7 +256,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 24
+    assert len(cluster_steps) == 25
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(
@@ -275,6 +276,8 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "uv run mypy --strict scripts/verify_manifests_kind.py" in commands
     assert "artifacts/node-shell/**" in upload["with"]["path"].splitlines()
     assert "uv run mypy --strict scripts/verify_node_shell_kind.py" in commands
+    assert "artifacts/node-maintenance/**" in upload["with"]["path"].splitlines()
+    assert "uv run mypy --strict scripts/verify_node_maintenance_kind.py" in commands
     assert "uv run mypy --strict scripts/ci_apt.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
@@ -302,6 +305,15 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in node_shell["run"]
     assert "--docker /usr/bin/docker" in node_shell["run"]
     assert "--evidence artifacts/node-shell/evidence.json" in node_shell["run"]
+    maintenance = next(
+        step
+        for step in cluster_steps
+        if "python -m scripts.verify_node_maintenance_kind" in step["run"]
+    )
+    assert '--kind "$RUNNER_TEMP/kuberich-kind"' in maintenance["run"]
+    assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in maintenance["run"]
+    assert "--docker /usr/bin/docker" in maintenance["run"]
+    assert "--evidence artifacts/node-maintenance/evidence.json" in maintenance["run"]
 
 
 def test_linux_package_setup_keeps_every_tool_and_a_finite_step_deadline():

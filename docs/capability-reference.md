@@ -210,8 +210,9 @@ identity remain visible.
 with privilege review, bounded sessions, cleanup by Pod UID and local recovery. Published 0.4.0
 predates this action.
 ### Cordon/uncordon/drain, disruption constraints and explicit overrides
-**planned** — Reviewed cordon, uncordon and drain with disruption constraints and explicit overrides
-are planned.
+**partial** — Development source for 0.5 adds selected-Node cordon, disruption-aware drain and
+separate uncordon with explicit consents and final scheduling observations. Published 0.4.0 predates
+these actions.
 ### Ephemeral debug containers and diagnostic sessions
 **planned** — Creating ephemeral debug containers and their managed sessions is planned.
 ### HTTP benchmarks, per-context options, results browser and cancellation

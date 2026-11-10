@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 26
+    assert len(first) == len(second) == 27
     acquisition = first[0]
     assert acquisition.name == "kind-1-diagnostic-tools"
     assert acquisition.command[4:] == (
@@ -189,6 +189,21 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     ) == (tmp_path / "kind-2-node-shell/evidence.json")
     assert node_shell.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
     assert "scripts/verify_node_shell_kind.py" in catalog.type_command(ROOT)
+    maintenance = next(stage for stage in first if stage.name == "kind-1-node-maintenance")
+    repeated_maintenance = next(
+        stage for stage in second if stage.name == "kind-2-node-maintenance"
+    )
+    assert maintenance.command[4] == "scripts.verify_node_maintenance_kind"
+    assert maintenance.command[maintenance.command.index("--kubectl") + 1] == "/owned/kubectl"
+    assert maintenance.command[maintenance.command.index("--docker") + 1] == "/usr/bin/docker"
+    assert Path(maintenance.command[maintenance.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-1-node-maintenance/evidence.json"
+    )
+    assert Path(
+        repeated_maintenance.command[repeated_maintenance.command.index("--evidence") + 1]
+    ) == (tmp_path / "kind-2-node-maintenance/evidence.json")
+    assert maintenance.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
+    assert "scripts/verify_node_maintenance_kind.py" in catalog.type_command(ROOT)
     for stage in first:
         module = stage.command[4]
         assert module in body

@@ -71,7 +71,16 @@ def test_actions_follow_the_current_view(action, view, expected):
 @pytest.mark.parametrize(
     "action",
     sorted(
-        TABLE_ACTIONS - {"configuration_data", "port_forward", "open_relationship", "node_shell"}
+        TABLE_ACTIONS
+        - {
+            "configuration_data",
+            "port_forward",
+            "open_relationship",
+            "node_shell",
+            "cordon",
+            "drain",
+            "uncordon",
+        }
     ),
 )
 def test_table_actions_pause_while_a_modal_or_input_has_focus(action):
@@ -153,10 +162,11 @@ def test_authorization_keeps_navigation_and_explicit_object_open_without_resourc
 
 
 @pytest.mark.parametrize("generic", [False, True])
-def test_node_shell_requires_exact_core_node_descriptor(generic):
+@pytest.mark.parametrize("action", ["node_shell", "cordon", "drain", "uncordon"])
+def test_node_actions_require_exact_core_node_descriptor(generic, action):
     node = ApiResource("", "v1", "nodes", "Node", False, frozenset())
-    assert action_available("node_shell", ViewState("nodes"))
-    assert action_available("node_shell", ViewState("nodes", generic=generic, descriptor=node))
+    assert action_available(action, ViewState("nodes"))
+    assert action_available(action, ViewState("nodes", generic=generic, descriptor=node))
     for field, value in (
         ("group", "other.example"),
         ("version", "v2"),
@@ -166,9 +176,9 @@ def test_node_shell_requires_exact_core_node_descriptor(generic):
     ):
         descriptor = replace(node, **{field: value})
         assert not action_available(
-            "node_shell", ViewState("nodes", generic=generic, descriptor=descriptor)
+            action, ViewState("nodes", generic=generic, descriptor=descriptor)
         )
-    assert not action_available("node_shell", ViewState("nodes", generic=True))
-    assert not action_available("node_shell", ViewState("nodes", modal=True, descriptor=node))
-    assert not action_available("node_shell", ViewState("nodes", typing=True, descriptor=node))
-    assert not action_available("node_shell", ViewState("pods", descriptor=node))
+    assert not action_available(action, ViewState("nodes", generic=True))
+    assert not action_available(action, ViewState("nodes", modal=True, descriptor=node))
+    assert not action_available(action, ViewState("nodes", typing=True, descriptor=node))
+    assert not action_available(action, ViewState("pods", descriptor=node))

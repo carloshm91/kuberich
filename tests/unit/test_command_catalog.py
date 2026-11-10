@@ -104,3 +104,22 @@ def test_catalog_refuses_a_declaration_that_could_desynchronize_policy_help_or_d
         specs[0] = replace(specs[0], **{problem: ""})
     with pytest.raises(AppError):
         CommandCatalog(tuple(specs))
+
+
+@pytest.mark.parametrize(
+    "verb,command",
+    [("cordon", Command.CORDON), ("drain", Command.DRAIN), ("uncordon", Command.UNCORDON)],
+)
+def test_node_maintenance_commands_have_one_selected_node_and_mutation_policy(verb, command):
+    service = CommandService(AccessPolicy(False))
+    assert service.resolve(":" + verb) is command
+    spec = COMMAND_CATALOG.by_command[command]
+    assert spec.policy is Action.MUTATE
+    assert spec.capabilities == frozenset({Capability.NODE})
+    assert spec.ui_action == verb and spec.generic_allowed
+    assert (verb, spec.help) in COMMAND_CATALOG.help_rows()
+    assert verb in suggestions(verb[:3], (), ())
+    with pytest.raises(AppError, match="without arguments"):
+        service.resolve(verb + " other-node")
+    with pytest.raises(AppError, match="Read-only mode blocks"):
+        CommandService(AccessPolicy(True)).resolve(verb + " other-node")

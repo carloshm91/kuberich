@@ -39,6 +39,9 @@ TABLE_ACTIONS = frozenset(
         "logs_all",
         "shell",
         "node_shell",
+        "cordon",
+        "drain",
+        "uncordon",
         "attach",
         "upload",
         "download",
@@ -62,7 +65,7 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
-    if action == "node_shell":
+    if action in {"node_shell", "cordon", "drain", "uncordon"}:
         descriptor = view.descriptor
         return (
             view.resource == "nodes"

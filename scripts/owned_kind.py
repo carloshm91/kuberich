@@ -20,6 +20,7 @@ NODE_IMAGE = (
     "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
 )
 SHELL_IMAGE = "alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
+MAX_WORKERS = 4
 
 
 def run_owned(argv: Sequence[str], environment: Mapping[str, str], timeout: float = 30) -> str:
@@ -80,28 +81,52 @@ def docker_environment(environment: Mapping[str, str], endpoint: str) -> dict[st
     return captured
 
 
-def verified_nodes(nodes: list[dict[str, Any]], name: str) -> tuple[str, ...]:
-    identities = []
+def verified_nodes(
+    nodes: list[dict[str, Any]],
+    name: str,
+    *,
+    worker_count: int = 0,
+    require_complete: bool = False,
+) -> tuple[str, ...]:
+    """Return role-bound identities; partial membership is only for safe cleanup."""
+    if type(worker_count) is not int or not 0 <= worker_count <= MAX_WORKERS:
+        raise ValueError(f"Owned worker count must be an integer from 0 to {MAX_WORKERS}.")
+    control_planes: list[str] = []
+    workers: list[str] = []
     for node in nodes:
-        labels = node["Config"].get("Labels", {})
+        configuration = node.get("Config")
+        if not isinstance(configuration, dict):
+            raise ValueError("Refusing an unverified disposable node.")
+        labels = configuration.get("Labels", {})
+        role = labels.get("io.x-k8s.kind.role") if isinstance(labels, dict) else None
+        identity = node.get("Id")
         if (
-            labels.get("io.x-k8s.kind.cluster") != name
-            or labels.get("io.x-k8s.kind.role") != "control-plane"
-            or node["Config"]["Image"] != NODE_IMAGE
-            or not isinstance(node["Id"], str)
-            or not node["Id"]
+            not isinstance(labels, dict)
+            or labels.get("io.x-k8s.kind.cluster") != name
+            or role not in {"control-plane", "worker"}
+            or configuration.get("Image") != NODE_IMAGE
+            or not isinstance(identity, str)
+            or not identity
         ):
             raise ValueError("Refusing an unverified disposable node.")
-        identities.append(node["Id"])
-    if len(identities) > 1 or len(set(identities)) != len(identities):
+        (control_planes if role == "control-plane" else workers).append(identity)
+    identities = (*control_planes, *sorted(workers))
+    if (
+        len(control_planes) > 1
+        or len(workers) > worker_count
+        or len(set(identities)) != len(identities)
+        or (require_complete and (len(control_planes) != 1 or len(workers) != worker_count))
+    ):
         raise ValueError("Unexpected disposable cluster membership.")
     return tuple(identities)
 
 
-def verify_config(path: Path, name: str, nodes: list[dict[str, Any]]) -> str:
+def verify_config(
+    path: Path, name: str, nodes: list[dict[str, Any]], *, worker_count: int = 0
+) -> str:
     """Bind the generated API endpoint to the actual owned Docker node."""
-    if len(verified_nodes(nodes, name)) != 1:
-        raise ValueError("Disposable cluster needs one verified control plane.")
+    identities = verified_nodes(nodes, name, worker_count=worker_count, require_complete=True)
+    control_plane = next(node for node in nodes if node["Id"] == identities[0])
     data = yaml.safe_load(path.read_text())
     context = "kind-" + name
     if (
@@ -123,7 +148,7 @@ def verify_config(path: Path, name: str, nodes: list[dict[str, Any]]) -> str:
     if set(settings) != {"certificate-authority-data", "server"}:
         raise ValueError("Unexpected disposable TLS configuration.")
     server = urlsplit(settings["server"])
-    ports = nodes[0]["NetworkSettings"]["Ports"].get("6443/tcp") or []
+    ports = control_plane["NetworkSettings"]["Ports"].get("6443/tcp") or []
     if (
         server.scheme != "https"
         or server.hostname != "127.0.0.1"
@@ -149,6 +174,7 @@ class OwnedCluster:
     node_ids: tuple[str, ...]
     max_restart_period_seconds: int | None = None
     sync_frequency_seconds: int | None = None
+    worker_count: int = 0
 
 
 def capture_docker(docker: str = "docker") -> dict[str, str]:
@@ -173,8 +199,11 @@ def owned_cluster(
     docker: str = "docker",
     max_restart_period_seconds: int | None = None,
     sync_frequency_seconds: int | None = None,
+    worker_count: int = 0,
 ) -> Iterator[OwnedCluster]:
     """Create no cluster until ownership is explicit; delete only the owned one."""
+    if type(worker_count) is not int or not 0 <= worker_count <= MAX_WORKERS:
+        raise ValueError(f"Owned worker count must be an integer from 0 to {MAX_WORKERS}.")
     if max_restart_period_seconds is not None and (
         type(max_restart_period_seconds) is not int or not 1 <= max_restart_period_seconds <= 300
     ):
@@ -217,7 +246,11 @@ def owned_cluster(
         directory = Path(temporary)
         path = directory / "owned-kubeconfig"
         config_args: list[str] = []
-        if max_restart_period_seconds is not None or sync_frequency_seconds is not None:
+        if (
+            max_restart_period_seconds is not None
+            or sync_frequency_seconds is not None
+            or worker_count
+        ):
             kubelet_config: dict[str, Any] = {"kind": "KubeletConfiguration"}
             if max_restart_period_seconds is not None:
                 kubelet_config.update(
@@ -228,6 +261,9 @@ def owned_cluster(
                 )
             if sync_frequency_seconds is not None:
                 kubelet_config["syncFrequency"] = f"{sync_frequency_seconds}s"
+            control_plane: dict[str, Any] = {"role": "control-plane"}
+            if len(kubelet_config) > 1:
+                control_plane["kubeadmConfigPatches"] = [yaml.safe_dump(kubelet_config)]
             configuration = directory / "kind.yaml"
             configuration.write_text(
                 yaml.safe_dump(
@@ -235,10 +271,8 @@ def owned_cluster(
                         "kind": "Cluster",
                         "apiVersion": "kind.x-k8s.io/v1alpha4",
                         "nodes": [
-                            {
-                                "role": "control-plane",
-                                "kubeadmConfigPatches": [yaml.safe_dump(kubelet_config)],
-                            }
+                            control_plane,
+                            *({"role": "worker"} for _ in range(worker_count)),
                         ],
                     }
                 )
@@ -269,8 +303,10 @@ def owned_cluster(
                 timeout=300,
             )
             nodes = inspect()
-            identities = verified_nodes(nodes, name)
-            context = verify_config(path, name, nodes)
+            identities = verified_nodes(
+                nodes, name, worker_count=worker_count, require_complete=True
+            )
+            context = verify_config(path, name, nodes, worker_count=worker_count)
             if max_restart_period_seconds is not None or sync_frequency_seconds is not None:
                 kubelet = yaml.safe_load(
                     run_owned(
@@ -299,13 +335,14 @@ def owned_cluster(
                 identities,
                 max_restart_period_seconds,
                 sync_frequency_seconds,
+                worker_count,
             )
         finally:
             # A second cancellation must not interrupt deletion or signal restoration.
             for signum in previous:
                 signal.signal(signum, signal.SIG_IGN)
             try:
-                current = verified_nodes(inspect(), name)
+                current = verified_nodes(inspect(), name, worker_count=worker_count)
                 if identities is not None and current and current != identities:
                     raise ValueError("Owned node identity changed; refusing deletion.")
                 if current:

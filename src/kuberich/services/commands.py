@@ -295,6 +295,9 @@ class CommandService:
                 Command.MANIFESTS,
                 Command.NODE_SHELL,
                 Command.NODE_SHELL_RECOVER,
+                Command.CORDON,
+                Command.DRAIN,
+                Command.UNCORDON,
                 Command.HISTORY,
             }
             and len(parts) != 1

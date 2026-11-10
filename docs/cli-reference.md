@@ -85,11 +85,13 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `cleanup` | cleanup |
 | `columns` | columns |
 | `context`, `contexts`, `ctx` | contexts |
+| `cordon` | cordon |
 | `delete` | delete |
 | `deletebatch` | delete batch |
 | `diagnose` | diagnose |
 | `diagnostics` | diagnostics |
 | `download` | download |
+| `drain` | drain |
 | `edit` | edit |
 | `ev`, `event`, `events` | events |
 | `export` | export |
@@ -130,6 +132,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `suspend` | suspend |
 | `theme`, `themes` | themes |
 | `trigger` | trigger |
+| `uncordon` | uncordon |
 | `upload` | upload |
 | `usedby` | used by |
 | `views` | views |

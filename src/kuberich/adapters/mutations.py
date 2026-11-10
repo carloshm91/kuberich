@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import ssl
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -14,6 +15,14 @@ from kuberich.adapters.kubernetes import KubernetesSession, decode_json
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState, status_result
 from kuberich.domain.resources import ApiResource, resource_record
 from kuberich.errors import AppError
+
+
+@dataclass(frozen=True)
+class WriteResponseMetadata:
+    """Only bounded protocol metadata; no arbitrary response headers or body."""
+
+    status: int
+    retry_after: str | None
 
 
 async def _single_attempt(
@@ -70,6 +79,7 @@ async def guarded_request(
     receipt: Callable[[bytes], MutationResult | None],
     dry_run: bool = False,
     error_receipt: Callable[[int, bytes], MutationResult] | None = None,
+    response_metadata: Callable[[WriteResponseMetadata], None] | None = None,
 ) -> MutationResult:
     """No redirects, 401 refresh/replay, HTTP retries or raw server error exposure.
 
@@ -110,6 +120,14 @@ async def guarded_request(
                 middlewares=(_single_attempt,),
                 timeout=aiohttp.ClientTimeout(total=client.timeout),
             ) as response:
+                if response_metadata is not None:
+                    hint = response.headers.get("Retry-After")
+                    response_metadata(
+                        WriteResponseMetadata(
+                            response.status,
+                            hint if hint is not None and len(hint) <= 1024 else None,
+                        )
+                    )
                 if response.status not in accepted:
                     # Do not read arbitrary Status bodies into errors/history.
                     if error_receipt is None:
