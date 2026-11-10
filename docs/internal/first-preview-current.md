@@ -54,6 +54,19 @@ documents the implemented automatic two-second preference reload. It finds no
 other command/configuration mismatch. The final source head still requires its
 complete protected checks; these source changes publish no artifacts or hosting.
 
+The next hosted run passes all 16 source parts, four native targets and three
+application profiles, including the original macOS header scenarios. Those three
+profiles measure 98.47–98.50% lines, 94.82–95.08% branches and over 97% changed
+lines, with all 124 critical modules passing. The remaining Linux application job
+fails in an existing positive container-inspection index during restricted reads;
+the full Quality gate remains failed. A status/version update independently
+reproduces the stale-index mechanism, although the original changed field is not
+recorded. A verifier-only bounded reload correction passes 48 focused cases and
+all seven actual inspection groups. Renewed committed-source node-shell trials
+pass all 16 real groups, with 303 unchanged inputs and verified cleanup. See
+[acceptance](acceptance/node-shell.md) for original receipts, hashes and limits.
+Complete protected exact-head qualification remains required before merge.
+
 ## Local manifests delivered in development source — 2026-11-10 UTC
 
 [PR #335](https://github.com/carloshm91/kuberich/pull/335) merged normally as

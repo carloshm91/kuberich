@@ -243,6 +243,48 @@ two-second reload, as the corrected setup steps now explain. This documentation
 change leaves the corrected runtime unchanged; protected checks still apply to
 the final source head.
 
+The subsequent run, `42775172947` at
+`4011e20aa12a46f227d10ef2a13cddd470b92fcf`, passes all 16 source parts,
+four native targets and three application profiles. The original macOS native
+and fragmented header scenarios both pass; its affected part has 3,339 passed
+and four skipped tests. Verified three-profile coverage spans 98.4687–98.4989%
+lines, 94.8213–95.0846% branches and 97.13–97.19% changed lines, with all 124
+critical modules passing. The canonical Linux application job fails later in
+the existing container-inspection verifier, before the remaining cluster checks
+and final coverage/package gates. The full run and Quality gate remain failed.
+
+Popeye and diagnostics pass. The actual failure is an `AppError` while indexing
+restricted container sources: successful Pod/source GETs surround the expected
+Secret 403. Original artifact `13745966990` is retained with verified ZIP SHA-256
+`0ea5e1b1d0363794f7341063b044bfca6f68d90ee06fc05eb4845b3b86a101d6`.
+Its report confirms private-client and owned-cluster cleanup. It does not record
+which Pod field changed. An owned HTTP test independently reproduces the same
+receipt pattern when a status/version update invalidates an unpublished index;
+the original specific field remains an inference.
+
+The verifier now applies its existing two-reload bound to positive index reads,
+including nested disclosure reloads. Only the exact stale-binding error with no
+published snapshot qualifies; current target/UID guards remain mandatory, and
+denials, malformed responses, other errors and cancellation propagate. No
+production service, write retry, negative acceptance check or budget changes.
+The deterministic original red and corrected green logs remain retained; all
+48 focused quality cases pass in 2.48 seconds, with Ruff/format and strict types.
+
+Clean committed candidate `a0a2e9dc80c0e8194ef85344c8c3d24217a2eb22` passes
+the actual corrected container-inspection verifier's seven groups in 35.58 seconds.
+Its 303 inputs remain unchanged; all clients/private files and the owned cluster
+are cleaned up. Report SHA-256:
+`ee0145563d3062a057e11bad1086164035d99733a4ce3f92389c897262ac8765`.
+The renewed node-shell verifier passes all 16 groups in 59.06 seconds on that
+candidate, including producer SIGKILL/fresh-session recovery. Its 303 inputs stay
+unchanged and every ownership/private-file/kubeconfig/environment/cluster cleanup
+check passes. Report SHA-256:
+`4e7d9ff71e0355d4d5ab455fb9750f1b1d5b7313da9ca03a440f59d3c7321bfc`.
+The commands use the same verified absolute tools and fresh evidence destinations
+`artifacts/issue76/container-inspection-corrected-01/evidence.json` and
+`artifacts/issue76/updated-node-kind-01/evidence.json`. Later documentation changes
+must preserve these measured inputs; final exact-head hosted checks remain required.
+
 The protected PR must pass complete exact-head hosted source/platform/native,
 production/critical/changed-line coverage and app-bound repository/DCO gates.
 No version bump, tag, package publication, hosting deployment or DNS change is
