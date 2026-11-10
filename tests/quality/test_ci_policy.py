@@ -351,8 +351,9 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "--docker /usr/bin/docker" in ephemeral_debug["run"]
     assert "--evidence artifacts/ephemeral-debug/evidence.json" in ephemeral_debug["run"]
     assert "artifacts/benchmarks/**" in upload["with"]["path"].splitlines()
-    assert "uv run mypy --strict scripts/benchmark_tools.py scripts/verify_benchmarks_kind.py" in (
-        commands
+    assert (
+        "uv run mypy --strict scripts/benchmark_tools.py scripts/benchmark_native.py scripts/verify_benchmarks_kind.py"
+        in commands
     )
     benchmarks = next(
         step for step in cluster_steps if "python -m scripts.verify_benchmarks_kind" in step["run"]

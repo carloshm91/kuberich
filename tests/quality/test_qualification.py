@@ -248,6 +248,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert first.index(benchmark_tools) < first.index(benchmark)
     assert benchmark.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
     assert "scripts/benchmark_tools.py" in catalog.type_command(ROOT)
+    assert "scripts/benchmark_native.py" in catalog.type_command(ROOT)
     assert "scripts/verify_benchmarks_kind.py" in catalog.type_command(ROOT)
     for stage in first:
         module = stage.command[4]
