@@ -366,7 +366,7 @@ async def test_terminal_proof_accepts_no_prompt_and_confines_completion_monitor_
         " if b'printf' in data:\n"
         "  os.write(1,b'OWNED-DEBUG-COMPLETE\\r\\n');data=b''\n"
         " if b'exit 7' in data:\n"
-        f"  Path({str(exited)!r}).write_text('terminated');time.sleep(.1);sys.exit(7)\n"
+        f"  Path({str(exited)!r}).write_text('terminated:7');time.sleep(.1);sys.exit(0)\n"
     )
     path = tmp_path / "delegated-config"
     command = capture_command(
@@ -408,6 +408,7 @@ async def test_terminal_proof_accepts_no_prompt_and_confines_completion_monitor_
     result = await proof.terminal_trial(
         Service(), "debug-complete", detach=False, progress=progress
     )
-    assert result["returncode"] == 7 and result["process_reaped"]
+    assert result["returncode"] == 0 and result["process_reaped"]
+    assert exited.read_text() == "terminated:7"
     assert progress["terminal_attempts"][0]["completion_monitor_cancelled"]
     assert not path.exists() and not asyncio.current_task().cancelling()

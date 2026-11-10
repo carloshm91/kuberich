@@ -353,7 +353,10 @@ async def _terminal_trial(
         pass
     else:
         raise AssertionError("Owned kubectl attach survived terminal drainage.")
-    assert result.returncode == (0 if detach else 7)
+    attempt["returncode"] = result.returncode
+    # kubectl attach reports transport completion; it does not execute a new
+    # process or propagate that existing remote process's exit status.
+    assert result.returncode == 0
     attempt.update(status="passed", returncode=result.returncode)
     return {
         "returncode": result.returncode,
@@ -380,6 +383,7 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
     stack = AsyncExitStack()
     owners: list[EphemeralDebugService] = []
     checks: list[str] = []
+    progress["checks"] = checks
     try:
         async with asyncio.timeout(VERIFY_SECONDS):
             await connection.open()
@@ -490,7 +494,14 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                 if item["name"] == options.name
             )
             assert status["state"]["terminated"]["exitCode"] == 7
-            checks.append("real-attach-literal-input-output-exit7-fresh-remote-completed")
+            progress["completion_remote"] = {
+                "uid": uid,
+                "name": options.name,
+                "state": "terminated",
+                "exit_code": 7,
+                "observed_at": time.time(),
+            }
+            checks.append("real-attach-input-output-local-exit0-fresh-remote-terminated-exit7")
 
             progress["phase"] = "real-completed-entry-immutable-server-contract"
             for label, operation in (
@@ -605,6 +616,12 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                 detached, detached_options.name, detach=True, progress=progress
             )
             assert await remote(detached_options.name, "running")
+            progress["detach_remote"] = {
+                "uid": uid,
+                "name": detached_options.name,
+                "state": "running",
+                "observed_at": time.time(),
+            }
             checks.append("real-ctrl-p-ctrl-q-detach-reaps-local-pty-remote-still-running")
 
             progress["phase"] = "production-response-loss-after-commit"

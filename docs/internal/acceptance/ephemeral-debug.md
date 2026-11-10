@@ -103,3 +103,18 @@ Verifier safety controls pass 15 cases in 1.06 seconds with
 `/tmp/kuberich-78-proof-01`. They refuse unsafe tools/source/evidence before
 cluster creation and preserve actual failures/cleanup. They do not substitute
 for the pending successful real API/PTY proof.
+
+The second committed trial, `f53dbbeb8e2f6510bd6bfa780c0b1e3bb0100198`,
+fails in 34.51 seconds at a verifier expectation for the local attach exit code.
+Preserving upstream aggregated-discovery Content-Type enables the actual
+WebSocket connection (HTTP 101), synthetic input/output marker and remote
+`exit 7` command. That original result does not record the child's numeric exit
+code before its assertion, so the subsequent correction must measure it and
+observe remote termination separately. All cleanup and input-stability checks
+pass. The original report remains at `artifacts/issue78/early-kind-02/evidence.json`.
+
+An owned HTTP regression covers discovery GVK parameters. A real local PTY
+control also catches an initial-input flush assumption; the corrected bounded
+handshake cohort passes 17 cases in 1.35 seconds. These test-harness corrections
+do not change the production attach argv or reinterpret local exit as remote
+completion. Full actual proof remains pending.
