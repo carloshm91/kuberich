@@ -48,8 +48,8 @@ def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
         if item["audience"] == "user"
     }
     retired = {name for page in catalog.guides for name in page.retired}
-    assert fragments | retired == baseline_guides and len(fragments | retired) == 35
-    assert len(fragments) == 20
+    assert fragments | retired == baseline_guides and len(fragments | retired) == 36
+    assert len(fragments) == 21
     paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, text=True).split("\0")
     paths += ["docs/STYLE.md", "docs/navigation.json", "docs/documentation-plan.json"]
     assert validate_documentation_plan(ROOT, paths) == len(plan["documents"])

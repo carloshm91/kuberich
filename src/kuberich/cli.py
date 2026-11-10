@@ -129,12 +129,17 @@ def _parser() -> argparse.ArgumentParser:
         "-c",
         dest="initial_command",
         type=_argument,
-        help="initial terminal command: po, ctx, ns, helm, manifests, node-shell-recover, pulse, overview, exports, themes, views, about, status, retry, back, forward, help or quit",
+        help="initial terminal command: po, ctx, ns, helm, manifests, node-shell-recover, pulse, overview, exports, benchmarks, themes, views, about, status, retry, back, forward, help or quit",
     )
     parser.add_argument(
         "--screen-dump-dir",
         type=_argument,
         help="initial local export directory; created privately only on Save",
+    )
+    parser.add_argument(
+        "--benchmark-directory",
+        type=_argument,
+        help="local benchmark result directory; created privately only by an explicit run",
     )
     for flag in ("headless", "logoless", "crumbsless", "invert"):
         parser.add_argument(
@@ -249,6 +254,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "write",
                     "initial_command",
                     "screen_dump_dir",
+                    "benchmark_directory",
                     "headless",
                     "logoless",
                     "crumbsless",
@@ -290,6 +296,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             for key in (
                 "initial_command",
                 "screen_dump_dir",
+                "benchmark_directory",
                 "headless",
                 "logoless",
                 "crumbsless",
@@ -324,6 +331,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             export_directory = (
                 capture_export_directory(Path(arguments.screen_dump_dir), Path.cwd())
                 if arguments.screen_dump_dir is not None
+                else None
+            )
+            benchmark_directory = (
+                capture_export_directory(Path(arguments.benchmark_directory), Path.cwd())
+                if arguments.benchmark_directory is not None
                 else None
             )
             connection = ConnectionRequest(
@@ -462,6 +474,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Command.OPEN_RELATIONSHIP,
                 Command.DIAGNOSE,
                 Command.EXPORT,
+                Command.BENCHMARK,
                 Command.LOGS_ALL,
                 Command.PORT_FORWARD,
                 Command.DELETE,
@@ -471,7 +484,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Command.RESUME,
             }:
                 raise AppError(
-                    "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, helm, manifests, node-shell-recover, status, retry, exports, themes, about, help, quit.",
+                    "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, helm, manifests, node-shell-recover, status, retry, exports, benchmarks, themes, about, help, quit.",
                     ExitCode.UNAVAILABLE,
                 )
         log_file = log_location(
@@ -545,6 +558,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         initial_command=initial,
                         connection=connection,
                         export_directory=export_directory,
+                        benchmark_directory=benchmark_directory,
                         preferences=PreferenceSource(
                             location,
                             document,

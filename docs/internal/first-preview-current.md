@@ -1,5 +1,37 @@
 # Development checkpoint
 
+## HTTP benchmarks usable implementation checkpoint — 2026-11-10 UTC
+
+A04 #79 is the active implementation issue. Clean signed source
+`a69eb6a02c954f958f683197f2286c8cf1e7e413` passes an actual owned-kind service
+checkpoint: two observed/reported requests, Service/Pod UID checks, a dedicated
+single-backend forward, saved-result reopening and stopped load after the actual
+forward is killed. All five owned children are reaped, private files are gone
+and the disposable cluster is deleted. The tested invocation, with its verified
+local tool paths parameterized, is:
+
+```sh
+uv run python -m scripts.verify_benchmarks_kind \
+  --kind "$KIND" --kubectl "$KUBECTL" --vegeta "$VEGETA" \
+  --evidence artifacts/issue79/early-kind-03.json
+```
+
+The optional program is Vegeta v12.13.0; Linux/macOS amd64/arm64 acquisition pins
+official archives and measured binary hashes without executing during provision.
+Only Linux amd64 executes in this local checkpoint. Native Service/forward forms
+and the offline `:benchmarks` browser are implemented; 51 focused UI/CLI cases and
+actual pinned-tool terminal diagnostics cover completion, cancellation, repeated
+interrupts, missing-tool refusal, terminal restoration and result reopening.
+Use `--benchmark-directory /absolute/path` to keep saved results separate.
+The final signed source still requires its exact-source installed/owned-cluster
+proofs and ordinary protected matrix before merge. Source has conservative
+request/load limits, explicit one-use review, context-owned cleanup, private
+normalized records and a local-only browser. The initial service proof does not
+qualify later UI/installed changes, the full coverage gates, platform matrix,
+providers or protected delivery. HTTP/1.1/single-backend and final name/listener
+races remain explicit in [benchmark acceptance](acceptance/http-benchmarks.md).
+Published packages remain 0.4.0; no artifact or hosting publication occurs.
+
 ## Ephemeral debugging verified candidate — 2026-11-10 UTC
 
 A03 #78 adds `:debug` for a captured Pod: explicit image/target/nonprivileged

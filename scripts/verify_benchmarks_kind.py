@@ -7,6 +7,8 @@ import json
 import os
 import signal
 import subprocess
+import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -21,9 +23,10 @@ from kuberich.domain.targets import ResourceTarget
 from kuberich.services.access import AccessPolicy
 from kuberich.services.benchmark_store import BenchmarkStore
 from kuberich.services.benchmarks import BenchmarkManager, BenchmarkService, BenchmarkState
-from kuberich.services.port_forwards import ForwardManager
+from kuberich.services.port_forwards import ForwardInfo, ForwardManager
 from kuberich.services.processes import ProcessRunner
 from kuberich.services.sessions import SessionService
+from scripts.benchmark_tools import VEGETA_COMMIT, verify_benchmark_binary
 from scripts.diagnostics_tools import KIND_SHA256, sha256_file
 from scripts.owned_kind import NODE_IMAGE, OwnedCluster, owned_cluster, run_owned
 from scripts.verify_node_maintenance_kind import KUBECTL_SHA256
@@ -39,13 +42,56 @@ exec httpd -f -p 8080 -h /tmp/www
 """
 
 
-def source_identity() -> dict[str, str]:
-    def git(*args: str) -> str:
-        return subprocess.check_output(["git", *args], text=True).strip()
+VERIFY_SECONDS = 300
+PROOF_INPUTS = (
+    "pyproject.toml",
+    "uv.lock",
+    "scripts/benchmark_tools.py",
+    "scripts/benchmark_native.py",
+    "scripts/owned_kind.py",
+    "scripts/diagnostics_tools.py",
+    "scripts/verify_node_maintenance_kind.py",
+    "scripts/verify_port_forwards_kind.py",
+    "scripts/verify_benchmarks_kind.py",
+    "tests/support/benchmark_terminal.py",
+    "tests/support/benchmark_forward.c",
+    "tests/terminal/pty_support.py",
+)
+BENCHMARK_CHECKS = (
+    "review-without-traffic",
+    "exact-service-and-ready-pod",
+    "single-backend-owned-forward",
+    "actual-vegeta-statistics",
+    "redacted-persistence-and-restart",
+    "observed-forward-loss-cancels",
+    "replacement-listener-not-adopted",
+    "children-listeners-private-files-drained",
+    "caller-kubeconfig-preserved",
+)
 
-    if git("status", "--porcelain", "--untracked-files=normal"):
+
+def input_hashes(root: Path) -> dict[str, str]:
+    paths = [
+        *(
+            path
+            for path in (root / "src/kuberich").rglob("*")
+            if path.is_file() and "__pycache__" not in path.parts
+        ),
+        *(root / name for name in PROOF_INPUTS),
+    ]
+    return {
+        str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in sorted(paths)
+    }
+
+
+def source_identity(root: Path) -> str:
+    def git(*args: str) -> str:
+        return subprocess.check_output(["git", *args], cwd=root, text=True, timeout=10).strip()
+
+    if git("status", "--porcelain", "--untracked-files=all"):
         raise ValueError("Commit and freeze clean tracked source before the benchmark proof.")
-    return {"commit": git("rev-parse", "HEAD"), "tree": git("rev-parse", "HEAD^{tree}")}
+    return git("rev-parse", "HEAD")
 
 
 def require_gone(pids: tuple[int, ...]) -> None:
@@ -57,8 +103,11 @@ def require_gone(pids: tuple[int, ...]) -> None:
         raise AssertionError("An owned benchmark child still exists.")
 
 
-async def verify(cluster: OwnedCluster, kubectl: Path, vegeta: Path) -> dict[str, Any]:
+async def verify(
+    cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path, vegeta: Path
+) -> dict[str, Any]:
     before = cluster.path.read_bytes()
+    progress["phase"] = "owned-fixture-setup"
     request = ConnectionRequest(
         kubeconfig=str(cluster.path), context=cluster.context, namespace=NAMESPACE, timeout=15
     )
@@ -156,6 +205,7 @@ async def verify(cluster: OwnedCluster, kubectl: Path, vegeta: Path) -> dict[str
             async def count() -> int:
                 return await asyncio.to_thread(count_sync)
 
+            progress["phase"] = "review-without-traffic"
             owner = create()
             backends = await owner.candidates()
             assert len(backends) == 1 and backends[0].pod.uid == pod.metadata.uid
@@ -167,6 +217,8 @@ async def verify(cluster: OwnedCluster, kubectl: Path, vegeta: Path) -> dict[str
                 ),
                 LoadOptions(duration_seconds=2, timeout_seconds=1),
             )
+            assert await count() == 0
+            progress["phase"] = "actual-vegeta-complete"
             result = await owner.run(review)
             assert (
                 result.completion == "complete"
@@ -188,6 +240,7 @@ async def verify(cluster: OwnedCluster, kubectl: Path, vegeta: Path) -> dict[str
                 not in (saved[0].ref.directory.path / saved[0].ref.name).read_bytes()
             )
             await owner.stop_owned()
+            progress["phase"] = "forward-loss-cancellation"
             loss = create()
             selected = (await loss.candidates())[0]
             review2 = await loss.review(
@@ -202,8 +255,36 @@ async def verify(cluster: OwnedCluster, kubectl: Path, vegeta: Path) -> dict[str
                     await asyncio.sleep(0.03)
             forward = forwards.infos[-1]
             assert forward.state is ForwardState.READY and forward.pid is not None
+            observed_loss = asyncio.Event()
+
+            def lost(info: ForwardInfo) -> None:
+                if info.identity == forward.identity and info.state is ForwardState.FAILED:
+                    observed_loss.set()
+
+            unsubscribe = forwards.subscribe(lost)
+            replacement_connections = 0
+
+            async def replacement(
+                reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+            ) -> None:
+                nonlocal replacement_connections
+                replacement_connections += 1
+                writer.close()
+                await writer.wait_closed()
+
             os.kill(forward.pid, signal.SIGKILL)
-            incomplete = await asyncio.wait_for(running, 10)
+            await asyncio.wait_for(observed_loss.wait(), 10)
+            unsubscribe()
+            replacement_server = await asyncio.start_server(
+                replacement, "127.0.0.1", forward.ports[0].local, reuse_address=True
+            )
+            try:
+                incomplete = await asyncio.wait_for(running, 10)
+                await asyncio.sleep(0.4)
+                assert replacement_connections == 0
+            finally:
+                replacement_server.close()
+                await replacement_server.wait_closed()
             assert incomplete.completion == "target_lost" and incomplete.metrics is None
             after_loss = await count()
             await asyncio.sleep(0.4)
@@ -216,6 +297,9 @@ async def verify(cluster: OwnedCluster, kubectl: Path, vegeta: Path) -> dict[str
             await loss.stop_owned()
             assert manager.active_count == 0 and cluster.path.read_bytes() == before
             return {
+                "checks": list(BENCHMARK_CHECKS),
+                "phase": "verified",
+                "replacement_listener_connections": replacement_connections,
                 "complete_requests": 2,
                 "loss_requests_total": after_loss,
                 "source_pod_uid_checked": True,
@@ -241,23 +325,90 @@ def main() -> None:
     parser.add_argument("--kind", type=Path, required=True)
     parser.add_argument("--kubectl", type=Path, required=True)
     parser.add_argument("--vegeta", type=Path, required=True)
+    parser.add_argument("--docker", default="docker")
     parser.add_argument("--evidence", type=Path, required=True)
     args = parser.parse_args()
+    if args.evidence.exists() or args.evidence.is_symlink():
+        raise ValueError("Use fresh benchmark evidence paths; retain original outcomes.")
     for path in (args.kind, args.kubectl, args.vegeta):
         if not path.is_absolute():
             raise ValueError("Use explicit absolute verified tool paths.")
     if sha256_file(args.kind) != KIND_SHA256 or sha256_file(args.kubectl) != KUBECTL_SHA256:
         raise ValueError("Owned cluster tools differ from the reviewed pins.")
-    identity = source_identity()
-    tool_digest = hashlib.sha256(args.vegeta.read_bytes()).hexdigest()
-    with owned_cluster(str(args.kind)) as cluster:
-        result = asyncio.run(verify(cluster, args.kubectl, args.vegeta))
-        result["cluster"] = cluster.name
-    result.update(source=identity, vegeta_sha256=tool_digest, owned_cluster_deleted=True)
-    args.evidence.parent.mkdir(parents=True, exist_ok=True)
-    args.evidence.write_text(json.dumps(result, indent=2) + "\n")
+    root = Path(__file__).resolve().parents[1]
+    commit, captured = source_identity(root), input_hashes(root)
+    tool_digest = verify_benchmark_binary(args.vegeta)
+    result: dict[str, Any] = {
+        "status": "failed",
+        "source_commit": commit,
+        "input_hashes": captured,
+        "deadline_seconds": VERIFY_SECONDS,
+        "owned_cluster_deleted": False,
+        "tools": {
+            "kind_sha256": KIND_SHA256,
+            "kubectl_sha256": KUBECTL_SHA256,
+            "vegeta_sha256": tool_digest,
+            "vegeta_version": "12.13.0",
+            "vegeta_source_commit": VEGETA_COMMIT,
+            "signatures_verified": False,
+        },
+    }
+    started, cluster = time.monotonic(), None
+    failure: BaseException | None = None
+    try:
+        with owned_cluster(str(args.kind), docker=args.docker) as cluster:
+            result["cluster"] = cluster.name
+            try:
+
+                async def bounded() -> dict[str, Any]:
+                    async with asyncio.timeout(VERIFY_SECONDS):
+                        return await verify(cluster, result, args.kubectl, args.vegeta)
+
+                result.update(asyncio.run(bounded()))
+            except BaseException as error:
+                failure = error
+        result["owned_cluster_deleted"] = True
+        result["private_directory_deleted"] = not cluster.directory.exists()
+        result["inputs_unchanged"] = (
+            input_hashes(root) == captured and source_identity(root) == commit
+        )
+        assert result["inputs_unchanged"] and result["private_directory_deleted"]
+        if failure is not None:
+            raise failure
+        result["status"] = "passed"
+    except BaseException as error:
+        result["failure_type"] = type(error).__name__
+        frames = []
+        trace = error.__traceback__
+        while trace is not None:
+            filename = Path(trace.tb_frame.f_code.co_filename).resolve()
+            if filename.is_relative_to(root):
+                frames.append(
+                    {
+                        "file": str(filename.relative_to(root)),
+                        "line": trace.tb_lineno,
+                        "function": trace.tb_frame.f_code.co_name,
+                    }
+                )
+            trace = trace.tb_next
+        result["failure_locations"] = frames
+        if cluster is not None:
+            result["private_directory_deleted"] = not cluster.directory.exists()
+        raise
+    finally:
+        result["duration_seconds"] = time.monotonic() - started
+        args.evidence.parent.mkdir(parents=True, exist_ok=True)
+        with args.evidence.open("x") as output:
+            output.write(json.dumps(result, indent=2) + "\n")
     print("Real owned-kind HTTP benchmark trials passed.", flush=True)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        print(
+            f"Owned benchmark proof failed ({type(error).__name__}); retain evidence.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1) from None

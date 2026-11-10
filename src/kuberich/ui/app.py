@@ -153,6 +153,8 @@ from kuberich.ui.workspace_presenter import WorkspacePresenter
 from kuberich.ui.workspace_screen import WorkspaceScreen
 
 if TYPE_CHECKING:
+    from kuberich.config.benchmarks import BenchmarkSettings
+    from kuberich.services.benchmark_store import BenchmarkStore
     from kuberich.services.ephemeral_debug import EphemeralDebugManager
     from kuberich.services.exports import ExportService
     from kuberich.services.helm import HelmService
@@ -237,6 +239,8 @@ class KubeRichApp(App[None]):
         export_directory: Path | None = None,
         helm_factory: HelmFactory | None = None,
         node_shell_manager: NodeShellManager | None = None,
+        benchmark_store: BenchmarkStore | None = None,
+        benchmark_directory: Path | None = None,
     ) -> None:
         self._startup_ready: asyncio.Event | None = None
         self._foreground = ForegroundGate(self._resume_foreground)
@@ -274,6 +278,13 @@ class KubeRichApp(App[None]):
         self.commands = CommandService(policy, self.navigation.aliases)
         self.processes = ProcessRunner(self.commands.policy)
         self.forwards = ForwardManager(self.processes, changed=self._forward_changed)
+        from kuberich.services.benchmark_store import BenchmarkStore
+        from kuberich.services.benchmarks import BenchmarkManager
+
+        self.benchmark_store = (
+            benchmark_store if benchmark_store is not None else BenchmarkStore(benchmark_directory)
+        )
+        self.benchmark_manager = BenchmarkManager(self.forwards, self.benchmark_store)
         self.mutations = MutationManager()
         self.sessions.before_close = self._close_client_operations
         self._terminal_signals = TerminalSignals(self)
@@ -471,6 +482,26 @@ class KubeRichApp(App[None]):
             notice=self._set_notice,
             on_error=self._handle_exception,
         )
+        from kuberich.ui.benchmark_actions import BenchmarkActions
+
+        self.benchmarks = BenchmarkActions(
+            self,
+            self.benchmark_manager,
+            self.benchmark_store,
+            self.targets.capture,
+            self._operation_context,
+            self.commands.policy,
+            self._benchmark_settings,
+            lambda: (
+                (self.sessions.client, identity)
+                if self.sessions.client is not None
+                and (identity := self.sessions.observation.identity) is not None
+                and self.sessions.observation.state in USABLE_CONNECTIONS
+                else None
+            ),
+            self._session_current,
+            self._set_notice,
+        )
         self.operations = ResourceOperations(
             self,
             self.targets.capture,
@@ -484,6 +515,8 @@ class KubeRichApp(App[None]):
             forwarding=self._forwarding_preferences,
             delete_context=lambda: self._edit_context(ContextChange.DELETE),
             stop_plugins=self.plugins.manager.stop_for_client,
+            stop_benchmarks=self.benchmarks.close_for_client,
+            benchmark_forward=self.benchmarks.open_forward,
             metric_history=self.metric_history.open_container,
             navigate_curated=self.navigator.open_curated,
             current_curated=self.navigator.curated_current,
@@ -597,6 +630,8 @@ class KubeRichApp(App[None]):
                 Command.POPEYE: self.diagnostics.popeye,
                 Command.EXPORT: self.exports.open_export,
                 Command.EXPORTS: self.exports.open_browser,
+                Command.BENCHMARK: self.benchmarks.open,
+                Command.BENCHMARKS: self.benchmarks.open_browser,
                 Command.MANIFESTS: self.action_manifests,
                 Command.RBAC: lambda: self.authorization.command(authorization_command("rbac")),
                 Command.CAN_I: lambda: self.authorization.command(authorization_command("can-i")),
@@ -956,6 +991,7 @@ class KubeRichApp(App[None]):
         if self._initial_command is not Command.QUIT:
             if self._initial_command not in {
                 Command.EXPORTS,
+                Command.BENCHMARKS,
                 Command.MANIFESTS,
                 Command.NODE_SHELL_RECOVER,
             }:
@@ -984,6 +1020,7 @@ class KubeRichApp(App[None]):
         self.navigator.connect(context, scope=scope, remember=remember, authenticate=authenticate)
 
     def _observation_changed(self) -> None:
+        self.benchmarks.observe()
         self.operations.observe_node_operations()
         self.operations.ephemeral_debug.observe()
         self.metric_history.observe(self.workspace.store.observation)
@@ -1092,6 +1129,7 @@ class KubeRichApp(App[None]):
         self.appearance_controller.stop()
         await self.appearance_controller.close()
         try:
+            await self.benchmarks.close()
             from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
 
             await asyncio.gather(
@@ -1179,8 +1217,19 @@ class KubeRichApp(App[None]):
         path: str | None = None,
         time_format: str | None = None,
     ) -> str | None:
+        from kuberich.ui.benchmarks import BenchmarkScreen
         from kuberich.ui.configuration_data import ConfigurationScreen
         from kuberich.ui.plugin_screens import PluginScreen
+
+        if any(
+            isinstance(screen, BenchmarkScreen) and screen.private_draft_visible
+            for screen in self.screen_stack
+        ):
+            self.notify(
+                "Finish or close the private benchmark draft before taking a screenshot.",
+                severity="warning",
+            )
+            return None
 
         if any(
             isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
@@ -1196,8 +1245,17 @@ class KubeRichApp(App[None]):
         return super().deliver_screenshot(filename, path, time_format)
 
     def export_screenshot(self, *, title: str | None = None, simplify: bool = False) -> str:
+        from kuberich.ui.benchmarks import BenchmarkScreen
         from kuberich.ui.configuration_data import ConfigurationScreen
         from kuberich.ui.plugin_screens import PluginScreen
+
+        if any(
+            isinstance(screen, BenchmarkScreen) and screen.private_draft_visible
+            for screen in self.screen_stack
+        ):
+            raise AppError(
+                "Finish or close the private benchmark draft before exporting a screenshot."
+            )
 
         if any(
             isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
@@ -1462,6 +1520,15 @@ class KubeRichApp(App[None]):
     def _forwarding_preferences(self) -> ForwardPreferences:
         return (
             forwarding_from(self.preferences.document) if self.preferences else ForwardPreferences()
+        )
+
+    def _benchmark_settings(self, context: str) -> BenchmarkSettings:
+        from kuberich.config.benchmarks import BenchmarkSettings, benchmarks_from
+
+        return (
+            benchmarks_from(self.preferences.document, context)
+            if self.preferences
+            else BenchmarkSettings()
         )
 
     def _helm_settings(self) -> HelmSettings:
@@ -1798,11 +1865,15 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        from kuberich.ui.benchmarks import BenchmarkBrowserScreen, BenchmarkScreen
         from kuberich.ui.ephemeral_debug import EphemeralDebugScreen
         from kuberich.ui.node_maintenance import NodeMaintenanceScreen
         from kuberich.ui.node_shell import NodeShellRecoveryScreen, NodeShellScreen
 
-        if isinstance(self.screen, (EphemeralDebugScreen, NodeMaintenanceScreen)):
+        if isinstance(
+            self.screen,
+            (BenchmarkScreen, BenchmarkBrowserScreen, EphemeralDebugScreen, NodeMaintenanceScreen),
+        ):
             await self.screen.action_back()
             return
 

@@ -1,0 +1,9 @@
+{
+  "producer_version": "12.13.0",
+  "source_commit": "507c4f028fbad80168f3b734dab9530d3aabfefa",
+  "parser_id": "vegeta-12.13.0-json-v1",
+  "fixture": "vegeta-12.13.0-http200.json",
+  "source": "Actual official Linux amd64 executable against a disposable synthetic loopback HTTP server; response200, requested rate1/s, duration2s, concurrency1, timeout1s.",
+  "binary_sha256": "c54d905541485153542dfcb850f9ab8ef801e7ab1a652d2cfc69cafdd4a5363f",
+  "private_values": "No request URL, headers, body or error strings retained."
+}

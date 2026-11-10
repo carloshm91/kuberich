@@ -218,7 +218,10 @@ these actions.
 separate session inspection/attachment. Published 0.4.0 predates this workflow; compatibility and
 qualification limits remain explicit.
 ### HTTP benchmarks, per-context options, results browser and cancellation
-**planned** — HTTP benchmarking, results browsing and benchmark cancellation are planned.
+**partial** — Development source adds short explicitly confirmed HTTP tests through one selected
+backend, with an optional Vegeta program, conservative limits, cancellation and a private local
+results browser. HTTP/1.1 only; whole-Service balancing and exact per-second traffic ceilings are
+not claimed.
 ### Policy/quota/admission/scheduling views and removed-API handling
 **partial** — Version 0.4 adds read-only scaling, policy, scheduling, quota and webhook summaries.
 Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate supported

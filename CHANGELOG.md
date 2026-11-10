@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Run explicitly confirmed HTTP benchmarks against one Service/forward backend with an optional Vegeta executable, conservative load limits, cancellation and private browsable local results ([#79](https://github.com/carloshm91/kuberich/issues/79)).
+
 - Review and permanently add an ephemeral debug container to a selected Pod, inspect its remote state and explicitly attach through the embedded terminal ([#78](https://github.com/carloshm91/kuberich/issues/78)).
 
 - Cordon, drain and uncordon a selected Node with disruption-aware progress, separate data-loss consents and explicit final scheduling observations ([#77](https://github.com/carloshm91/kuberich/issues/77)).

@@ -28,7 +28,7 @@ from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.mutations import MutationManager, MutationService
 from kuberich.services.ownership import finish_owned
-from kuberich.services.port_forwards import ForwardManager, ForwardService
+from kuberich.services.port_forwards import ForwardInfo, ForwardManager, ForwardService
 from kuberich.services.processes import ProcessRunner
 from kuberich.ui.chrome import WorkspaceChrome
 from kuberich.ui.target_capture import CapturedResource
@@ -81,6 +81,8 @@ class ResourceOperations:
         forwarding: Callable[[], ForwardPreferences],
         delete_context: Callable[[], None],
         stop_plugins: Callable[[KubernetesSession], Awaitable[None]],
+        stop_benchmarks: Callable[[KubernetesSession], Awaitable[None]] | None = None,
+        benchmark_forward: Callable[[ForwardInfo], None] | None = None,
         metric_history: Callable[[CapturedResource[KubernetesSession], ContainerIdentity], None]
         | None = None,
         navigate_curated: Callable[[CuratedOrigin, ResolvedCuratedDestination], None] | None = None,
@@ -98,6 +100,7 @@ class ResourceOperations:
         self.notice = status if notice is None else notice
         self.session_current, self.forwarding = session_current, forwarding
         self.delete_context, self.stop_plugins = delete_context, stop_plugins
+        self.stop_benchmarks, self.benchmark_forward = stop_benchmarks, benchmark_forward
         self.metric_history = metric_history
         self.navigate_curated = navigate_curated
         self.current_curated = current_curated
@@ -649,7 +652,13 @@ class ResourceOperations:
         context = self.context()
         if not context.modal:
             self.host.push_screen(
-                ForwardScreen(self.forwards, context.chrome, context.trail, selected=selected)
+                ForwardScreen(
+                    self.forwards,
+                    context.chrome,
+                    context.trail,
+                    selected=selected,
+                    benchmark=self.benchmark_forward,
+                )
             )
 
     def _forward_started(self, identity: UUID | None) -> None:
@@ -657,6 +666,8 @@ class ResourceOperations:
             self.port_forwards(identity)
 
     async def close_for_client(self, client: KubernetesSession) -> None:
+        if self.stop_benchmarks is not None:
+            await self.stop_benchmarks(client)
         await self.ephemeral_debug.close_for_client(client)
         await self.node_maintenance.close_for_client(client)
         await self.node_shells.close_for_client(client)

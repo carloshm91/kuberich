@@ -292,6 +292,8 @@ class CommandService:
                 Command.POPEYE,
                 Command.EXPORT,
                 Command.EXPORTS,
+                Command.BENCHMARK,
+                Command.BENCHMARKS,
                 Command.MANIFESTS,
                 Command.NODE_SHELL,
                 Command.NODE_SHELL_RECOVER,

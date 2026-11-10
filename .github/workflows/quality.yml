@@ -185,7 +185,7 @@ jobs:
           uv run mypy --strict scripts/verify_node_shell_kind.py
           uv run mypy --strict scripts/verify_node_maintenance_kind.py
           uv run mypy --strict scripts/verify_ephemeral_debug_kind.py
-          uv run mypy --strict scripts/benchmark_tools.py scripts/verify_benchmarks_kind.py
+          uv run mypy --strict scripts/benchmark_tools.py scripts/benchmark_native.py scripts/verify_benchmarks_kind.py
           uv run mypy --strict scripts/ci_apt.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification

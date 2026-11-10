@@ -60,6 +60,8 @@ class Host:
                 bundle / "kuberich",
                 directory / "tools/owned-auth",
                 directory / "tools/kubectl",
+                directory / "tools/vegeta",
+                directory / "benchmark/kubectl",
                 Path("/bin/sh"),
                 # macOS sh re-execs a system shell selected through /var/select/sh.
                 Path("/bin/bash"),
@@ -308,7 +310,9 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             raise ValueError("Owned standalone API was not reaped")
 
 
-def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
+def verify(
+    source: Path, candidate: Path, evidence: Path, *, benchmark_tool: Path | None = None
+) -> dict[str, Any]:
     manifest = inspect_candidate(source, candidate)
     if manifest["target"] != native_target():
         raise ValueError("Native qualification must execute on its actual OS/architecture")
@@ -453,6 +457,13 @@ def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
                 raise ValueError("Native info must report the artifact and avoid cluster access")
             missing = browser(host, directory / "missing", evidence, helpers=False)
             external = browser(host, directory / "external", evidence, helpers=True)
+            benchmarks = None
+            if benchmark_tool is not None:
+                from scripts.benchmark_native import verify_native_benchmarks
+
+                benchmarks = verify_native_benchmarks(
+                    host, directory / "benchmark", evidence, benchmark_tool
+                )
         finally:
             host.close()
         receipt = {
@@ -470,6 +481,7 @@ def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
             "owned_helper_sha256": digest(helper),
             "missing_optional_tool": missing,
             "auth_and_shell": external,
+            "http_benchmarks": benchmarks,
             "private_credential_child": True,
             "scope": "Exact extracted archive, native CLI, owned loopback API, C credential and kubectl fixtures with real /bin/sh. Not provider or real Kubernetes exec certification.",
             "runtime_qualified": False,
@@ -486,8 +498,16 @@ def main() -> int:
     parser.add_argument("--source", type=Path, default=ROOT)
     parser.add_argument("--candidate", type=Path, required=True)
     parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument(
+        "--benchmark-tool", type=Path, default=os.environ.get("KUBERICH_TEST_VEGETA")
+    )
     args = parser.parse_args()
-    receipt = verify(args.source.absolute(), args.candidate.absolute(), args.evidence.absolute())
+    receipt = verify(
+        args.source.absolute(),
+        args.candidate.absolute(),
+        args.evidence.absolute(),
+        benchmark_tool=args.benchmark_tool,
+    )
     print(
         json.dumps(
             {

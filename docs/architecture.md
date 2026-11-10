@@ -82,6 +82,14 @@ directory traversal, private staged writes and reviewed local entry operations.
 The local browser does not use artifact context metadata to connect to a cluster.
 See [reviewed local artifacts](adr/0037-reviewed-local-artifacts.md).
 
+[HTTP benchmarks](../src/kuberich/services/benchmarks.py) bind one-use request/load
+reviews to a fresh single-backend Pod and a dedicated no-retry loopback forward.
+The [tool owner](../src/kuberich/services/benchmark_tool.py) drains bounded private
+Vegeta processes before forward/client teardown. The
+[local store](../src/kuberich/services/benchmark_store.py) retains normalized,
+nonreplayable results; browsing cannot connect or execute. See
+[owned HTTP benchmarks](adr/0045-owned-http-benchmarks.md).
+
 [Container inspection](../src/kuberich/services/container_inspection.py) owns
 finite Pod/configuration reads and separate fresh disclosure intents. Its
 [pure model](../src/kuberich/domain/container_inspection.py) and

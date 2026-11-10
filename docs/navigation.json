@@ -280,9 +280,10 @@
         },
         {
           "source": "port-forwards.md",
-          "title": "Forward ports",
+          "title": "Forward ports and HTTP benchmarks",
           "sources": [
-            "port-forwards.md"
+            "port-forwards.md",
+            "benchmarks.md"
           ],
           "generated": false,
           "retired_sources": [],
@@ -700,6 +701,13 @@
         "standard-resource-views": "standard-and-discovered-views",
         "generic-discovered-resources": "standard-and-discovered-views"
       }
+    },
+    {
+      "source": "benchmarks.md",
+      "target": "port-forwards.md",
+      "anchor": "benchmarks--run-an-http-benchmark",
+      "heading": "benchmarks--run-an-http-benchmark",
+      "fragments": {}
     }
   ]
 }

@@ -29,6 +29,7 @@ from kuberich.domain.benchmark_targets import (
     service_endpoints,
 )
 from kuberich.domain.benchmarks import LoadOptions, RequestOptions, RequestReview, review_request
+from kuberich.domain.connections import ConnectionProblem
 from kuberich.domain.port_forwards import ForwardState, PortMapping, validate_forward_target
 from kuberich.domain.relationships import selector_matches
 from kuberich.domain.resources import api_segment, resource_object
@@ -61,6 +62,11 @@ class BenchmarkState(StrEnum):
     TOOL_FAILED = "tool_failed"
     MALFORMED_OUTPUT = "malformed_output"
     CLEANUP_FAILED = "cleanup_failed"
+
+
+class BenchmarkTargetLost(AppError):
+    def __init__(self) -> None:
+        super().__init__("The reviewed benchmark Service/backend identity or readiness changed.")
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -188,6 +194,11 @@ class BenchmarkService:
         if self._run_task is not None and not self._run_task.done():
             self._run_task.cancel()
 
+    def invalidate(self) -> None:
+        """Mark observed connection/forward loss before any screen starts drainage."""
+        self.revoke_review()
+        self._invalidate()
+
     async def _owned[T](self, operation: Coroutine[Any, Any, T]) -> T:
         task = asyncio.create_task(operation)
         self._jobs.add(task)
@@ -213,6 +224,14 @@ class BenchmarkService:
 
     async def _verify(
         self, backend: BenchmarkBackend, expected: tuple[object, ...] | None = None
+    ) -> tuple[object, ...]:
+        try:
+            return await self._verify_backend(backend, expected)
+        except (AppError, ConnectionProblem, TimeoutError):
+            raise BenchmarkTargetLost() from None
+
+    async def _verify_backend(
+        self, backend: BenchmarkBackend, expected: tuple[object, ...] | None
     ) -> tuple[object, ...]:
         service = None if backend.service is None else await self._get(backend.service)
         pod = await self._get(backend.pod)
@@ -378,7 +397,11 @@ class BenchmarkService:
             self._preparing = False
 
     async def run(self, review: BenchmarkReview) -> BenchmarkResult:
-        self.require_current()
+        try:
+            self.require_current()
+        except AppError:
+            self.revoke_review()
+            raise
         if review is not self._review or self._started:
             raise AppError("An unused exact benchmark review is required; review again.")
         self.revoke_review()
@@ -392,6 +415,11 @@ class BenchmarkService:
             except asyncio.CancelledError:
                 task.cancel()
                 await finish_owned(asyncio.gather(task, return_exceptions=True))
+                if self.result is None:
+                    self._publish(
+                        BenchmarkState(self._reason),
+                        "Benchmark stopped before execution; no trustworthy metrics are available.",
+                    )
                 raise
         finally:
             self._jobs.discard(task)
@@ -512,6 +540,8 @@ class BenchmarkService:
             completion, metrics = self._reason, None
         except BenchmarkCleanupError:
             completion, metrics = "cleanup_failed", None
+        except BenchmarkTargetLost:
+            completion, metrics = "target_lost", None
         except BenchmarkToolError as error:
             completion, metrics = (
                 ("malformed_output" if error.reason == "malformed_output" else "tool_failed"),
@@ -568,7 +598,9 @@ class BenchmarkService:
             self.save_failed = True
         self._publish(
             BenchmarkState(completion),
-            "Benchmark complete; local result saved."
+            "Benchmark cleanup could not be confirmed; the run is incomplete."
+            if completion == "cleanup_failed"
+            else "Benchmark complete; local result saved."
             if completion == "complete" and not self.save_failed
             else "Result remains visible; local save failed."
             if self.save_failed
@@ -583,6 +615,13 @@ class BenchmarkService:
             if not task.done():
                 task.cancel()
         await finish_owned(asyncio.gather(*tasks, return_exceptions=True))
+        if self.result is None:
+            self._publish(
+                BenchmarkState(self._reason),
+                "Benchmark cancelled before execution; no trustworthy metrics are available."
+                if self._reason == "cancelled"
+                else "Benchmark target changed; no trustworthy metrics are available.",
+            )
 
     async def _stop(self) -> None:
         await self.cancel()
@@ -649,10 +688,15 @@ class BenchmarkManager:
         return owner
 
     async def close_for_client(self, client: KubernetesSession) -> None:
+        self.invalidate_for_client(client)
+        if self._active is not None and self._active.client is client:
+            await self._active.stop_owned()
+
+    def invalidate_for_client(self, client: KubernetesSession) -> None:
+        """Retire starts and classify target loss before UI cleanup can retire the owner."""
         self._retired.add(client)
         if self._active is not None and self._active.client is client:
-            self._active._reason = "target_lost"
-            await self._active.stop_owned()
+            self._active.invalidate()
 
     async def close(self) -> None:
         self._closed = True

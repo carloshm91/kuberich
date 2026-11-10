@@ -65,12 +65,17 @@ class BenchmarkActions:
             client, _, _, target, current = selection
             if target.group or target.resource != "services":
                 raise AppError("Select a Service, or choose a READY owned forward from :pf.")
+            settings = self.settings(target.session.context)
             owner = self.manager.create(
                 client,
                 target,
                 self.policy,
-                lambda: current() and self.context().live,
-                settings=self.settings(target.session.context),
+                lambda: (
+                    current()
+                    and self.context().live
+                    and self.settings(target.session.context) == settings
+                ),
+                settings=settings,
                 environment=context.environment,
                 directory=context.directory,
             )
@@ -84,18 +89,25 @@ class BenchmarkActions:
             if self._closed:
                 return
             selected = self.connection()
-            if selected is None or selected[1] != info.target.session:
+            if selected is None or (
+                selected[1].context != info.target.session.context
+                or selected[1].connection_id != info.target.session.connection_id
+            ):
                 raise AppError("The forward connection changed. Review a current owned forward.")
             if info.state is not ForwardState.READY:
                 raise AppError("Select a READY owned forward before reviewing a benchmark.")
             client, identity = selected
             context = self.context()
+            settings = self.settings(identity.context)
             owner = self.manager.create(
                 client,
                 info.target,
                 self.policy,
-                lambda: self.session_current(client, identity),
-                settings=self.settings(identity.context),
+                lambda: (
+                    self.session_current(client, identity)
+                    and self.settings(identity.context) == settings
+                ),
+                settings=settings,
                 environment=context.environment,
                 directory=context.directory,
                 forward=info,
@@ -137,6 +149,7 @@ class BenchmarkActions:
             screen.validate_target()
 
     async def close_for_client(self, client: KubernetesSession) -> None:
+        self.manager.invalidate_for_client(client)
         await asyncio.gather(
             *(
                 screen.stop_owned()

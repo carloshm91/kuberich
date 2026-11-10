@@ -80,6 +80,12 @@ Checking preferences performs no connection, backend installation, credential-fi
 read or file rewrite. See the [generated fields](config-reference.md) for accepted
 provider, endpoint, label, prefix and rate-window declarations.
 
+The optional [HTTP benchmark](benchmarks.md#configure-the-optional-program) uses
+`benchmarks.defaults` and exact `benchmarks.contexts.NAME` field overrides.
+Configure an absolute Vegeta path and conservative load defaults; no preference
+entry, reload or context selection starts a test. A run needs its own Review
+and Run actions. Context defaults cannot exceed the fixed load limits.
+
 ## Choose and save a theme
 
 Open `:themes` or run `kuberich --command themes`. The standalone picker needs no

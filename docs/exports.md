@@ -5,6 +5,10 @@ diagnostics or supported table. Use `:exports` to browse files saved locally.
 These features are available from version 0.4. Saving works in read-only mode and does not
 change Kubernetes resources. Nothing is uploaded automatically.
 
+HTTP benchmark results use their separate [local results browser](benchmarks.md#browse-saved-results-locally),
+`:benchmarks`, with a smaller normalized schema and retention policy. The exports
+browser does not import raw benchmark reports or start load from file metadata.
+
 ## Review and save
 
 1. Open the source you want to retain, then type `:export`. In a log viewer,

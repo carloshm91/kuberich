@@ -13,6 +13,17 @@ class Field(TypedDict):
 # These are parser entry points, not a duplicate catalogue of accepted fields.
 # Each field and its fallback expression is read from its production declaration.
 PARSERS = (
+    ("config/benchmarks.py", "benchmarks_from", {"raw": "benchmarks"}),
+    (
+        "config/benchmarks.py",
+        "parse_benchmark_settings",
+        {"value": "benchmarks.defaults", "raw": "benchmarks.defaults.load"},
+    ),
+    (
+        "config/benchmarks.py",
+        "parse_benchmark_settings",
+        {"value": "benchmarks.contexts.NAME", "raw": "benchmarks.contexts.NAME.load"},
+    ),
     ("config/node_shell.py", "parse_node_shell", {"value": "node_shell"}),
     (
         "config/navigation.py",

@@ -4,6 +4,7 @@ import json
 from copy import deepcopy
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import pytest
@@ -20,31 +21,9 @@ from kuberich.errors import AppError
 
 # The coordinator executed pinned Vegeta against an owned local HTTP server.
 # Preserve its nine-digit timestamps and the tool's first-to-last-start denominator.
-OBSERVED = {
-    "latencies": {
-        "total": 2231720,
-        "mean": 1115860,
-        "50th": 1115860,
-        "90th": 1458412,
-        "95th": 1458412,
-        "99th": 1458412,
-        "max": 1458412,
-        "min": 773308,
-    },
-    "bytes_in": {"total": 0, "mean": 0},
-    "bytes_out": {"total": 0, "mean": 0},
-    "earliest": "2026-11-10T20:35:22.442020037Z",
-    "latest": "2026-11-10T20:35:23.44203639Z",
-    "end": "2026-11-10T20:35:23.442809698Z",
-    "duration": 1000016353,
-    "wait": 773308,
-    "requests": 2,
-    "rate": 1.9999672945348326,
-    "throughput": 1.9984219241449577,
-    "success": 1,
-    "status_codes": {"200": 2},
-    "errors": [],
-}
+OBSERVED = json.loads(
+    (Path(__file__).parents[1] / "fixtures/benchmarks/vegeta-12.13.0-http200.json").read_bytes()
+)
 
 
 def report_data(raw=None):

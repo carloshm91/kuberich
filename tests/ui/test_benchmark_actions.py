@@ -12,6 +12,7 @@ from kuberich.domain.registry import RESOURCE_ALIASES
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ResourceSelection
+from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.benchmark_store import BenchmarkStore
 from kuberich.ui.benchmark_actions import BenchmarkActions
@@ -31,6 +32,9 @@ class RefusalManager:
 
     async def close_for_client(self, client):
         self.closed_clients.append(client)
+
+    def invalidate_for_client(self, client):
+        pass
 
     async def close(self):
         self.closed = True
@@ -121,3 +125,23 @@ async def test_forward_connection_attempt_state_and_closed_entries_do_not_create
     actions.open_forward(info)
     actions.open_browser()
     assert len(notices) == 3
+
+
+def test_owned_forward_survives_namespace_generation_but_never_adopts_new_connection(tmp_path):
+    actions, ports, manager, notices = actions_for(tmp_path)
+    info = forward()
+    ports.connection = (SimpleNamespace(), replace(info.target.session, generation=2))
+    calls = []
+
+    def captured_factory(*args, **kwargs):
+        calls.append((args, kwargs))
+        raise AppError("Synthetic factory admission observed")
+
+    manager.create = captured_factory
+    actions.open_forward(info)
+    assert len(calls) == 1 and calls[0][0][1] == info.target
+    assert calls[0][1]["forward"] == info and calls[0][0][3]()
+    assert "factory admission" in notices[-1]
+    ports.connection = (SimpleNamespace(), SessionIdentity(info.target.session.context, 2))
+    actions.open_forward(info)
+    assert len(calls) == 1 and "connection changed" in notices[-1]

@@ -6,6 +6,7 @@ import os
 import shutil
 import stat
 import tempfile
+from collections import deque
 from collections.abc import Callable
 from pathlib import Path
 from uuid import uuid4
@@ -81,7 +82,7 @@ class BenchmarkTool:
             guard,
         )
         self._busy = False
-        self._pids: list[int] = []
+        self._pids: deque[int] = deque(maxlen=3)
 
     @property
     def process_ids(self) -> tuple[int, ...]:
