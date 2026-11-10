@@ -391,6 +391,7 @@ class ForwardManager:
         self._retired: WeakSet[KubernetesSession] = WeakSet()
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
+        self._listeners: set[Callable[[ForwardInfo], None]] = set()
 
     @property
     def infos(self) -> tuple[ForwardInfo, ...]:
@@ -407,7 +408,33 @@ class ForwardManager:
 
     def _record_changed(self, info: ForwardInfo) -> None:
         self._records[info.identity] = info
+        for listener in tuple(self._listeners):
+            try:
+                listener(info)
+            except Exception:
+                self._listeners.discard(listener)
         self.changed()
+
+    def subscribe(self, listener: Callable[[ForwardInfo], None]) -> Callable[[], None]:
+        """Observe owned child state directly, independently of UI refreshes."""
+        if self._closed:
+            raise AppError("Port-forward manager is closed.")
+        self._listeners.add(listener)
+        return lambda: self._listeners.discard(listener)
+
+    def owned_source(self, identity: UUID, attempt: int) -> ForwardService:
+        """Capture only this current ready child; retained addresses grant no authority."""
+        record = self._live.get(identity)
+        if (
+            self._closed
+            or record is None
+            or record.task.done()
+            or record.info.state is not ForwardState.READY
+            or record.info.attempt != attempt
+        ):
+            raise AppError("The selected owned forward changed; select a ready session again.")
+        record.source.require_current()
+        return record.source
 
     def _completed(self, record: _Forward, task: asyncio.Task[None]) -> None:
         if not task.cancelled():
@@ -491,6 +518,7 @@ class ForwardManager:
         await asyncio.gather(
             *(record.stop("Stopped on application exit.") for record in self._live.values())
         )
+        self._listeners.clear()
 
     async def close(self) -> None:
         if self._closing is None:

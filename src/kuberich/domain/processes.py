@@ -33,6 +33,7 @@ class ProcessPurpose(Enum):
     HELM_MUTATE = auto()
     MANIFEST_RENDER = auto()
     MANIFEST_PREVIEW = auto()
+    BENCHMARK = auto()
 
     @property
     def action(self) -> Action:
@@ -50,6 +51,7 @@ class ProcessPurpose(Enum):
             ProcessPurpose.HELM_MUTATE: Action.MUTATE,
             ProcessPurpose.MANIFEST_RENDER: Action.READ,
             ProcessPurpose.MANIFEST_PREVIEW: Action.MUTATE,
+            ProcessPurpose.BENCHMARK: Action.BENCHMARK,
         }[self]
 
 
