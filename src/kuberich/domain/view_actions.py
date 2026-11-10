@@ -19,7 +19,7 @@ WORKLOAD_LOG_VIEWS = frozenset(
         "replicationcontrollers",
     }
 )
-POD_ONLY = frozenset({"logs", "shell", "attach", "upload", "download"})
+POD_ONLY = frozenset({"logs", "shell", "debug", "attach", "upload", "download"})
 # Table actions are unavailable while a modal screen or an input has focus.
 TABLE_ACTIONS = frozenset(
     {
@@ -38,6 +38,7 @@ TABLE_ACTIONS = frozenset(
         "logs",
         "logs_all",
         "shell",
+        "debug",
         "node_shell",
         "cordon",
         "drain",

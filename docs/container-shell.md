@@ -190,3 +190,59 @@ Fresh Node and Pod checks reduce replacement races, but scheduling and exec have
 no atomic cross-resource UID precondition. UID-conditioned deletion does protect
 a same-name replacement during cleanup. Linux disposable-cluster and terminal
 tests do not certify every cloud provider or admission policy.
+
+## Debug a Pod with an ephemeral container (development source)
+
+The upcoming 0.5 source workflow adds `:debug` on a selected Pod. It is not
+included in published 0.4.0. It adds a new container to that existing Pod;
+this is separate from exec into an existing container or a node diagnostic Pod.
+
+**The addition is permanent for the lifetime of that Pod.** Kubernetes cannot
+remove or restart an individual ephemeral entry, including one that has finished.
+Closing the terminal does not undo the addition or prove the remote process ended.
+
+1. Select the intended Pod and enter `:debug` to inspect its sessions. Read-only
+   mode permits inspection; preparation, addition and attachment need write mode.
+2. Enter an approved image pinned as `registry/name@sha256:<64 lowercase hex
+   digits>`. There is no default image or automatic substitute. The cluster may
+   pull it only after the addition is confirmed.
+3. Keep a new unique container name and review the literal command argument list.
+   Command input is a JSON string array, such as `["/bin/sh"]`; KubeRich does not
+   interpret local shell expressions. The image must provide that program.
+4. Leave the target blank to use Pod namespaces, or name a currently running
+   regular/init container. KubeRich checks its observed running instance. A
+   completed container or another ephemeral container cannot be the target.
+5. Choose **Review** for strict server dry-run. Inspect context, namespace, Pod
+   UID/version, name, image digest, command, target, inherited namespaces and
+   security choices. Nothing is persisted by dry-run. Edited options need a new
+   review.
+6. Deliberately choose **Add permanently** after that review. Cancel is the
+   default. A changed Pod version or target requires a fresh review; the old
+   approval is not rebased or retried.
+7. Select a running debug session and choose **Attach** to use its existing
+   process in the embedded terminal. Waiting, image failures, running and
+   terminated sessions remain separate from the addition's recorded outcome.
+
+The initial Linux profile uses a positive nonroot user/group, drops all
+capabilities, disables privilege escalation and uses RuntimeDefault seccomp.
+The root filesystem starts read-only; explicitly choose writable if the reviewed
+image needs it. There are no root/privileged fallbacks, extra capabilities,
+workload environment/mount copies, token mounts or resource reservations. This
+profile cannot support every debugging tool, and the debug container can add
+resource pressure to the Pod. Explicit Windows Pods are unsupported.
+
+A named target requests runtime process-namespace targeting; runtime support
+and process visibility are not guaranteed by API success. Pod host namespaces
+and security settings still apply. Cluster admission, Pod Security, image
+availability and RBAC decide whether the addition and attachment succeed.
+The identity needs Pod reads, `pods/ephemeralcontainers` PATCH and the
+`pods/attach` access used by kubectl. Discovery support is not authorization.
+
+Ctrl+C reaches the remote program. Ctrl+P then Ctrl+Q detaches; Ctrl+] closes
+locally. Context changes and quit drain local processes and private files.
+None of these actions removes the declaration or requests Pod deletion. A
+running process may survive a disconnect; only a fresh terminated status shows
+completion. A lost addition response can remain uncertain even when a later
+session row appears. KubeRich never automatically repeats or adopts that write.
+Fresh checks reduce Pod/instance replacement races, but attach has no atomic UID
+precondition. Other runtimes and cloud providers require separate qualification.

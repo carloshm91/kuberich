@@ -43,6 +43,7 @@ class Command(Enum):
     CORDON = auto()
     DRAIN = auto()
     UNCORDON = auto()
+    DEBUG = auto()
     ATTACH = auto()
     UPLOAD = auto()
     DOWNLOAD = auto()

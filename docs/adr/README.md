@@ -67,6 +67,8 @@ implemented decisions are kept separately without rewriting that history:
 The composition record retains its existing filename; it is not renumbered into
 the historical migration. Its source checkpoints are not release qualification.
 
+- [0044: Reviewed ephemeral-container debugging](0044-reviewed-ephemeral-debugging.md) — implementation in progress.
+
 ## Add or change a decision
 
 Copy the [template](0000-template.md), choose the next unused number, and give

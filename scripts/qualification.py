@@ -51,6 +51,7 @@ KIND_SCENARIOS = (
     ("manifests", "verify_manifests_kind", True),
     ("node-shell", "verify_node_shell_kind", True),
     ("node-maintenance", "verify_node_maintenance_kind", True),
+    ("ephemeral-debug", "verify_ephemeral_debug_kind", True),
 )
 
 
@@ -233,7 +234,8 @@ def cluster_stages(
                     ),
                     *(
                         ("--docker", "/usr/bin/docker")
-                        if name in {"manifests", "node-shell", "node-maintenance"}
+                        if name
+                        in {"manifests", "node-shell", "node-maintenance", "ephemeral-debug"}
                         else ()
                     ),
                     "--evidence",
@@ -252,6 +254,7 @@ def cluster_stages(
                             "manifests",
                             "node-shell",
                             "node-maintenance",
+                            "ephemeral-debug",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),

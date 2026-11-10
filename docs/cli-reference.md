@@ -86,6 +86,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `columns` | columns |
 | `context`, `contexts`, `ctx` | contexts |
 | `cordon` | cordon |
+| `debug` | debug |
 | `delete` | delete |
 | `deletebatch` | delete batch |
 | `diagnose` | diagnose |

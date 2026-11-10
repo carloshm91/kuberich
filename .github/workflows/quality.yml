@@ -162,6 +162,7 @@ jobs:
           uv run mypy --strict scripts/verify_manifests_kind.py
           uv run mypy --strict scripts/verify_node_shell_kind.py
           uv run mypy --strict scripts/verify_node_maintenance_kind.py
+          uv run mypy --strict scripts/verify_ephemeral_debug_kind.py
           uv run mypy --strict scripts/ci_apt.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification
@@ -273,6 +274,9 @@ jobs:
       - name: Verify production Node maintenance in disposable multi-node kind
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_node_maintenance_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --docker /usr/bin/docker --evidence artifacts/node-maintenance/evidence.json
+      - name: Verify irreversible ephemeral additions and owned attach sessions
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_ephemeral_debug_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --docker /usr/bin/docker --evidence artifacts/ephemeral-debug/evidence.json
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
@@ -322,6 +326,7 @@ jobs:
             artifacts/manifests/**
             artifacts/node-shell/**
             artifacts/node-maintenance/**
+            artifacts/ephemeral-debug/**
             artifacts/quickstart/*
             artifacts/startup/**
           if-no-files-found: error

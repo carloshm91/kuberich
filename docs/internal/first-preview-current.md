@@ -1,5 +1,31 @@
 # Development checkpoint
 
+## Node maintenance delivered in development source — 2026-11-10 UTC
+
+[PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as
+`4a39d458a6801a103bab1ee5b305ed45cbba24b1`. Its tree
+`f273ff33cb85b0d8f2bf3c95805c45494db848cd` matches the qualified candidate.
+A02 #77 is closed and Done. Application quality run `42811137464` passes all
+27 selected jobs, with app-bound Repository checks and DCO passing separately.
+The canonical Linux 3.12 measurement covers all 302 production modules:
+41,369/41,986 lines (98.5305%) and 12,231/12,856 branches (95.1385%), with
+99.63% changed-line coverage. All 125 critical modules meet 100% lines and
+applicable branches. Every source profile passes its independent coverage gate.
+
+The hosted actual three-node trial passes all 13 maintenance groups with 308
+unchanged measured inputs and verified process, private-file, caller-state and
+cluster cleanup. Its report SHA-256 is
+`ea0a3971361ec1e2fe1662c3b06bafcd86f0f04b3b868473ec0442baa0c6c74e`.
+The exact tested command and original failed trials remain in
+[maintenance acceptance](acceptance/node-maintenance.md) and below. These source
+changes publish no artifacts or hosting; published packages remain 0.4.0.
+
+A03 #78 is now the only implementation issue. Its reviewed workflow uses a
+conditional ephemeral-container append, strict server dry-run, an explicit
+irreversible-addition review and the existing embedded attach terminal. Actual
+owned-cluster and terminal proof is pending; prepared contracts do not establish
+delivery or runtime/provider compatibility.
+
 ## Node maintenance corrected candidate — 2026-11-10 UTC
 
 A02 #77 is implemented in [PR #337](https://github.com/carloshm91/kuberich/pull/337)

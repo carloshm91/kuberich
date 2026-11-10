@@ -298,6 +298,7 @@ class CommandService:
                 Command.CORDON,
                 Command.DRAIN,
                 Command.UNCORDON,
+                Command.DEBUG,
                 Command.HISTORY,
             }
             and len(parts) != 1
