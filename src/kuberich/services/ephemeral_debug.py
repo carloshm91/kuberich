@@ -462,7 +462,9 @@ class EphemeralDebugService:
             task.cancel()
             await finish_owned(asyncio.gather(task, return_exceptions=True))
         self._attachment = None
-        self._publish(attaching=None, code=code)
+        self._publish(
+            attaching=None, code=self.observation.code if self.observation.stale else code
+        )
 
     async def _stop(self) -> None:
         await self._stop_attachment("closed")
@@ -548,7 +550,10 @@ class EphemeralDebugTerminal:
             self.owner._terminal = None
             if self.owner._attachment is self:
                 self.owner._attachment = None
-            self.owner._publish(attaching=None, code="detached")
+            self.owner._publish(
+                attaching=None,
+                code=self.owner.observation.code if self.owner.observation.stale else "detached",
+            )
 
 
 class EphemeralDebugManager:

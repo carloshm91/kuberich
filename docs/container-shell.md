@@ -223,6 +223,10 @@ Closing the terminal does not undo the addition or prove the remote process ende
    process in the embedded terminal. Waiting, image failures, running and
    terminated sessions remain separate from the addition's recorded outcome.
 
+Confirmation requires a complete preview within 16,384 characters. If that
+limit is exceeded, shorten the command where possible and choose **Review**
+again. An oversized preview cannot authorize an addition.
+
 The initial Linux profile uses a positive nonroot user/group, drops all
 capabilities, disables privilege escalation and uses RuntimeDefault seccomp.
 The root filesystem starts read-only; explicitly choose writable if the reviewed

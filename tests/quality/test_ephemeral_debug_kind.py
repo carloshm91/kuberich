@@ -351,6 +351,60 @@ async def test_discovery_relay_preserves_negotiated_aggregated_content_type_exac
 
 
 @pytest.mark.asyncio
+async def test_attach_websocket_denial_retains_only_status_and_never_upgrades():
+    async def api(request):
+        return web.json_response({"private": "synthetic-private-status-body"}, status=403)
+
+    async with server(api) as endpoint, aiohttp.ClientSession() as upstream:
+        proxy = proof.DebugProxy(upstream, endpoint)
+        async with server(proxy.handle) as local:
+            with pytest.raises(aiohttp.WSServerHandshakeError) as refused:
+                await upstream.ws_connect(
+                    local + "/api/v1/namespaces/team/pods/one/attach",
+                    protocols=("v5.channel.k8s.io",),
+                )
+            assert refused.value.status == 403
+        assert proxy.receipts == [
+            {
+                "method": "GET",
+                "path": "/api/v1/namespaces/team/pods/one/attach",
+                "status": 403,
+                "transport": "websocket",
+            }
+        ]
+        assert "synthetic-private" not in json.dumps(proxy.receipts)
+
+
+@pytest.mark.asyncio
+async def test_watch_relay_delivers_a_frame_before_the_upstream_stream_closes():
+    release = asyncio.Event()
+
+    async def api(request):
+        stream = web.StreamResponse(headers={"Content-Type": "application/json"})
+        await stream.prepare(request)
+        await stream.write(b'{"type":"BOOKMARK"}\n')
+        await release.wait()
+        return stream
+
+    async with server(api) as endpoint, aiohttp.ClientSession() as upstream:
+        proxy = proof.DebugProxy(upstream, endpoint)
+        try:
+            async with (
+                server(proxy.handle) as local,
+                upstream.get(local + "/api/v1/pods?watch=true") as response,
+            ):
+                async with asyncio.timeout(1):
+                    assert await response.content.readline() == b'{"type":"BOOKMARK"}\n'
+                release.set()
+                assert await response.read() == b""
+            assert proxy.receipts == [
+                {"method": "GET", "path": "/api/v1/pods", "status": 200, "transport": "watch"}
+            ]
+        finally:
+            release.set()
+
+
+@pytest.mark.asyncio
 async def test_terminal_proof_accepts_no_prompt_and_confines_completion_monitor_cancellation(
     tmp_path,
 ):

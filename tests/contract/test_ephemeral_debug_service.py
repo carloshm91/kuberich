@@ -1,6 +1,8 @@
 """HTTP and ownership evidence for reviewed append and existing-process attach."""
 
 import asyncio
+import os
+import sys
 import threading
 from contextlib import suppress
 from dataclasses import replace
@@ -12,6 +14,7 @@ from kuberich.domain.mutations import MutationState
 from kuberich.errors import AppError
 from kuberich.services.ephemeral_debug import EphemeralDebugManager
 from kuberich.services.mutations import MutationManager
+from kuberich.services.processes import ProcessRunner
 from tests.support.ephemeral_debug_service import OPTIONS, PODS, debug_source
 
 
@@ -193,6 +196,72 @@ async def test_failed_reads_retain_stale_rows_and_collector_has_no_overlapping_g
         api.read_release.set()
         await manual
         assert api.maximum_reads == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("active", [False, True], ids=["inspection", "active-pty"])
+@pytest.mark.parametrize("status,code", [(403, "denied"), (404, "not_found"), (500, "unavailable")])
+async def test_failed_observation_preserves_cause_and_rows_through_local_terminal_drain(
+    tmp_path, active, status, code
+):
+    async with debug_source(tmp_path) as (source, api, _):
+        await append(source)
+        await source.observe()
+        publications = []
+        source.subscribe(publications.append)
+        terminal = None
+        request = None
+        pid = None
+        async with ProcessRunner(source.policy) as runner:
+            if active:
+                executable = tmp_path / "kubectl"
+                executable.write_text(
+                    f"#!{sys.executable}\nimport os,tty\ntty.setraw(0)\n"
+                    "os.write(1,b'OWNED DEBUG READY')\n"
+                    "while os.read(0,4096):pass\n"
+                )
+                executable.chmod(0o700)
+                source.environment = {**os.environ, "PATH": str(tmp_path)}
+                shell, request = await source.prepare_shell(OPTIONS.name)
+                ready = asyncio.Event()
+
+                async def attached():
+                    nonlocal pid
+                    async with (
+                        shell.stage(request) as command,
+                        runner.terminal(
+                            command, width=80, height=24, guard=shell.require_current
+                        ) as (endpoint, process),
+                    ):
+                        pid = process.pid
+                        output = bytearray()
+                        while b"OWNED DEBUG READY" not in output:
+                            output.extend(await endpoint.read())
+                        ready.set()
+                        await asyncio.Event().wait()
+
+                terminal = asyncio.create_task(attached())
+                async with asyncio.timeout(3):
+                    await ready.wait()
+                assert request.path.exists() and runner.active_count == 1
+            before = source.observation
+            api.read_status = status
+            with pytest.raises(HttpProblem) as failure:
+                await source.observe()
+            assert failure.value.status == status
+            assert source.observation.stale and source.observation.code == code
+            assert source.observation.remote == before.remote
+            assert source.observation.observed_at == before.observed_at
+            assert all(item.code == code for item in publications if item.stale)
+            assert source.observation.attaching is None
+            assert runner.active_count == 0
+            if terminal is not None:
+                assert terminal.cancelled() and request is not None and not request.path.exists()
+                assert pid is not None
+                with pytest.raises(ProcessLookupError):
+                    os.kill(pid, 0)
+            assert len(api.requests) == 2
+            assert api.pod["spec"]["ephemeralContainers"][0]["name"] == OPTIONS.name
 
 
 @pytest.mark.asyncio

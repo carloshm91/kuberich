@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Review and permanently add an ephemeral debug container to a selected Pod, inspect its remote state and explicitly attach through the embedded terminal ([#78](https://github.com/carloshm91/kuberich/issues/78)).
+
 - Cordon, drain and uncordon a selected Node with disruption-aware progress, separate data-loss consents and explicit final scheduling observations ([#77](https://github.com/carloshm91/kuberich/issues/77)).
 
 - Open configured Linux node diagnostic shells with privilege review, bounded sessions, cleanup by Pod UID and explicit local recovery ([#76](https://github.com/carloshm91/kuberich/issues/76)).

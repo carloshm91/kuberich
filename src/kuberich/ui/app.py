@@ -153,6 +153,7 @@ from kuberich.ui.workspace_presenter import WorkspacePresenter
 from kuberich.ui.workspace_screen import WorkspaceScreen
 
 if TYPE_CHECKING:
+    from kuberich.services.ephemeral_debug import EphemeralDebugManager
     from kuberich.services.exports import ExportService
     from kuberich.services.helm import HelmService
     from kuberich.services.node_shell import NodeShellManager
@@ -623,6 +624,7 @@ class KubeRichApp(App[None]):
                 Command.UNCORDON: partial(
                     self.operations.open_node_maintenance, MaintenanceMode.UNCORDON
                 ),
+                Command.DEBUG: self.operations.open_ephemeral_debug,
                 Command.ATTACH: self.action_attach,
                 Command.UPLOAD: self.action_upload,
                 Command.DOWNLOAD: self.action_download,
@@ -756,6 +758,16 @@ class KubeRichApp(App[None]):
     def node_shell_manager(self) -> NodeShellManager:
         """The bounded public lifecycle observations for diagnostic sessions."""
         return self.operations.node_shells.manager
+
+    @property
+    def ephemeral_debug_manager(self) -> EphemeralDebugManager:
+        """Bounded debug outcomes and active-owner observations."""
+        return self.operations.ephemeral_debug.manager
+
+    @property
+    def retained_ephemeral_debug_view_count(self) -> int:
+        """Debug viewers remain owned until their terminal and requests drain."""
+        return self.operations.ephemeral_debug.retained_count
 
     @property
     def retained_node_shell_view_count(self) -> int:
@@ -973,6 +985,7 @@ class KubeRichApp(App[None]):
 
     def _observation_changed(self) -> None:
         self.operations.observe_node_operations()
+        self.operations.ephemeral_debug.observe()
         self.metric_history.observe(self.workspace.store.observation)
         self.plugins.refresh()
         self.plugins.manager.invalidate()
@@ -1100,6 +1113,7 @@ class KubeRichApp(App[None]):
             await self.clipboard_queue.close()
             await self.live_preferences.close()
             await self.plugins.close()
+            await self.operations.ephemeral_debug.close()
             await self.operations.node_maintenance.close()
             await self.operations.node_shells.close()
             await self.mutations.close()
@@ -1784,10 +1798,11 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        from kuberich.ui.ephemeral_debug import EphemeralDebugScreen
         from kuberich.ui.node_maintenance import NodeMaintenanceScreen
         from kuberich.ui.node_shell import NodeShellRecoveryScreen, NodeShellScreen
 
-        if isinstance(self.screen, NodeMaintenanceScreen):
+        if isinstance(self.screen, (EphemeralDebugScreen, NodeMaintenanceScreen)):
             await self.screen.action_back()
             return
 

@@ -12,8 +12,9 @@ import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import replace
+from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast
 
 from kubernetes_asyncio import client as sdk
 from kubernetes_asyncio.client.exceptions import ApiException
@@ -30,6 +31,7 @@ from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.ephemeral_debug import EphemeralDebugService
 from kuberich.services.logs import PODS
+from kuberich.services.ownership import finish_owned
 from kuberich.services.processes import ProcessRunner
 from scripts.diagnostics_tools import KIND_SHA256, sha256_file
 from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, OwnedCluster, owned_cluster, run_owned
@@ -45,7 +47,25 @@ PROOF_INPUTS = (
     "scripts/verify_node_maintenance_kind.py",
     "scripts/verify_ephemeral_debug_kind.py",
     "tests/support/ephemeral_debug_terminal.py",
+    "tests/support/terminal_modes.py",
+    "tests/terminal/pty_support.py",
 )
+
+
+class RealCliDriver(Protocol):
+    """Typed seam for the existing test-only PTY driver, outside the strict runtime inventory."""
+
+    def __call__(
+        self,
+        command: list[str],
+        directory: Path,
+        kubeconfig: Path,
+        context: str,
+        namespace: str,
+        kubectl: Path,
+        *,
+        evidence: str,
+    ) -> dict[str, Any]: ...
 
 
 class DebugProxy:
@@ -65,6 +85,8 @@ class DebugProxy:
         receipt: dict[str, Any] = {"method": request.method, "path": request.path}
         if request.headers.get("Upgrade", "").lower() == "websocket":
             return await self.websocket(request, receipt)
+        if request.method == "GET" and request.query.get("watch") in {"true", "1"}:
+            return await self.watch(request, receipt)
         append = request.method == "PATCH" and request.path.endswith("/ephemeralcontainers")
         name = None
         if append:
@@ -118,6 +140,33 @@ class DebugProxy:
         return web.Response(
             status=response.status, body=payload, headers={"Content-Type": content_type}
         )
+
+    async def watch(self, request: Any, receipt: dict[str, Any]) -> Any:
+        """Forward the real CLI's watch frames promptly while retaining metadata only."""
+        from aiohttp import web
+
+        headers = {
+            key: value
+            for key, value in request.headers.items()
+            if key.lower() in {"accept", "impersonate-user", "impersonate-group"}
+        }
+        async with self.upstream.get(self.endpoint + request.raw_path, headers=headers) as upstream:
+            receipt.update(status=upstream.status, transport="watch")
+            self.receipts.append(receipt)
+            downstream = web.StreamResponse(
+                status=upstream.status,
+                headers={"Content-Type": upstream.headers.get("Content-Type", "application/json")},
+            )
+            await downstream.prepare(request)
+            size = 0
+            try:
+                async for data in upstream.content.iter_chunked(16384):
+                    size += len(data)
+                    assert size <= 8 * 1024 * 1024
+                    await downstream.write(data)
+            except ConnectionResetError:
+                pass
+            return downstream
 
     async def websocket(self, request: Any, receipt: dict[str, Any]) -> Any:
         """Relay the pinned kubectl WebSocket transport without recording terminal bytes."""
@@ -291,6 +340,34 @@ async def terminal_trial(
     finally:
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
+
+
+async def denied_attach_trial(service: EphemeralDebugService, name: str) -> dict[str, Any]:
+    """Observe the actual denied kubectl attach transport without changing the remote process."""
+    terminal, request = await service.prepare_shell(name)
+    transcript = bytearray()
+    async with ProcessRunner(AccessPolicy(False)) as runner:
+        async with (
+            terminal.stage(request) as command,
+            runner.terminal(command, width=90, height=28, guard=terminal.require_current) as (
+                endpoint,
+                process,
+            ),
+        ):
+            async with asyncio.timeout(30):
+                while data := await endpoint.read():
+                    transcript.extend(data)
+                    assert len(transcript) <= 65536
+                result = await process.wait()
+        assert runner.active_count == 0
+    assert result.returncode != 0 and not request.path.exists()
+    assert b"forbidden" in transcript.lower()
+    return {
+        "returncode": result.returncode,
+        "forbidden_observed": True,
+        "delegation_deleted": not request.path.exists(),
+        "transcript_sha256": hashlib.sha256(transcript).hexdigest(),
+    }
 
 
 async def _terminal_trial(
@@ -692,6 +769,41 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
             progress["denied_http_receipts"] = denied_proxy.receipts
             checks.append("real-pods-ephemeralcontainers-rbac403-no-persisted-entry")
 
+            progress["phase"] = "real-attach-subresource-denied-after-confirmed-append"
+            await rbac.patch_namespaced_role(
+                identity,
+                NAMESPACE,
+                {
+                    "rules": [
+                        {"apiGroups": [""], "resources": ["pods"], "verbs": ["get"]},
+                        {
+                            "apiGroups": [""],
+                            "resources": ["pods/ephemeralcontainers"],
+                            "verbs": ["patch"],
+                        },
+                    ]
+                },
+            )
+            attach_denied = owner(denied_client)
+            attach_options = replace(options, name="debug-attach-denied")
+            attach_review = await attach_denied.prepare(attach_options)
+            assert (
+                await attach_denied.execute(attach_denied.confirm(attach_review))
+            ).state is MutationState.SUCCEEDED
+            before_denied_attach = (await manifest())["spec"]["ephemeralContainers"]
+            progress["attach_denied_pty"] = await denied_attach_trial(
+                attach_denied, attach_options.name
+            )
+            assert await remote(attach_options.name, "running")
+            assert (await manifest())["spec"]["ephemeralContainers"] == before_denied_attach
+            assert any(
+                item["path"].endswith("/attach") and item["status"] == 403
+                for item in denied_proxy.receipts
+            )
+            checks.append(
+                "real-pods-attach-rbac403-local-pty-drained-confirmed-entry-still-running"
+            )
+
             progress["phase"] = "real-target-instance-restart-stops-local-attachment"
             attached = asyncio.Event()
 
@@ -786,6 +898,110 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                 "real-target-termination-restart-cancels-local-pty-old-instance-review-refused"
             )
 
+            progress["phase"] = "real-owned-admission-policy-refuses-debug-name"
+            await wait_for(ready)
+            admission: Any = sdk.AdmissionregistrationV1Api(connection.api)
+            policy_name = "kuberich-owned-debug-refusal"
+            await core.patch_namespace(
+                NAMESPACE, {"metadata": {"labels": {"kuberich.test/debug-proof": "owned"}}}
+            )
+            await admission.create_validating_admission_policy(
+                {
+                    "apiVersion": "admissionregistration.k8s.io/v1",
+                    "kind": "ValidatingAdmissionPolicy",
+                    "metadata": {"name": policy_name},
+                    "spec": {
+                        "failurePolicy": "Fail",
+                        "matchConstraints": {
+                            "resourceRules": [
+                                {
+                                    "apiGroups": [""],
+                                    "apiVersions": ["v1"],
+                                    "operations": ["UPDATE"],
+                                    "resources": ["pods/ephemeralcontainers"],
+                                }
+                            ]
+                        },
+                        "validations": [
+                            {
+                                "expression": "!has(object.spec.ephemeralContainers) || object.spec.ephemeralContainers.all(c, c.name != 'debug-admission-denied')",
+                                "message": "Owned debug proof refuses this synthetic name.",
+                            }
+                        ],
+                    },
+                }
+            )
+            await admission.create_validating_admission_policy_binding(
+                {
+                    "apiVersion": "admissionregistration.k8s.io/v1",
+                    "kind": "ValidatingAdmissionPolicyBinding",
+                    "metadata": {"name": policy_name},
+                    "spec": {
+                        "policyName": policy_name,
+                        "validationActions": ["Deny"],
+                        "matchResources": {
+                            "namespaceSelector": {
+                                "matchLabels": {"kuberich.test/debug-proof": "owned"}
+                            }
+                        },
+                    },
+                }
+            )
+            admission_fixture_probes: list[int] = []
+            progress["fixture_admission_probe_statuses"] = admission_fixture_probes
+
+            async def admission_ready() -> bool:
+                pod = await manifest()
+                entry = dict(progress["first_append"]["declaration"])
+                entry["name"] = "debug-admission-denied"
+                patch = [
+                    {"op": "test", "path": "/metadata/uid", "value": uid},
+                    {
+                        "op": "test",
+                        "path": "/metadata/resourceVersion",
+                        "value": pod["metadata"]["resourceVersion"],
+                    },
+                    {"op": "add", "path": "/spec/ephemeralContainers/-", "value": entry},
+                ]
+                try:
+                    await core.patch_namespaced_pod_ephemeralcontainers(
+                        "workload",
+                        NAMESPACE,
+                        patch,
+                        dry_run="All",
+                        _content_type="application/json-patch+json",
+                    )
+                except ApiException as error:
+                    assert error.status == 403
+                    admission_fixture_probes.append(error.status)
+                    return True
+                admission_fixture_probes.append(200)
+                return False
+
+            await wait_for(admission_ready)
+            refused = owner()
+            receipt_start = len(proxy.receipts)
+            try:
+                await refused.prepare(
+                    replace(options, name="debug-admission-denied", target_container=None)
+                )
+            except AppError:
+                pass
+            else:
+                raise AssertionError("An owned real admission refusal enabled a review.")
+            admission_writes = [
+                item for item in proxy.receipts[receipt_start:] if item["method"] == "PATCH"
+            ]
+            assert (
+                len(admission_writes) == 1
+                and admission_writes[0]["status"] == 403
+                and admission_writes[0]["dry_run"]
+            )
+            assert "debug-admission-denied" not in [
+                item["name"] for item in (await manifest())["spec"]["ephemeralContainers"]
+            ]
+            checks.append("real-admission-policy-refusal-no-append-no-privilege-fallback")
+
             writes = [item for item in proxy.receipts if item["method"] != "GET"]
             assert all(
                 item["method"] == "PATCH"
@@ -801,6 +1017,128 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
             final = await manifest()
             assert final["metadata"]["uid"] == uid and final["spec"]["containers"] == workload_spec
             checks.append("production-never-deletes-pod-or-debug-entry-never-mutates-workload-spec")
+
+            progress["phase"] = "real-cli-review-append-attach-return"
+            import yaml
+
+            terminal_real_ephemeral_debug = cast(
+                RealCliDriver,
+                import_module(
+                    "tests.support.ephemeral_debug_terminal"
+                ).terminal_real_ephemeral_debug,
+            )
+
+            cli_config = cluster.directory / "owned-cli-kubeconfig"
+            assert product.configuration is not None
+            document = {
+                "apiVersion": "v1",
+                "kind": "Config",
+                "current-context": cluster.context,
+                "contexts": [
+                    {"name": cluster.context, "context": {"cluster": "owned", "user": "owned"}}
+                ],
+                "clusters": [{"name": "owned", "cluster": {"server": product.configuration.host}}],
+                "users": [{"name": "owned", "user": {}}],
+            }
+            descriptor = os.open(cli_config, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(descriptor, "w") as output:
+                yaml.safe_dump(document, output)
+            cli_receipts_start = len(proxy.receipts)
+            cli_trial = asyncio.create_task(
+                asyncio.to_thread(
+                    terminal_real_ephemeral_debug,
+                    [sys.executable, "-m", "kuberich"],
+                    cluster.directory / "real-cli",
+                    cli_config,
+                    cluster.context,
+                    NAMESPACE,
+                    kubectl,
+                    evidence="ephemeral-debug-real-kind-" + cluster.name,
+                )
+            )
+            try:
+                progress["real_cli_pty"] = await asyncio.shield(cli_trial)
+            finally:
+                await finish_owned(cli_trial)
+            cli_writes = [
+                item for item in proxy.receipts[cli_receipts_start:] if item["method"] == "PATCH"
+            ]
+            assert len(cli_writes) == 2 and [item["dry_run"] for item in cli_writes] == [
+                True,
+                False,
+            ]
+            assert cli_writes[0]["body_sha256"] == cli_writes[1]["body_sha256"]
+            assert all(
+                item["name"] == "debug-real-cli" and item["uid"] == uid for item in cli_writes
+            )
+            assert await remote("debug-real-cli", "terminated")
+            cli_status = next(
+                item
+                for item in (await manifest())["status"]["ephemeralContainerStatuses"]
+                if item["name"] == "debug-real-cli"
+            )
+            assert cli_status["state"]["terminated"]["exitCode"] == 7
+            progress["real_cli_remote"] = {
+                "uid": uid,
+                "name": "debug-real-cli",
+                "state": "terminated",
+                "exit_code": 7,
+                "observed_at": time.time(),
+            }
+            checks.append(
+                "real-cli-review-one-append-real-kubectl-attach-return-host-restored-remote-exit7"
+            )
+
+            progress["phase"] = "owned-same-name-pod-replacement-refuses-original-uid"
+            await core.delete_namespaced_pod(
+                "workload",
+                NAMESPACE,
+                body=sdk.V1DeleteOptions(
+                    preconditions=sdk.V1Preconditions(uid=uid), grace_period_seconds=0
+                ),
+            )
+            progress["fixture_deletes"] = [
+                {"name": "workload", "uid": uid, "purpose": "same-name-replacement-proof"}
+            ]
+
+            async def original_absent() -> bool:
+                try:
+                    await core.read_namespaced_pod("workload", NAMESPACE)
+                except ApiException as error:
+                    assert error.status == 404
+                    return True
+                return False
+
+            await wait_for(original_absent)
+            replacement = await core.create_namespaced_pod(
+                NAMESPACE,
+                {
+                    "apiVersion": "v1",
+                    "kind": "Pod",
+                    "metadata": {"name": "workload"},
+                    "spec": {
+                        "containers": [
+                            {"name": "app", "image": SHELL_IMAGE, "command": ["/bin/sleep", "600"]}
+                        ]
+                    },
+                },
+            )
+            assert replacement.metadata.uid != uid
+            original_owner = owner()
+            replacement_start = len(proxy.receipts)
+            try:
+                await original_owner.prepare(replace(options, name="debug-old-pod"))
+            except AppError:
+                pass
+            else:
+                raise AssertionError("A same-name replacement reused the original Pod UID.")
+            assert not any(item["method"] != "GET" for item in proxy.receipts[replacement_start:])
+            progress["pod_replacement"] = {
+                "old_uid": uid,
+                "new_uid": replacement.metadata.uid,
+                "old_target_refused_before_write": True,
+            }
+            checks.append("real-same-name-pod-replacement-original-uid-refused-before-dry-run")
             return {
                 "checks": checks,
                 "node_image": NODE_IMAGE,

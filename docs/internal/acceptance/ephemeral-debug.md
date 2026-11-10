@@ -118,3 +118,96 @@ control also catches an initial-input flush assumption; the corrected bounded
 handshake cohort passes 17 cases in 1.35 seconds. These test-harness corrections
 do not change the production attach argv or reinterpret local exit as remote
 completion. Full actual proof remains pending.
+
+## First complete actual spine
+
+Candidate `21341e19f8caa69fda6fae1d4cd70d2e6a3703e3` passes all 12 real
+groups in 37.74 seconds. It uses the invocation above with the explicit reviewed
+tools and fresh `artifacts/issue78/early-kind-04/evidence.json`. All 314 measured
+inputs remain unchanged, owners drain, private sessions/directories disappear
+and the generated cluster is deleted with absence verified.
+
+The observed groups establish strict dry-run with no persistence; one exact
+UID/version append; actual attach input/output with local exit zero and a fresh
+remote terminated exit seven; server refusal to edit/remove completed entries;
+failed UID/version conditions and duplicate names; stale review refusal; actual
+detach with the remote process still running; lost post-commit response without
+replay/adoption; denied subresource; target-instance invalidation; and no
+production deletion or workload-specification changes. The same Pod survives
+the target restart from count zero to one. The local terminal is cancelled and
+its old review cannot reconnect. This precedes broad UI implementation.
+
+The original third trial passes ten of those groups and then times out in
+98.74 seconds waiting for its fixture restart. Its `kill -9 1` was sent inside
+the same PID namespace, where namespace-init signal restrictions apply. The
+corrected fixture explicitly installs a USR1 handler and records a successful
+owned trigger followed by the fresh restart count; production code, Pod
+namespaces and deadlines are unchanged. Original early-kind-03 remains failed,
+with all cleanup checks passing. Local attach exit is measured independently
+from remote process status; neither is inferred from the other.
+
+Successful early service/PTY proof is not product CLI, installed-wheel, complete
+platform/coverage or cumulative release qualification. Those gates remain pending.
+
+## Product interaction preparation
+
+After the actual 12-group spine, the source CLI completion case passes in
+4.49 seconds with `/tmp/kuberich-78-proof-08`: explicit review and one addition,
+separate attach, input/output, local return, fresh remote terminated exit seven,
+resize and quit. The helper verifies exact terminal restoration, child reaping
+and private connection-file removal. This is an owned loopback API and audited
+local kubectl substitute; it does not itself establish a real runtime connection.
+The earlier helper attempt retains its failed input-selection expectation;
+existing ForwardInput uses Home plus erase-to-end, not select-all.
+
+The first 15-scenario CLI cohort passes 11 and fails four in 49.33 seconds.
+Its original ANSI/JSON receipts retain the missing-tool message/return behavior,
+partial-result label, wrapped screen text and explicit read-only flag assumptions.
+Helper expectations are corrected without changing product policy or hiding
+failures. A fresh complete interaction result remains pending.
+
+Generated references pass declaration-drift checks. Both locally built preview
+surfaces pass 53 pages, 2,204 local links/assets and 70 files. App and operation
+composition pass focused strict typing and Ruff. No site is deployed by these
+checks; installed feature, real-CLI-plus-kind, full coverage and hosted gates
+remain pending.
+
+The corrected source CLI cohort passes all 15 scenarios in 20.55 seconds with
+`/tmp/kuberich-78-proof-11`: completion, interrupt, detach, local close, quit,
+SIGTERM, disconnect, missing helper, startup failure, uncertainty, context,
+repeat, cancel, denial and read-only inspection. The context scenario changes
+context after closing the local terminal/viewer; active-attachment invalidation
+is tested separately through Pilot and the service owner. Earlier proof-10
+retains 14 passes and one invalid helper spelling (`--read-only` instead of the
+actual `--readonly`); the corrected flag does not change product policy.
+
+The separate real-kind CLI driver's owned-HTTP/real-local-PTY preflight passes
+in 4.91 seconds with `/tmp/kuberich-78-proof-14`. It verifies explicit selection
+among heterogeneous existing/new rows and an audited executable wrapper; its
+first failed focus-count assumption is retained. This preflight does not itself
+run kind. The final actual verifier now includes a real CLI plus verified
+kubectl connection, real attach denial, admission refusal and Pod replacement;
+those additional actual results remain pending. Verifier quality passes 19
+cases in 1.53 seconds, with strict typing and Ruff passing.
+
+Pilot also exposes a real stale-cause bug: denied Pod reads were immediately
+relabelled as generic attachment unavailability, including when no terminal
+existed. The narrow service correction preserves denied/not-found/unavailable
+through both local stop and terminal-finally publication. Six HTTP regressions
+cover 403/404/500 with inspection and actual owned ProcessRunner PTYs, preserving
+rows and the last valid observation time while reaping the child and staging.
+The final service cohort passes 55 cases in 7.25 seconds with
+`/tmp/kuberich-78-service-09`, retaining 390/391 lines and 71/74 branches.
+The first added-test attempt retains six test-authoring failures; no production
+failures or earlier reports are relabelled.
+
+The first complete 39-case Pilot cohort passes in 70.02 seconds with
+`/tmp/kuberich-78-ui-15.EwNq9n`. Independent focused UI coverage is 349/366
+lines (95.36%) and 72/86 branches (83.72%); this is not the whole-production
+branch gate and is not relabelled as 90%. Cases cover default Cancel at two
+viewport sizes, review/edit races, supported/refused options, read-only and
+uncertain state, stale rows/viewport, real local PTY input/resize/return,
+context/policy/quit drainage, complete-preview bounds and fatal rendering faults.
+The repeated-Back regression prevents dismissing the root before delayed
+Unmount. Failed waiting-reason and pre-entry cancellation/quit assumptions
+remain retained in earlier attempts. Final focused additions remain pending.

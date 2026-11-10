@@ -22,9 +22,13 @@ changes publish no artifacts or hosting; published packages remain 0.4.0.
 
 A03 #78 is now the only implementation issue. Its reviewed workflow uses a
 conditional ephemeral-container append, strict server dry-run, an explicit
-irreversible-addition review and the existing embedded attach terminal. Actual
-owned-cluster and terminal proof is pending; prepared contracts do not establish
-delivery or runtime/provider compatibility.
+irreversible-addition review and the existing embedded attach terminal. The first complete
+owned-kind service/PTY spine passes all 12 groups in 37.74 seconds on
+`21341e19f8caa69fda6fae1d4cd70d2e6a3703e3`, with 314 unchanged inputs and
+verified cleanup. Report SHA-256:
+`0bff4e17bf74128b0c2e93e3ef0f468ab5d22f2239252a93a1d8f0895bc8e75c`.
+Product UI/installed evidence and exact-head protected delivery remain pending;
+this result does not establish runtime/provider certification.
 
 ## Node maintenance corrected candidate — 2026-11-10 UTC
 
