@@ -157,12 +157,15 @@ class NodeHandler(BaseHTTPRequestHandler):
         self.respond(pod, status=201)
 
     def do_DELETE(self):
+        parsed = urlsplit(self.path)
+        assert parse_qs(parsed.query) == {"fieldValidation": ["Strict"]}
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
         assert body["preconditions"] == {"uid": "owned-diagnostic-uid"}
         assert body["gracePeriodSeconds"] == 5
         with self.server.lock:
             pod = self.server.pod
-            assert pod is not None and self.path.endswith("/" + pod["metadata"]["name"])
+            assert pod is not None
+            assert parsed.path == "/api/v1/namespaces/team/pods/" + pod["metadata"]["name"]
             self.server.deletes.append(body)
             self.server.pod = None
         self.respond({"kind": "Status", "status": "Success"})
