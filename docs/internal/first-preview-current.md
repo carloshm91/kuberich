@@ -1,43 +1,43 @@
 # Development checkpoint
 
-## Node maintenance implementation candidate — 2026-11-10 UTC
+## Node maintenance corrected candidate — 2026-11-10 UTC
 
-A02 #77 starts from protected main
-`7c8c7cb1595a3609c2d6a5748087d53917ce9af8` on
-`feat/77-node-maintenance`. Clean candidate
-`1a824b52beea7fc057c84dea6de00c8ab9a0baa2` passes all 13 actual owned-kind
-contract groups in 90.40 seconds, with 308 unchanged measured inputs and
-verified owner/private-file/caller-state/three-node cleanup. The report SHA-256
-is `c585b31e5974ad43ca99d36c787201f440cdf17adc2e76ac207c94915a607eda`.
+A02 #77 is implemented in [PR #337](https://github.com/carloshm91/kuberich/pull/337)
+from protected main `7c8c7cb1595a3609c2d6a5748087d53917ce9af8`.
+Corrected clean candidate `10ba07d858d7cd7f787d6294ec653a287bd2849f` passes all
+13 actual three-node kind groups in 88.71 seconds, with 308 unchanged measured
+inputs and verified owner/private-file/caller-state/cluster cleanup. Report
+SHA-256: `2fb4e1a938f210a5782d05f897cc75640a6ef26f5c2a43e5603f4e6d75a7f4f7`.
 
-The source supports selected-Node cordon, disruption-aware drain and separately
-confirmed uncordon. Actual API observations cover fixed UID/version eviction,
-PDB refusal/recovery, finalizer-pending acceptance, independent consents, real
-DaemonSet/static-mirror retention, partial cancellation, RBAC denial, replacement
-and arrival guards, external uncordon and final scheduling state. Stop sends
-zero production requests beyond the refused Pod's actual retry deadline.
-An owned post-commit response-loss fault remains uncertain without replay;
-it is explicitly distinguished from a real provider/network failure.
+The source adds selected-Node cordon, disruption-aware drain and deliberately
+confirmed uncordon. Actual checks cover fixed UID/version eviction, PDB
+refusal/recovery, finalizers, independent consents, real DaemonSet/static-mirror
+retention, partial Stop, RBAC, lost receipts, replacements, new arrivals and
+external uncordon. No production requests occur after the stopped operation's
+actual retry deadline. Provider/network certification remains separate.
 
-The final actual command is:
+The tested verifier invocation uses a fresh evidence path:
 
 ```sh
 uv run python -m scripts.verify_node_maintenance_kind \
   --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind \
   --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl \
   --docker /usr/bin/docker \
-  --evidence artifacts/issue77/full-kind-04/evidence.json
+  --evidence artifacts/issue77/full-kind-05/evidence.json
 ```
 
-The scoped core cohort passes 186 cases; the verifier cohort passes 14. The
-separate source/fresh-wheel PTY rehearsal passes eight cases in 40.41 seconds,
-with all 304 runtime files matched to the frozen source. Full production and
-changed-line coverage, all 125 critical modules and all 27 protected exact-head
-hosted jobs remain pending. The retained initial HTTP 201 contract failure and
-expanded proxy, cancellation-oracle and SDK-default failures remain documented
-in [maintenance acceptance](acceptance/node-maintenance.md); the final report
-corroborates the SDK's omitted scheduling field as schedulable. No artifacts,
-tags or hosting are published; packages remain 0.4.0.
+Independent cross-review reproduces and fixes interrupted 429-cleanup retries,
+contradictory final-success reporting and stale details after an empty re-review.
+The scoped core cohort passes 194 cases and navigation/maintenance Pilot passes
+51. Fresh source/installed PTY verification passes eight cases in 39.89 seconds;
+all 304 wheel runtime files match corrected source. The original hosted Fast
+failure from an outdated `:c` completion expectation remains retained, alongside
+all earlier failed and successful trials in
+[maintenance acceptance](acceptance/node-maintenance.md).
+
+Full production/changed-line coverage, all 125 critical modules and the complete
+27-job protected exact-head PR pipeline remain pending. Published packages remain
+0.4.0; these source changes publish no tags, artifacts or hosting.
 
 ## Node diagnostics delivered in development source — 2026-11-10 UTC
 

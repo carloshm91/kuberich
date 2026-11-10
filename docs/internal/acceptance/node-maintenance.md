@@ -102,7 +102,7 @@ uv run python -m scripts.verify_node_maintenance_kind \
   --evidence artifacts/issue77/full-kind-04/evidence.json
 ```
 
-The final committed candidate
+The first fully expanded committed candidate
 `1a824b52beea7fc057c84dea6de00c8ab9a0baa2`, tree
 `967796c3e7388b55dc5bb29989263b712a1e1360`, passes all 13 real contract groups
 in 90.40 seconds. The report SHA-256 is
@@ -195,6 +195,53 @@ It is a local verification artifact, not a published package.
 Ruff/format, the complete strict type target union, private-access, plan and
 documentation checks pass. The source/runtime association and individual
 cohorts remain separate from complete hosted application qualification.
+
+## Cross-review regressions and corrected candidate
+
+Subsequent independent review identifies two additional core races: a cancelled
+response-cleanup await can leave a 429 retry hint after the attempt becomes
+uncertain, and the final Node observation can contradict a prior successful
+aggregate. Five owned HTTP cases reproduce the failures before source changes,
+including an unwanted second Pod POST after Stop/deadline and obsolete success
+claims after uncordon, replacement or a failed final GET. The original red log
+and XML remain at `artifacts/issue77/core-review-red.log` and
+`artifacts/issue77/core-review-red.xml`.
+
+Only a completed REJECTED HTTP 429 now supplies a retry hint. Every receipt
+branch publishes its outcome and checks pending cancellation before another
+request. A conflicting or unavailable final scheduling observation downgrades
+prior success to partial without changing completed Pod outcomes. The corrected
+cohort passes 194 cases in 26.80 seconds; the maintenance domain and adapter each
+have 100% scoped lines/branches. Independent read-only follow-up confirms both
+original control-flow gaps are closed.
+
+A public Pilot regression also reproduces stale Pod/PDB/storage details after a
+populated review becomes empty in the same screen. Rebuilding and empty selection
+now clear those facts. The complete maintenance/navigation cohort passes 51
+cases in 59.09 seconds, including both small and ordinary terminal geometries.
+The first hosted Fast job, run `42801828070`, separately fails an old completion
+expectation: `:c` correctly includes the new `cordon` command before `ctx`.
+Its original 96-pass/one-failure run remains failed; its platform matrix never
+runs. The corrected keyboard/choice expectations pass in that focused cohort.
+Repository validation run `42801828235` succeeds for the earlier head.
+
+Clean corrected candidate `10ba07d858d7cd7f787d6294ec653a287bd2849f`, tree
+`eddb6c3eea055dde32c1804fc58c92ad314ec04b`, repeats all 13 actual kind groups
+successfully in 88.71 seconds. All 308 inputs and every cleanup/caller-state
+check pass. Evidence is `artifacts/issue77/full-kind-05/evidence.json`, SHA-256
+`2fb4e1a938f210a5782d05f897cc75640a6ef26f5c2a43e5603f4e6d75a7f4f7`;
+the same verifier invocation above uses this fresh evidence path. Stop observes
+zero production requests beyond the actual retry deadline. These kind scenarios
+and the controlled HTTP cleanup races are distinct evidence layers.
+
+The fresh installed rehearsal on that corrected source passes eight cases in
+39.89 seconds with `--basetemp=/tmp/kuberich-77-installed-02`. Its 304 runtime
+files match source; `artifacts/issue77/installed-02/wheel-receipt.json` records
+wheel SHA-256
+`d67c3be06fb3db2fafd2616efde9ca146272e68a69c13275e8932eb6af554c2c`.
+Earlier successful receipts remain valid for their recorded source; they do not
+qualify later runtime changes. Complete protected checks on the corrected PR
+head are still required.
 
 ## Completion limits
 
