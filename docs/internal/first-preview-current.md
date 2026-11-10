@@ -34,8 +34,11 @@ The third hosted attempt passes all source parts, native targets and three full
 Application profiles, including the corrected terminal/inventory regressions.
 Its remaining Linux 3.12 job fails in an earlier container-inspection verifier's
 restricted-read check; the later hosted debug proof does not execute. Original
-receipts and partial coverage remain preserved. A controlled verifier correction
-and complete protected qualification are still required before delivery.
+receipts and partial coverage remain preserved. The narrow verifier correction
+passes 68 focused cases and all seven actual inspection groups in 35.24 seconds,
+with its original reload budget, mandatory 403s and complete cleanup. All 318
+debug-proof inputs remain unchanged. Complete protected qualification is still
+required before delivery.
 
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 

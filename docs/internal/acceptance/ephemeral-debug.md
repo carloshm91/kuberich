@@ -468,3 +468,18 @@ The original hosted receipt still cannot establish its exact Pod-versus-source
 change. A new actual owned-kind trial and exact-head hosted run remain required.
 All 318 inputs bound by the successful debug proof remain byte-identical; its
 unchanged local actual/installed trials are not rerun solely for this verifier.
+
+The frozen correction `4f95de23309f3c8f6d7289ca62073a8b368d8e57` passes
+all seven actual inspection groups in 35.24 seconds:
+
+```sh
+uv run --no-sync python -m scripts.verify_container_inspection_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --docker /usr/bin/docker --evidence artifacts/issue78/container-inspection-fix-01/evidence.json
+```
+
+Its report SHA-256 is
+`f72f83e5e482d9a66ef049f487b281b74446a163de48b29c1a045e232e850635`.
+All 313 measured inputs remain unchanged; owned sessions, private directory,
+environment and cluster-absence checks pass. No incidental reload is needed in
+this actual trial; the controlled HTTP cohort separately proves that branch.
+Whole-checkout Ruff, formatting and private-access validation pass. Full
+exact-head hosted qualification remains required before delivery.
