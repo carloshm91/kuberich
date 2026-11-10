@@ -40,8 +40,12 @@ macOS exposes a temporary-path alias assumption in a renderer test, and App's
 priority Escape dismisses the editor before private-draft cleanup. The original
 logs remain failed. The shortened note, physical-identity test and awaited
 ownership route pass their focused corrections; public App/native-CLI held-close
-controls reproduce the original bug and pass after the fix. A fresh committed
-candidate must repeat the applicable trials and every required hosted gate.
+controls reproduce the original bug and pass after the fix. Fresh committed
+candidate `cc6f8c73e7cd09f149ebd2f4677d023581381d1a` repeats all 58 real-cluster
+checks and 10 source/installed terminal cases successfully, with measured inputs
+unchanged and cleanup verified. The new startup trial preserves its advisory
+600 ms miss and passes hard contracts. The protected PR still requires every
+complete source/platform/native/coverage gate on the corrected exact head.
 
 The early exploratory command is retained in the issue checkout:
 `uv run --locked python -m artifacts.issue67.early_apply_proof --kind VERIFIED_KIND --kubectl VERIFIED_KUBECTL --output FRESH_REPORT`.

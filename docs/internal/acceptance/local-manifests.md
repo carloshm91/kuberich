@@ -228,3 +228,27 @@ The final two held-cleanup controls pass in 4.41 seconds after atomic publicatio
 of their fixture receipt. The original immediate draft-removal assertion and
 all deadlines remain unchanged. Counts overlap; fresh committed-source kind,
 installed-terminal and required hosted gates must qualify the follow-up head.
+
+## Follow-up frozen candidate
+
+Committed follow-up `cc6f8c73e7cd09f149ebd2f4677d023581381d1a` repeats the
+complete owned-kind verifier successfully: **58 checks**, 293 unchanged measured
+inputs, preserved configuration/sentinel, drained private/process/service owners
+and verified cluster deletion. `frozen-kind-03.json` SHA-256 is
+`f14272172039865afa2a8ca0da2477f2f3033f3e9d583ce7d79a94386bbf0839`.
+The subsequent documentation update preserves every measured application input.
+
+The same source/installed command above now includes the held native cleanup
+control and passes **10 cases in 30.23 seconds**, using fresh outside-checkout
+wheel environments for both entry points. Logs/XML are `installed-pty-02`.
+The frozen `startup-02` trial passes all hard contracts and its original strict
+negative controls; offline/import targets are met. Initial frames are
+993.14–1,022.15 ms against the unchanged advisory 600 ms target. This miss stays
+recorded, without changing enforcement or the source version.
+
+Ruff/format, private-access checking, the actual 341-file strict target union,
+generated references and plan pass on the corrected source. Affected
+documentation/style checks pass 44 cases in 20.46 seconds. Final complete
+source/platform/native/coverage results must come from the protected PR's
+corrected exact-head workflow; the first failed run is not relabeled or reused
+as that qualification.
