@@ -624,3 +624,41 @@ all four new canonical archives and protected merge remain required.
 Whole-checkout Ruff, formatting and private-access validation pass. Read-only
 binding checks confirm all 318 debug inputs, 313 inspection inputs and 309
 installed wheel runtime files remain byte-identical to the rebound proofs.
+
+## Seventh hosted attempt: concurrent fixture receipt publication
+
+Run `42877444072` measures `760c51ee1b6d873e40d21c4dc15ef757f69dd587`.
+Fast passes 10,991 cases with one skip in 429.66 seconds and all four native
+jobs pass. The macOS Python 3.12 second source part fails an existing Popeye
+process-cleanup test before its cancellation assertions: after waiting only for
+the PID receipt path to exist, JSON decoding reads an empty string. The part
+retains 3,216 passes and seven skips in 709.21 seconds. The full original log is
+`artifacts/issue78/control/hosted-mac312-part2-07.log`; the superseded remainder
+is cancelled, and the run remains unqualified.
+
+A native held-open writer reproduces premature publication for all three Popeye
+phases: version, scan and leader exit (three failures in 1.47 seconds). A scoped
+read-only audit finds two equivalent live-helper readiness races in Kustomize
+render cancellation and manifest-preview cancellation/close. Held-open controls
+reproduce those too (three failures and one ordinary pass in 1.90 seconds).
+Completed-process reads, atomic publications, later payload-ready handshakes
+and touch-only markers are excluded from this correction.
+
+These three test producers now close a complete sibling staging file before
+replacing the final JSON receipt. Readiness/reaping deadlines, repeated
+cancellation, private-file lifetime and process-cleanup assertions remain
+unchanged; no JSON parse retry or production/verifier change is introduced.
+All 67 branch-traced process/render/preview cases pass in 13.36 seconds:
+
+```sh
+COVERAGE_FILE=/tmp/kuberich-78-delivery-09/.coverage uv run --no-sync pytest -q tests/contract/test_popeye_process72.py tests/contract/test_kustomize_renderer.py tests/contract/test_manifest_preview.py --basetemp=/tmp/kuberich-78-delivery-09/basetemp --cov=kuberich --cov-branch --cov-report= --junitxml=/tmp/kuberich-78-delivery-09/junit.xml
+```
+
+Original control source, logs, JUnit and the scoped audit findings remain under
+`artifacts/issue78/receipt-publication-fix-01/`. The actual/installed proof inputs
+remain unchanged; those trials are not repeated for this test-only correction.
+Another complete exact-head hosted matrix and protected merge remain required.
+
+Whole-checkout Ruff, formatting and private-access validation pass. Read-only
+binding checks again confirm all 318 debug inputs, 313 inspection inputs and
+309 installed runtime files remain unchanged.

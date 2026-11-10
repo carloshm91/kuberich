@@ -13,17 +13,24 @@ from kuberich.errors import AppError
 from tests.contract.test_manifest_writes import RESOURCE, SESSION, adapter_fixture, create_intent
 
 HELPER = r"""
-import json, os, stat, sys
+import json, os, stat, sys, time
 from pathlib import Path
 arguments = sys.argv[1:]
 config = Path(next(arg.split('=',1)[1] for arg in arguments if arg.startswith('--kubeconfig=')))
 filename = Path(next(arg.split('=',1)[1] for arg in arguments if arg.startswith('--filename=')))
 cache = Path(next(arg.split('=',1)[1] for arg in arguments if arg.startswith('--cache-dir=')))
-Path(os.environ['FIXTURE_CAPTURE']).write_text(json.dumps({
-    'argv': arguments, 'kubeconfig': str(config), 'filename': str(filename), 'cache':str(cache),
-    'configuration': json.loads(config.read_text()), 'config_mode': stat.S_IMODE(config.stat().st_mode),
-    'file_mode':stat.S_IMODE(filename.stat().st_mode), 'KUBECONFIG':os.environ['KUBECONFIG'],
-    'KUBECTL_KUBERC':os.environ['KUBECTL_KUBERC']}))
+capture = Path(os.environ['FIXTURE_CAPTURE'])
+staged = capture.with_name(capture.name+'.staged')
+with staged.open('w') as receipt:
+    if os.environ['FIXTURE_HOLD_CAPTURE']=='1':
+        Path(os.environ['FIXTURE_CAPTURE_OPENED']).touch()
+        while not Path(os.environ['FIXTURE_CAPTURE_RELEASE']).exists(): time.sleep(0.01)
+    receipt.write(json.dumps({
+        'argv': arguments, 'kubeconfig': str(config), 'filename': str(filename), 'cache':str(cache),
+        'configuration': json.loads(config.read_text()), 'config_mode': stat.S_IMODE(config.stat().st_mode),
+        'file_mode':stat.S_IMODE(filename.stat().st_mode), 'KUBECONFIG':os.environ['KUBECONFIG'],
+        'KUBECTL_KUBERC':os.environ['KUBECTL_KUBERC']}))
+staged.replace(capture)
 value = json.loads(Path(os.environ['FIXTURE_BASELINE']).read_text())
 mode = os.environ.get('FIXTURE_MODE','normal')
 if mode == 'stall':
@@ -52,7 +59,7 @@ print(json.dumps(value))
 """
 
 
-def helper_environment(tmp_path, value, mode="normal"):
+def helper_environment(tmp_path, value, mode="normal", *, hold_receipt=False):
     executable = tmp_path / "kubectl"
     executable.write_text(f"#!{sys.executable}\n" + HELPER)
     executable.chmod(0o700)
@@ -64,6 +71,9 @@ def helper_environment(tmp_path, value, mode="normal"):
         "KUBECTL_KUBERC": "ambient-true",
         "FIXTURE_BASELINE": str(baseline),
         "FIXTURE_CAPTURE": str(tmp_path / "helper-capture.json"),
+        "FIXTURE_HOLD_CAPTURE": "1" if hold_receipt else "0",
+        "FIXTURE_CAPTURE_OPENED": str(tmp_path / "writer-open"),
+        "FIXTURE_CAPTURE_RELEASE": str(tmp_path / "publish-receipt"),
         "FIXTURE_MODE": mode,
     }
 
@@ -184,21 +194,38 @@ async def test_missing_kubectl_refuses_strict_preview_without_client_fallback(tm
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("close", [False, True])
+@pytest.mark.parametrize("hold_receipt", [False, True])
 async def test_helper_cancel_or_owner_close_drains_process_before_private_files_are_removed(
-    tmp_path, close
+    tmp_path, close, hold_receipt
 ):
     async with adapter_fixture(tmp_path) as (adapter, api):
         intent = create_intent()
         await adapter.execute(intent, lambda: None)
         baseline = await adapter.read(RESOURCE, intent.target, lambda: None)
         target = ResourceTarget(SESSION, "", "configmaps", "team", "owned-one", baseline.uid)
-        adapter.environment = helper_environment(tmp_path, api.value, "stall")
+        adapter.environment = helper_environment(
+            tmp_path, api.value, "stall", hold_receipt=hold_receipt
+        )
         task = asyncio.create_task(
             adapter.preview_update(RESOURCE, target, intent.body, baseline, lambda: None)
         )
-        async with asyncio.timeout(2):
-            while not (tmp_path / "helper-capture.json").exists():
-                await asyncio.sleep(0.01)
+        release = tmp_path / "publish-receipt"
+        try:
+            async with asyncio.timeout(2):
+                if hold_receipt:
+                    while not (tmp_path / "writer-open").exists():
+                        await asyncio.sleep(0.01)
+                    assert not (tmp_path / "helper-capture.json").exists() and not task.done()
+                    release.touch()
+                while not (tmp_path / "helper-capture.json").exists():
+                    await asyncio.sleep(0.01)
+        except BaseException:
+            release.touch()
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            raise
+        finally:
+            release.touch()
         captured = json.loads((tmp_path / "helper-capture.json").read_text())
         if close:
             await adapter.close()

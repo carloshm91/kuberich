@@ -74,6 +74,14 @@ refusal. Moving downloads/combination into `artifacts/test-parts/` preserves the
 guard and original bytes; 90 focused cases pass. Original failed/partial evidence
 remains retained, and another full exact-head matrix remains required.
 
+The seventh hosted attempt passes Fast and all native jobs, then a macOS source
+part reads an incomplete live-helper PID receipt in an existing Popeye test.
+Held-open writers reproduce that race and two equivalent adjacent readiness
+fixtures. Atomic sibling publication preserves the original cleanup assertions
+and deadlines; all 67 branch-traced process/render/preview cases pass. No
+production or verifier input changes, and complete exact-head hosted
+qualification is still required before delivery.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as
