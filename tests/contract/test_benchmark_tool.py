@@ -1,6 +1,7 @@
 """Real process faults exercise bounded private input, cancellation and child cleanup."""
 
 import asyncio
+import sys
 import threading
 from pathlib import Path
 
@@ -27,6 +28,16 @@ async def test_explicit_private_target_minimal_env_literal_args_and_cleanup(tmp_
     monkeypatch.setenv("HTTP_PROXY", "http://synthetic-private-proxy")
     monkeypatch.setenv("KUBECONFIG", "/synthetic-private-kubeconfig")
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "synthetic-private-credential")
+    monkeypatch.setenv("__CF_USER_TEXT_ENCODING", "synthetic-private-encoding")
+    supplied_environments = []
+    loop = asyncio.get_running_loop()
+    launch = loop.subprocess_exec
+
+    async def observe_launch(protocol_factory, *arguments, **options):
+        supplied_environments.append(dict(options["env"]))
+        return await launch(protocol_factory, *arguments, **options)
+
+    monkeypatch.setattr(loop, "subprocess_exec", observe_launch)
     tool = owner(tmp_path)
     version = await tool.probe()
     metrics = await tool.execute(
@@ -40,9 +51,15 @@ async def test_explicit_private_target_minimal_env_literal_args_and_cleanup(tmp_
         version=version,
     )
     assert metrics.attempts == metrics.successful_requests == 2
+    assert supplied_environments == [{"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C"}] * 3
+    observed_keys = {"PATH", "LANG", "LC_ALL", "LC_CTYPE"}
+    if sys.platform == "darwin":
+        # Apple's CoreFoundation may add this inside the Python fault helper.
+        # It remains absent from the exact environment passed to the OS above.
+        observed_keys.add("__CF_USER_TEXT_ENCODING")
     for phase in ("version", "attack", "report"):
         observed = await receipt(tmp_path / (phase + ".json"))
-        assert observed["environment"].keys() <= {"PATH", "LANG", "LC_ALL", "LC_CTYPE"}
+        assert observed["environment"].keys() <= observed_keys
         assert "synthetic-private" not in repr(observed)
         await gone(observed["pid"])
     assert len(tool.process_ids) == 3
