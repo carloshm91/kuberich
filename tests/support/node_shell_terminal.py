@@ -180,6 +180,11 @@ class NodeServer(ThreadingHTTPServer):
 
 
 def terminal_node_shell(command, directory, scenario, *, evidence):
+    directory = directory.resolve()
+    child_home, child_state = directory / "node-child-home", directory / "node-state"
+    for root in (child_home, child_state):
+        root.mkdir(mode=0o700, exist_ok=True)
+        root.chmod(0o700)
     server = NodeServer()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -217,7 +222,11 @@ def terminal_node_shell(command, directory, scenario, *, evidence):
         with TerminalSession(
             invocation,
             directory,
-            environment={"PATH": str(binary), "XDG_STATE_HOME": str(directory / "node-state")},
+            environment={
+                "PATH": str(binary),
+                "HOME": str(child_home),
+                "XDG_STATE_HOME": str(child_state),
+            },
             size=(120, 36),
         ) as terminal:
             terminal.wait_for_screen("owned-pty-node")
@@ -270,7 +279,8 @@ def terminal_node_shell(command, directory, scenario, *, evidence):
             assert b"synthetic-pty" not in terminal.transcript
         assert kubeconfig.read_bytes() == before
         assert server.pod is None and len(server.posts) == len(server.deletes) == attempts
-        assert not list((directory / "node-state").rglob("*.json"))
+        for root in (child_home, child_state):
+            assert not list(root.rglob("*.json")), f"Node-shell journal remained under {root}"
         captured = directory / "node-exec-arguments.jsonl"
         if scenario == "missing":
             assert not captured.exists()
