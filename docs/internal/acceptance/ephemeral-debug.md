@@ -396,3 +396,75 @@ recording error is an application test failure or an additional behavior pass.
 
 Fresh full exact-head hosted coverage, platform and protected merge checks
 remain required. No tags, packages or hosting are published by these trials.
+
+## Third hosted attempt: earlier inspection verifier
+
+Run `42844067685` measures corrected head
+`e2a392e2ec47739ecf048d52a016ac9b5cc5a3a4`. Fast passes 10,986 cases with
+one skip in 373.98 seconds. All 16 source parts, four native targets and the
+Python 3.13/3.14 Linux and Python 3.12 macOS Application jobs pass. The formerly
+failing Python 3.14 terminal part now passes 3,218 cases with one platform skip;
+the inventory part passes 3,697. The terminal part retains an existing
+`asyncio.iscoroutinefunction` deprecation warning in the node-shell verifier test.
+
+The canonical Linux 3.12 Application job fails earlier than the debug verifier,
+in existing container-inspection verification. Its phase is
+`checking-restricted-source-reads`, failure type AppError, duration 33.07 seconds.
+All inspection-owner, private-directory, owned-cluster, environment and input
+stability guards pass. The original complete job log is retained at
+`artifacts/issue78/control/hosted-application-312-03.log`. The verified archive
+SHA-256 is
+`633804847ca7f3832bc086638128b51dde8426cf8bc8eb9ebab5e40c496c8264`.
+Known inspection receipts are retained under
+`artifacts/issue78/hosted-original/container-inspection-03-*.json`.
+
+Its ledger ends in three complete six-GET cycles; each keeps the expected Secret
+403 and absent optional ConfigMap 404. The final direct refused-copy check uses
+an older snapshot outside the existing bounded positive-reading helpers.
+Incidental stale binding is a candidate cause, but the original receipt retains
+neither the AppError code nor Pod/source versions or stack locations. The exact
+original cause must not be inferred as established from those requests alone.
+Controlled reproduction and a narrow correction remain in progress.
+
+Checksum-verified archives for the three completed Application profiles cover
+all 307 production modules, exceeding 98% lines, 94% branches and 98% changed
+lines; all 126 critical modules meet 100% lines and applicable branches. The
+failed canonical archive separately contains valid whole-coverage observations:
+42,454/43,087 lines and 12,499/13,136 branches, with all critical modules passing.
+It lacks the later changed-line report and hosted debug proof. The full archive
+audit rejects that missing evidence; its coverage-only observation is explicitly
+partial. The failed run does not qualify delivery, and protected merge remains
+pending. No original result is relabelled and no publication is performed.
+
+### Controlled inspection-verifier correction
+
+An owned loopback HTTP control reproduces a status-only Pod-version change during
+the final Secret-copy read while every Secret response remains 403. The existing
+service correctly raises the stale-binding error and retires the snapshot;
+all service/HTTP/private-directory cleanup completes. The original direct verifier
+call fails on that condition. Corrected refused-copy verification explicitly
+obtains a fresh observation only for that exact stale error with a retired
+snapshot, retaining the existing reload limit of two and the same captured UID
+and current-target guards. Each candidate observation must still identify the
+exact Secret as forbidden; every captured restricted Secret GET must be 403 and
+the result must remain incomplete with no text. This changes development proof,
+not application behavior or its freshness/permission policy.
+
+The controlled original and corrected results remain at
+`artifacts/issue78/inspection-fix/red-02.log` and `green-03.log`; the first
+test-authoring attempt's missing import remains separately retained. The final
+verifier/enrollment cohort passes 68 cases in 3.22 seconds:
+
+```sh
+uv run pytest tests/quality/test_container_inspection_kind.py tests/quality/test_container_inspection_enrollment.py --basetemp=/tmp/kuberich-78-inspection-fix-06 -n 0 -q
+```
+
+Negative controls preserve finite exhaustion, changed permissions, replacement
+UIDs, retired targets, unrelated errors, unexplained stale errors with a current
+snapshot and forbidden values/completion. Failure receipts gain fixed codes and
+at most eight owned relative source locations, without error text, payloads,
+locals or absolute paths. Ruff, formatting and strict verifier typing pass.
+The original hosted receipt still cannot establish its exact Pod-versus-source
+change. A new actual owned-kind trial and exact-head hosted run remain required.
+All 318 inputs bound by the successful debug proof remain byte-identical; its
+unchanged local actual/installed trials are not rerun solely for this verifier.

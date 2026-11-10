@@ -30,6 +30,13 @@ regressions, fresh installed behavior and all real-kind groups; the corrected
 workflow cohort also passes. A fresh complete exact-head matrix is required
 before this candidate can merge.
 
+The third hosted attempt passes all source parts, native targets and three full
+Application profiles, including the corrected terminal/inventory regressions.
+Its remaining Linux 3.12 job fails in an earlier container-inspection verifier's
+restricted-read check; the later hosted debug proof does not execute. Original
+receipts and partial coverage remain preserved. A controlled verifier correction
+and complete protected qualification are still required before delivery.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as

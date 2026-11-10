@@ -22,7 +22,12 @@ from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import load_catalog
 from kuberich.domain.connection_overrides import ConnectionOverrides
 from kuberich.domain.connections import ConnectionRequest, HttpProblem
-from kuberich.domain.container_inspection import ContainerIdentity, InspectionSnapshot
+from kuberich.domain.container_inspection import (
+    ContainerIdentity,
+    InspectionSnapshot,
+    ResolvedValue,
+    SourceRef,
+)
 from kuberich.domain.resources import Discovery
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
@@ -548,6 +553,71 @@ async def positive_values(
     return snapshot, values
 
 
+async def refused_copy(
+    service: ContainerInspectionService,
+    snapshot: InspectionSnapshot,
+    name: str,
+    forbidden: SourceRef,
+    *,
+    phase: str,
+    reloads: list[dict[str, Any]],
+    index_reloads: list[dict[str, Any]],
+) -> tuple[InspectionSnapshot, ResolvedValue]:
+    """Reacquire only retired stale observations for the expected denied copy."""
+    captured_uid = service.target.uid
+    attempts = 0
+    while True:
+        service.require_current()
+        if service.target.uid != captured_uid or snapshot.pod.uid != captured_uid:
+            raise AssertionError("Refused-copy observation changed the captured Pod UID.")
+        if forbidden.kind != "Secret" or not any(
+            item.ref == forbidden and item.state == "forbidden" for item in snapshot.sources
+        ):
+            raise AssertionError(
+                "Refused-copy observation must still establish the forbidden Secret."
+            )
+        entries = [
+            item for item in snapshot.entries if item.name == name and item.source == forbidden
+        ]
+        if len(entries) != 1:
+            raise AssertionError("Refused-copy check requires the exact Secret-backed entry.")
+        try:
+            result = await service.disclose(service.new_intent(snapshot.id, entries[0].id, "copy"))
+        except AppError as error:
+            if str(error) != STALE_MESSAGE or service.snapshot_current(snapshot.id):
+                raise
+            service.require_current()
+            if service.target.uid != captured_uid:
+                raise AssertionError("Refused-copy reload changed the captured Pod UID.") from None
+            if attempts >= POSITIVE_RELOAD_LIMIT:
+                raise AssertionError("Refused-copy reload budget exhausted.") from error
+            attempts += 1
+            receipt: dict[str, Any] = {
+                "phase": phase,
+                "entry": name,
+                "attempt": attempts,
+                "previous_snapshot": str(snapshot.id),
+                "previous_resource_version": snapshot.pod.resource_version,
+                "reason": "retired-stale-refused-copy",
+                "state": "started",
+            }
+            reloads.append(receipt)
+            snapshot = await positive_index(service, phase=phase, reloads=index_reloads)
+            if snapshot.pod.uid != captured_uid:
+                raise AssertionError("Refused-copy reload changed the captured Pod UID.") from None
+            receipt.update(
+                state="completed",
+                snapshot=str(snapshot.id),
+                resource_version=snapshot.pod.resource_version,
+            )
+        else:
+            if result.text is not None or result.complete:
+                raise AssertionError(
+                    "Forbidden Secret copy unexpectedly produced a value or completed."
+                )
+            return snapshot, result
+
+
 async def close_owned(
     services: list[ContainerInspectionService], clients: list[KubernetesSession]
 ) -> None:
@@ -808,6 +878,7 @@ async def verify(
             restricted = service(low, ContainerIdentity("containers", "app", "App"))
             progress["phase"] = "checking-restricted-source-reads"
             with inspection_receipts(receipts):
+                restricted_start = len(receipts)
                 denied = await positive_index(
                     restricted, phase=progress["phase"], reloads=index_reloads
                 )
@@ -823,11 +894,22 @@ async def verify(
                     reloads=reloads,
                     index_reloads=index_reloads,
                 )
-                token_entry = next(item for item in denied.entries if item.name == "TOKEN")
-                result = await restricted.disclose(
-                    restricted.new_intent(denied.id, token_entry.id, "copy")
+                denied, result = await refused_copy(
+                    restricted,
+                    denied,
+                    "TOKEN",
+                    SourceRef("Secret", NAMESPACE, SECRET),
+                    phase=progress["phase"],
+                    reloads=reloads,
+                    index_reloads=index_reloads,
                 )
                 assert result.text is None and not result.complete
+                denied_reads = [
+                    item
+                    for item in receipts[restricted_start:]
+                    if item["path"] == f"/api/v1/namespaces/{NAMESPACE}/secrets/{SECRET}"
+                ]
+                assert denied_reads and all(item["status"] == 403 for item in denied_reads)
             checks.append(
                 "real-rbac-denied-secret-get-preserves-independent-literal-and-no-value-copy"
             )
@@ -961,6 +1043,40 @@ def input_hashes(root: Path) -> dict[str, str]:
     }
 
 
+def failure_diagnostic(error: BaseException) -> dict[str, Any]:
+    """Retain fixed failure categories and owned source locations, never messages."""
+    code = (
+        "stale-binding"
+        if isinstance(error, AppError) and str(error) == STALE_MESSAGE
+        else "application-error"
+        if isinstance(error, AppError)
+        else "assertion"
+        if isinstance(error, AssertionError)
+        else "deadline"
+        if isinstance(error, TimeoutError)
+        else "cancelled"
+        if isinstance(error, asyncio.CancelledError)
+        else "api-error"
+        if isinstance(error, ApiException)
+        else "unexpected-error"
+    )
+    root = Path(__file__).resolve().parents[1]
+    frames = []
+    frame = error.__traceback__
+    while frame is not None:
+        try:
+            path = Path(frame.tb_frame.f_code.co_filename).resolve().relative_to(root)
+        except ValueError:
+            pass
+        else:
+            if path.suffix == ".py" and (
+                path.parts[:1] == ("scripts",) or path.parts[:2] == ("src", "kuberich")
+            ):
+                frames.append({"path": path.as_posix(), "line": frame.tb_lineno})
+        frame = frame.tb_next
+    return {"code": code, "owned_frames": frames[-8:]}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--kind", required=True, type=Path)
@@ -989,6 +1105,7 @@ def main() -> None:
             except BaseException as error:
                 problem = error
                 result["failure_type"] = type(error).__name__
+                result["failure"] = failure_diagnostic(error)
         result["owned_cluster_deleted"] = True
         result["private_directory_deleted"] = not cluster.directory.exists()
         result["inputs_unchanged"] = input_hashes(root) == captured
@@ -1003,6 +1120,7 @@ def main() -> None:
         result["status"] = "passed"
     except BaseException as error:
         result.setdefault("failure_type", type(error).__name__)
+        result.setdefault("failure", failure_diagnostic(error))
         if cluster is not None:
             result["private_directory_deleted"] = not cluster.directory.exists()
         raise
