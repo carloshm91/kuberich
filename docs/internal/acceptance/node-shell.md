@@ -237,6 +237,12 @@ file passes four cases on local Linux in 15.06 seconds with unchanged 15-second
 stage deadlines. Ruff, formatting and strict module types pass. These results do
 not claim a macOS pass; the next exact-head hosted matrix must establish it.
 
+The final guide audit also corrects an unusable `:reload` instruction: no such
+command exists. Valid node-shell preference changes use the implemented automatic
+two-second reload, as the corrected setup steps now explain. This documentation
+change leaves the corrected runtime unchanged; protected checks still apply to
+the final source head.
+
 The protected PR must pass complete exact-head hosted source/platform/native,
 production/critical/changed-line coverage and app-bound repository/DCO gates.
 No version bump, tag, package publication, hosting deployment or DNS change is

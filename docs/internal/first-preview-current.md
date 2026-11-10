@@ -49,6 +49,11 @@ remains retained; the application coverage matrix did not run. The earlier local
 wheel source association is historical after this runtime correction, and a fresh
 complete exact-head matrix remains required.
 
+The final configuration-guide audit removes a nonexistent `:reload` step and
+documents the implemented automatic two-second preference reload. It finds no
+other command/configuration mismatch. The final source head still requires its
+complete protected checks; these source changes publish no artifacts or hosting.
+
 ## Local manifests delivered in development source — 2026-11-10 UTC
 
 [PR #335](https://github.com/carloshm91/kuberich/pull/335) merged normally as

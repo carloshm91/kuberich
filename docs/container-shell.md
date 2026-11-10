@@ -124,8 +124,9 @@ node_shell:
 ```
 
 Replace that fictional image/digest and namespace with reviewed choices, then run
-`kuberich config check`. Reload preferences with `:reload`. Loading preferences
-does not pull images or create pods. Normal kubelet image pulls can occur after
+`kuberich config check`. KubeRich checks for valid preference changes every two
+seconds and applies them automatically. Loading preferences does not pull images
+or create pods. Normal kubelet image pulls can occur after
 confirmation. There is no per-dialog image override or fallback image.
 
 Requests must be positive and no greater than limits. CPU is bounded to eight
