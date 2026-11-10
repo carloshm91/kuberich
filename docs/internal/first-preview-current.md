@@ -39,6 +39,11 @@ its matrices; fresh 06/03 evidence above binds the corrected runtime.
 See all earlier failed and successful trials in
 [maintenance acceptance](acceptance/node-maintenance.md).
 
+All four native builds and all Linux source parts pass on `d167143`. A macOS
+part exposes an older 30 ms first-response assumption in an aggregate-log test;
+a controlled HTTP regression reproduces it and the corrected verifier cohorts
+pass 47 cases. Application files and real deadlines remain unchanged.
+
 Full production/changed-line coverage, all 125 critical modules and the complete
 27-job protected exact-head PR pipeline remain pending. Published packages remain
 0.4.0; these source changes publish no tags, artifacts or hosting.

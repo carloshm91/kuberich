@@ -267,6 +267,9 @@ async def test_missing_waiting_instance_hits_the_owned_deadline_without_admissio
     tmp_path, monkeypatch
 ):
     async def short_deadline(predicate):
+        # Establish one real, rejected snapshot before timing repeated observation.
+        # Transport/worker startup need not fit this fixture's short retry deadline.
+        assert not await predicate()
         async with asyncio.timeout(0.03):
             while not await predicate():
                 await asyncio.sleep(0)
@@ -274,6 +277,8 @@ async def test_missing_waiting_instance_hits_the_owned_deadline_without_admissio
     monkeypatch.setattr(verification, "wait_for", short_deadline)
 
     async def handler(request):
+        # Keep first-response startup longer than the deliberately tiny retry timer.
+        await asyncio.sleep(0.04)
         return web.json_response(collection(pod(uid="recreated")))
 
     async with reader_fixture(tmp_path, handler) as reader:

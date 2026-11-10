@@ -284,6 +284,29 @@ this source; `artifacts/issue77/installed-03/wheel-receipt.json` records SHA-256
 `17ae25c2c4a885a5ff8f8954a32068d47688375070bfc9a70a8e93c6d0a449ab`.
 The older 05/02 receipts remain historical after this runtime change.
 
+## Hosted macOS fixture deadline
+
+On corrected application source `d167143`, all four native targets and every
+Linux source part pass. The macOS third part fails one existing aggregate-log
+verifier fixture after 3,370 passes. Its 30 ms test-only timer can expire before
+the first real LIST response/parse has populated attempt evidence; the test then
+incorrectly assumes a completed observation. The original job log is retained
+at `artifacts/issue77/control/macos-part3-failure.log` for run `42806258472`,
+job `129800913926`.
+
+A controlled 40 ms HTTP response reproduces the same KeyError locally before
+the correction; the original red remains at
+`artifacts/issue77/aggregate-deadline/red.log`. The fixture now establishes one
+real rejected snapshot before arming its unchanged 30 ms repeated-observation
+timer. The first read retains the session's owned timeout; production and actual
+verifier deadlines are unchanged. Wrong-UID observations still never admit a
+log read or consume the pending membership gate. Both verifier cohorts pass all
+47 cases in 3.77 seconds at `/tmp/kuberich-77-aggregate-deadline-green-02`.
+The other 15 source parts and all four native targets finish successfully;
+the aggregate profiles are skipped and Quality gate fails because that required
+part failed. Only a test and this evidence change; the successful 06/03 application
+source bindings remain current. A complete new exact-head pipeline is required.
+
 ## Completion limits
 
 Full production coverage of at least 90% lines and 90% branches, at least 90%
