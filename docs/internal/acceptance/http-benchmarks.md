@@ -218,3 +218,21 @@ inherited a group-writable host umask. The original `native-runtime-03.log` is
 retained. The verifier now creates its owned tools directory with mode 0700;
 the benchmark adapter independently refuses group-writable or linked tool
 folders before copy/compile. Authentication and filesystem guards are preserved.
+
+## Late-worker metric duration correction
+
+A final owned actual-tool diagnostic finds a valid report that the first
+normalizer rejected: requested rate 5/s, concurrency 1, duration 1 second and
+request timeout 5 seconds, with a first response delayed 4 seconds. The second
+scheduled request starts when that worker becomes available. Two requests are
+observed/reported, with a 4.006835042-second start span and 0.000739998-second
+final wait, well within the unchanged 8-second attack process deadline. The
+original outcome is retained as `malformed_output`, with private-file/child
+cleanup; this diagnostic is not relabeled as a passing production run.
+
+Both raw-report and normalized-record decoders now validate their durations
+against the existing duration + request timeout + 2-second process budget, and
+also reject duration + final wait beyond that budget. The exact actual report
+is retained as a synthetic, value-free fixture with roundtrip and over-budget
+controls; a real HTTP contract exercises the same busy-worker boundary. No
+load limit, process deadline or latency gate is raised.

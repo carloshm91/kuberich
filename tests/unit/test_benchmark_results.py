@@ -252,3 +252,64 @@ def test_missing_tool_may_not_claim_metrics_and_naive_dates_cannot_serialize():
         encode_result(replace(result(), method=object()))
     with pytest.raises(AppError):
         decode_result(b" " * 32769)
+
+
+def test_actual_late_worker_report_and_saved_record_use_unchanged_outer_wall_budget():
+    raw = json.loads(
+        (
+            Path(__file__).parents[1] / "fixtures/benchmarks/vegeta-12.13.0-slow-worker.json"
+        ).read_bytes()
+    )
+    load = LoadOptions(rate=5, duration_seconds=1, timeout_seconds=5)
+    metrics = parse_vegeta_report(report_data(raw), load)
+    assert metrics.attempts == 2 and metrics.duration_ns == 4006835042
+    assert 3e9 < metrics.duration_ns + metrics.wait_ns < 8e9
+    value = replace(
+        result(), load=load, metrics=metrics, finished_at=result().started_at + timedelta(seconds=5)
+    )
+    assert decode_result(encode_result(value)) == value
+
+
+def test_report_and_saved_metrics_reject_total_span_beyond_process_wall_budget():
+    load = LoadOptions(rate=5, duration_seconds=1, timeout_seconds=5)
+    # Both intervals pass the former individual caps; timestamps, percentiles,
+    # totals and rates are internally consistent. Their sum exceeds 8 seconds.
+    raw = deepcopy(OBSERVED)
+    raw.update(
+        earliest="2026-11-10T00:00:00Z",
+        latest="2026-11-10T00:00:02.5Z",
+        end="2026-11-10T00:00:08.1Z",
+        duration=2_500_000_000,
+        wait=5_600_000_000,
+        rate=0.8,
+        throughput=2 / 8.1,
+        latencies={
+            "total": 5_601_000_000,
+            "mean": 2_800_500_000,
+            "50th": 2_800_500_000,
+            "90th": 5_600_000_000,
+            "95th": 5_600_000_000,
+            "99th": 5_600_000_000,
+            "max": 5_600_000_000,
+            "min": 1_000_000,
+        },
+    )
+    with pytest.raises(AppError):
+        parse_vegeta_report(report_data(raw), load)
+    saved = json.loads(encode_result(replace(result(), load=load)))
+    saved["finished_at"] = "2026-11-10T00:00:10Z"
+    saved["metrics"].update(
+        duration_ns=2_500_000_000,
+        wait_ns=5_600_000_000,
+        actual_rate=0.8,
+        throughput=2 / 8.1,
+        latency_min_ns=1_000_000,
+        latency_mean_ns=2_800_500_000,
+        latency_p50_ns=2_800_500_000,
+        latency_p90_ns=5_600_000_000,
+        latency_p95_ns=5_600_000_000,
+        latency_p99_ns=5_600_000_000,
+        latency_max_ns=5_600_000_000,
+    )
+    with pytest.raises(AppError):
+        decode_result(json.dumps(saved).encode())

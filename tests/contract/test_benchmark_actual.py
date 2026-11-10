@@ -7,14 +7,18 @@ import stat
 import time
 from collections import Counter
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
 from aiohttp import web
 
+from kuberich.domain.benchmark_results import BenchmarkProvenance, BenchmarkResult
 from kuberich.domain.benchmarks import LoadOptions, RequestOptions
 from kuberich.services.access import AccessPolicy
+from kuberich.services.benchmark_store import BenchmarkStore
 from kuberich.services.benchmark_tool import BenchmarkTool
 from scripts.benchmark_tools import verify_benchmark_binary
 from tests.support.benchmarks import gone
@@ -294,3 +298,40 @@ async def test_actual_cancellation_reaps_load_and_observes_no_new_requests(actua
         count = len(server.observed)
         await asyncio.sleep(0.35)
         assert len(server.observed) == count >= 1
+
+
+@pytest.mark.asyncio
+async def test_actual_slow_worker_may_start_after_duration_within_original_wall_budget(
+    actual_tool, tmp_path
+):
+    tool, version = actual_tool
+
+    async def handler(request, index):
+        if index == 0:
+            await asyncio.sleep(4)
+        return web.Response(text="owned delayed worker")
+
+    load = LoadOptions(rate=5, duration_seconds=1, timeout_seconds=5)
+    started = datetime.now(UTC)
+    async with owned_http(handler) as server:
+        metrics = await tool.execute(RequestOptions(), load, server.port, version=version)
+    assert metrics.attempts == len(server.observed) == 2
+    assert metrics.duration_ns > (load.duration_seconds + 2) * 1e9
+    assert (
+        metrics.duration_ns + metrics.wait_ns
+        <= (load.duration_seconds + load.timeout_seconds + 2) * 1e9
+    )
+    value = BenchmarkResult(
+        uuid4(),
+        started,
+        datetime.now(UTC),
+        version,
+        BenchmarkProvenance("owned-loopback", "synthetic", "slow", "synthetic-uid", 8080),
+        "GET",
+        load,
+        "complete",
+        metrics,
+    )
+    store = BenchmarkStore(tmp_path / "saved-slow")
+    saved = await store.save(value)
+    assert await BenchmarkStore(store.default_root).read(saved.ref) == value

@@ -211,8 +211,11 @@ def parse_vegeta_report(
         or mean != int(total_latency / attempts)
     ):
         raise _invalid()
-    duration = _int(raw["duration"], (load.duration_seconds + 2) * 1_000_000_000)
+    wall_bound = (load.duration_seconds + load.timeout_seconds + 2) * 1_000_000_000
+    duration = _int(raw["duration"], wall_bound)
     wait = _int(raw["wait"], bound)
+    if duration + wait > wall_bound:
+        raise _invalid()
     _, earliest = _timestamp(raw["earliest"])
     _, latest = _timestamp(raw["latest"])
     _, end = _timestamp(raw["end"])
@@ -290,8 +293,11 @@ def _read_metrics(value: Any, load: LoadOptions) -> BenchmarkMetrics:
     values = [_int(raw[key], (load.timeout_seconds + 2) * 10**9) for key in latency_keys]
     if values != sorted(values) or not values[0] <= _int(raw["latency_mean_ns"]) <= values[-1]:
         raise _invalid()
-    duration = _int(raw["duration_ns"], (load.duration_seconds + 2) * 10**9)
+    wall_bound = (load.duration_seconds + load.timeout_seconds + 2) * 10**9
+    duration = _int(raw["duration_ns"], wall_bound)
     wait = _int(raw["wait_ns"], (load.timeout_seconds + 2) * 10**9)
+    if duration + wait > wall_bound:
+        raise _invalid()
     for key, numerator, denominator in (
         ("actual_rate", attempts, duration),
         ("throughput", expected["successful_requests"], duration + wait),
