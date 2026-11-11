@@ -1963,11 +1963,17 @@ class KubeRichApp(App[None]):
             from kuberich.ui.manifest_browser import ManifestBrowserScreen
             from kuberich.ui.manifest_editor import ManifestEditorScreen
             from kuberich.ui.manifest_review import ManifestReviewScreen
+            from kuberich.ui.resource_creation import ResourceCreationScreen
 
             manifest_screen = self.screen
             if isinstance(
                 manifest_screen,
-                (ManifestBrowserScreen, ManifestEditorScreen, ManifestReviewScreen),
+                (
+                    ManifestBrowserScreen,
+                    ManifestEditorScreen,
+                    ManifestReviewScreen,
+                    ResourceCreationScreen,
+                ),
             ):
                 # App priority Escape must drain ownership before popping the screen.
                 await manifest_screen.action_back()

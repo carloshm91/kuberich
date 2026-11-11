@@ -1,5 +1,6 @@
 """Observable offline import, editor consent and separate creation review controls."""
 
+import asyncio
 import logging
 
 import pytest
@@ -92,3 +93,39 @@ def test_create_command_is_local_and_rejects_unreviewed_arguments():
     assert commands.resolve(":create") is Command.CREATE
     with pytest.raises(Exception, match="without arguments"):
         commands.resolve(":create owned.yaml")
+
+
+@pytest.mark.asyncio
+async def test_root_escape_keeps_creation_foreground_until_public_owner_close(
+    tmp_path, monkeypatch
+):
+    from kuberich.services.resource_creation import ResourceCreationService
+
+    app = KubeRichApp(
+        Settings(),
+        logging.Logger("owned-creation-escape"),
+        catalog=KubeCatalog(),
+        directory=tmp_path,
+        initial_command=Command.CREATE,
+    )
+    async with app.run_test() as pilot:
+        await wait_for(lambda: isinstance(app.screen, ResourceCreationScreen))
+        screen = app.screen
+        entered, release = asyncio.Event(), asyncio.Event()
+        close = ResourceCreationService.close
+
+        async def held(owner):
+            if owner is screen.service:
+                entered.set()
+                await release.wait()
+            await close(owner)
+
+        monkeypatch.setattr(ResourceCreationService, "close", held)
+        escape = asyncio.create_task(pilot.press("escape"))
+        try:
+            await wait_for(entered.is_set)
+            assert app.screen is screen and len(app.screen_stack) == 2
+        finally:
+            release.set()
+            await escape
+        await wait_for(lambda: len(app.screen_stack) == 1)

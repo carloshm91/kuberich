@@ -67,7 +67,7 @@ class ResourceCreationScreen(ModalScreen[None]):
         self.pages: tuple[str, ...] = ()
         self.page = 0
         self.disclosure: DraftDisclosureIntent | None = None
-        self._task: asyncio.Task[None] | None = None
+        self._operation_task: asyncio.Task[None] | None = None
         self._stopped = False
 
     @property
@@ -76,7 +76,10 @@ class ResourceCreationScreen(ModalScreen[None]):
 
     @property
     def operation_count(self) -> int:
-        return int(self._task is not None and not self._task.done()) + self.service.operation_count
+        return (
+            int(self._operation_task is not None and not self._operation_task.done())
+            + self.service.operation_count
+        )
 
     def compose(self) -> ComposeResult:
         with Vertical(id="creation-form"):
@@ -115,7 +118,7 @@ class ResourceCreationScreen(ModalScreen[None]):
     def _controls(self) -> None:
         if not self.viewer.is_attached:
             return
-        busy = self._task is not None and not self._task.done()
+        busy = self._operation_task is not None and not self._operation_task.done()
         source = self.service.current_source
         self.file.disabled = busy or self._stopped
         self.query_one("#creation-import", Button).disabled = busy or self._stopped
@@ -133,10 +136,10 @@ class ResourceCreationScreen(ModalScreen[None]):
         self.query_one("#creation-next", Button).disabled = self.page + 1 >= len(self.pages)
 
     def _start(self, operation: Callable[[], Awaitable[str]]) -> None:
-        if self._stopped or (self._task is not None and not self._task.done()):
+        if self._stopped or (self._operation_task is not None and not self._operation_task.done()):
             return
-        self._task = asyncio.create_task(self._run(operation))
-        self._task.add_done_callback(self._retired)
+        self._operation_task = asyncio.create_task(self._run(operation))
+        self._operation_task.add_done_callback(self._retired)
         self._controls()
 
     async def _run(self, operation: Callable[[], Awaitable[str]]) -> None:
@@ -149,7 +152,7 @@ class ResourceCreationScreen(ModalScreen[None]):
             feedback = "Creation source operation failed; private details withheld."
         finally:
             if self._current():
-                self._task = None
+                self._operation_task = None
                 self._controls()
                 self.set_focus(self.query_one("#creation-back", Button))
                 if feedback:
@@ -158,8 +161,8 @@ class ResourceCreationScreen(ModalScreen[None]):
     def _retired(self, task: asyncio.Task[None]) -> None:
         if not task.cancelled():
             task.exception()
-        if self._task is task:
-            self._task = None
+        if self._operation_task is task:
+            self._operation_task = None
         self._controls()
 
     async def _show_source(self) -> None:
@@ -253,11 +256,11 @@ class ResourceCreationScreen(ModalScreen[None]):
             self.run_worker(self.action_back())
 
     async def action_stop(self) -> None:
-        task = self._task
+        task = self._operation_task
         if task is not None:
             task.cancel()
             await finish_owned(asyncio.gather(task, return_exceptions=True))
-        self._task = None
+        self._operation_task = None
         await self.service.close_draft()
         self.disclosure = None
         self._controls()
