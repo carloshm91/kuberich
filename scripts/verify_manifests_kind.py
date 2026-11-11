@@ -21,6 +21,7 @@ from kuberich.config.catalog import Entry, load_catalog
 from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.manifests import (
+    LAST_APPLIED,
     ManifestAction,
     ManifestPlan,
     ManifestScope,
@@ -369,6 +370,91 @@ class Harness:
             connection is None or not list(Path(connection.directory.name).glob("manifest-*")),
         )
         await self.sessions.close()
+
+
+async def creation_cases(h: Harness) -> None:
+    """Early create-only spine with independent observations of actual storage."""
+    h.report["active_case"] = "strict-create-only-spine"
+    name = "owned-create-only"
+    service, plan = await h.reviewed("create-only.yaml", (fixture_manifest(name),), action="create")
+    h.check(
+        "create-only-strict-dryrun-validates-without-persisting-or-capturing-preview-uid",
+        plan.ready and await h.cm(name) is None and not service.created_receipts,
+    )
+    result = await h.execute(service, plan)
+    persisted = await h.require_cm(name)
+    receipts = service.created_receipts
+    h.check(
+        "create-only-201-receipt-matches-independent-persistent-uid-and-version",
+        result.state is MutationState.SUCCEEDED
+        and len(receipts) == 1
+        and receipts[0].target.uid == persisted.metadata.uid
+        and receipts[0].resource_version == persisted.metadata.resource_version,
+    )
+    h.check(
+        "create-only-does-not-add-last-applied-annotation",
+        LAST_APPLIED not in (persisted.metadata.annotations or {}),
+    )
+    original_uid, original_version = persisted.metadata.uid, persisted.metadata.resource_version
+    conflict = await h.prepare(service, "create")
+    h.check(
+        "create-only-existing-name-refuses-without-update-or-adoption",
+        not conflict.ready
+        and conflict.items[0].request is None
+        and conflict.items[0].validation.state is MutationState.CONFLICT
+        and (await h.require_cm(name)).metadata.uid == original_uid
+        and (await h.require_cm(name)).metadata.resource_version == original_version,
+    )
+    race = "owned-create-after-review"
+    service, plan = await h.reviewed(
+        "create-after-review.yaml", (fixture_manifest(race),), action="create"
+    )
+    proof = service.confirm(plan)
+    appeared = await h.core.create_namespaced_config_map(
+        NAMESPACE,
+        client.V1ConfigMap(metadata=client.V1ObjectMeta(name=race), data={"owned": "collision"}),
+    )
+    result = await service.execute(proof)
+    h.check(
+        "create-only-after-review-collision-leaves-existing-uid-and-data-untouched",
+        result.state is MutationState.CONFLICT
+        and not service.created_receipts
+        and (await h.require_cm(race)).metadata.uid == appeared.metadata.uid
+        and (await h.require_cm(race)).data == {"owned": "collision"},
+    )
+    for suffix, change in (
+        ("unknown-field", {"unknownCreationField": "private-invalid-field"}),
+        ("wrong-type", {"data": ["private-invalid-type"]}),
+    ):
+        invalid_name = "owned-create-" + suffix
+        service, plan = await h.reviewed(
+            "create-" + suffix + ".yaml",
+            ({**fixture_manifest(invalid_name), **change},),
+            action="create",
+        )
+        h.check(
+            "create-only-strict-server-rejects-" + suffix + "-without-persistence",
+            not plan.ready
+            and plan.items[0].validation.state is MutationState.REJECTED
+            and await h.cm(invalid_name) is None,
+        )
+    blocked = "owned-create-readonly"
+    write_documents(h.root / "create-readonly.yaml", (fixture_manifest(blocked),))
+    service = await h.source("create-readonly.yaml")
+    h.policy.restrict(True)
+    try:
+        try:
+            await service.prepare("create")
+        except AppError:
+            refused = True
+        else:
+            refused = False
+        h.check(
+            "create-only-readonly-refuses-validation-and-persistent-write",
+            refused and service.intent is None and await h.cm(blocked) is None,
+        )
+    finally:
+        h.policy.restrict(False)
 
 
 async def apply_cases(h: Harness) -> None:
@@ -1013,13 +1099,15 @@ async def verify(cluster: OwnedCluster, kubectl: Path, report: dict[str, Any]) -
     try:
         async with asyncio.timeout(VERIFY_SECONDS):
             await h.open()
-            await apply_cases(h)
-            await kustomize_and_scope(h)
-            await refusal_and_races(h)
-            await rbac_cases(h)
-            await deletion_cases(h)
-            await proxy_cases(h)
-            await ui_case(h)
+            await creation_cases(h)
+            if not report.get("creation_spine_only", False):
+                await apply_cases(h)
+                await kustomize_and_scope(h)
+                await refusal_and_races(h)
+                await rbac_cases(h)
+                await deletion_cases(h)
+                await proxy_cases(h)
+                await ui_case(h)
             h.check(
                 "owned-kubeconfig-and-ambient-sentinel-unchanged",
                 cluster.path.read_bytes() == before
@@ -1040,6 +1128,7 @@ def run(args: argparse.Namespace, root: Path) -> int:
         "scope": "Owned Linux amd64 kind only; no provider, macOS or public-release qualification.",
         "owned_cluster_deleted": False,
         "source_unchanged": False,
+        "creation_spine_only": getattr(args, "creation_spine", False),
     }
     failure: BaseException | None = None
     before: dict[str, str] = {}
@@ -1110,6 +1199,9 @@ def main() -> None:
     parser.add_argument("--kubectl", type=Path, required=True)
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument(
+        "--creation-spine", action="store_true", help="Run only the early create-only API proof."
+    )
     args = parser.parse_args()
     raise SystemExit(run(args, Path(__file__).resolve().parent.parent))
 

@@ -13,7 +13,12 @@ from kuberich.adapters.kubernetes import KubernetesSession, decode_json
 from kuberich.adapters.mutations import guarded_request
 from kuberich.adapters.operations import operation_receipt
 from kuberich.domain.connections import HttpProblem
-from kuberich.domain.manifests import ManifestCreateIntent, manifest_status
+from kuberich.domain.manifests import (
+    CreatedResourceReceipt,
+    ManifestCreateIntent,
+    create_manifest_intent,
+    manifest_status,
+)
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState
 from kuberich.domain.operations import ResourceAction, ResourceIntent, operation_json
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose, ProcessStatus
@@ -40,6 +45,13 @@ type ManifestGuard = Callable[[], None]
 class ManifestValidation:
     result: MutationResult
     body: bytes | None = field(default=None, repr=False)
+    created: CreatedResourceReceipt | None = None
+
+
+@dataclass(frozen=True)
+class ManifestCreationResult:
+    result: MutationResult
+    receipt: CreatedResourceReceipt | None = None
 
 
 class ManifestAdapterPort(Protocol):
@@ -58,6 +70,9 @@ class ManifestAdapterPort(Protocol):
         self, intent: ManifestRequest, guard: ManifestGuard
     ) -> ManifestValidation: ...
     async def execute(self, intent: ManifestRequest, guard: ManifestGuard) -> MutationResult: ...
+    async def execute_creation(
+        self, intent: ManifestCreateIntent, guard: ManifestGuard
+    ) -> ManifestCreationResult: ...
     async def close(self) -> None: ...
 
 
@@ -312,7 +327,21 @@ class ManifestAdapter:
         dry_run: bool,
     ) -> ManifestValidation:
         self._check(guard)
+        if isinstance(intent, ManifestCreateIntent) and intent.policy == "create-only":
+            verified = await parse_owned(
+                partial(
+                    create_manifest_intent,
+                    intent.resource,
+                    intent.target,
+                    intent.body,
+                    policy="create-only",
+                )
+            )
+            self._check(guard)
+            if verified.body != intent.body:
+                raise AppError("Create-only request differs from its canonical reviewed input.")
         captured: list[bytes] = []
+        created: list[CreatedResourceReceipt] = []
 
         def receipt(data: bytes) -> MutationResult | None:
             if isinstance(intent, ResourceIntent):
@@ -343,6 +372,21 @@ class ManifestAdapter:
                 captured.append(data)
                 return None
             if isinstance(intent, ManifestCreateIntent):
+                assert record.uid is not None and record.resource_version is not None
+                created.append(
+                    CreatedResourceReceipt(
+                        resource=intent.resource,
+                        target=ResourceTarget(
+                            intent.target.session,
+                            intent.target.group,
+                            intent.target.resource,
+                            intent.target.namespace,
+                            intent.target.name,
+                            record.uid,
+                        ),
+                        resource_version=record.resource_version,
+                    )
+                )
                 return MutationResult(
                     MutationState.SUCCEEDED,
                     f"Created {intent.target.resource}/{intent.target.name}; UID: {record.uid}. No retry was made.",
@@ -373,13 +417,23 @@ class ManifestAdapter:
             dry_run=dry_run,
             error_receipt=manifest_status,
         )
-        return ManifestValidation(result, captured[0] if captured else None)
+        return ManifestValidation(
+            result, captured[0] if captured else None, created[0] if created else None
+        )
 
     async def validate(self, intent: ManifestRequest, guard: ManifestGuard) -> ManifestValidation:
         return await self._owned(partial(self._request, intent, guard, dry_run=True))
 
     async def execute(self, intent: ManifestRequest, guard: ManifestGuard) -> MutationResult:
         return (await self._owned(partial(self._request, intent, guard, dry_run=False))).result
+
+    async def execute_creation(
+        self, intent: ManifestCreateIntent, guard: ManifestGuard
+    ) -> ManifestCreationResult:
+        if intent.policy != "create-only":
+            raise AppError("Creation requires an exact create-only request.")
+        response = await self._owned(partial(self._request, intent, guard, dry_run=False))
+        return ManifestCreationResult(response.result, response.created)
 
     async def _close(self) -> None:
         self._closed = True

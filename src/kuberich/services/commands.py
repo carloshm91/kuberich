@@ -295,6 +295,7 @@ class CommandService:
                 Command.BENCHMARK,
                 Command.BENCHMARKS,
                 Command.MANIFESTS,
+                Command.CREATE,
                 Command.HELM_CATALOG,
                 Command.NODE_SHELL,
                 Command.NODE_SHELL_RECOVER,

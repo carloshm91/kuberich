@@ -423,7 +423,7 @@ async def test_editor_draft_creation_io_error_is_safe_and_never_changes_source(
     def fail(*args, **kwargs):
         raise OSError("private-path-and-secret-sentinel")
 
-    monkeypatch.setattr(tempfile, "TemporaryDirectory", fail)
+    monkeypatch.setattr(tempfile, "mkdtemp", fail)
     with pytest.raises(AppError) as error:
         await local.open_editor(local.confirm_disclosure(disclosure))
     assert (

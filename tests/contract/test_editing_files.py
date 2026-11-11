@@ -1,9 +1,11 @@
 """Owned actual filesystem descriptors and cancellation of held worker threads."""
 
 import asyncio
+import gc
 import os
 import stat
 import threading
+import weakref
 from pathlib import Path
 
 import pytest
@@ -52,7 +54,8 @@ def test_growth_after_stat_is_still_bounded(monkeypatch):
 
     def growing(descriptor):
         info = original(descriptor)
-        file.path.write_bytes(b"x" * (MAX_EDIT_BYTES + 1))
+        if stat.S_ISREG(info.st_mode):
+            file.path.write_bytes(b"x" * (MAX_EDIT_BYTES + 1))
         return info
 
     try:
@@ -206,3 +209,105 @@ async def test_concurrent_cleanup_and_repeated_cancellation_join_one_owned_worke
         assert not path.parent.exists() and not api.requests
         reopened = await source.open()
         assert reopened.path != path
+
+
+@pytest.mark.parametrize("replace_parent", [False, True])
+def test_editor_root_and_parent_replacement_refuse_reads_and_cleanup_without_removing_replacement(
+    tmp_path, monkeypatch, replace_parent
+):
+    parent = tmp_path / "owned-parent"
+    parent.mkdir(mode=0o700)
+    monkeypatch.setattr("kuberich.adapters.editing.tempfile.tempdir", str(parent))
+    file = ManifestFile(b"private-original")
+    original = file.path.parent
+    selected = parent if replace_parent else original
+    retired = selected.with_name(selected.name + "-retired")
+    selected.rename(retired)
+    selected.mkdir(mode=0o700)
+    replacement = selected / original.name if replace_parent else selected
+    replacement.mkdir(mode=0o700, exist_ok=True)
+    sentinel = replacement / "sentinel"
+    sentinel.write_bytes(b"private-replacement")
+    (replacement / "manifest.yaml").write_bytes(b"private-injected")
+    try:
+        with pytest.raises(AppError, match="directory changed"):
+            file.read()
+        with pytest.raises(AppError, match="directory changed"):
+            file.close()
+        assert sentinel.read_bytes() == b"private-replacement"
+        original_file = (
+            retired / original.name / "manifest.yaml"
+            if replace_parent
+            else retired / "manifest.yaml"
+        )
+        assert original_file.read_bytes() == b"private-original"
+    finally:
+        (replacement / "manifest.yaml").unlink()
+        sentinel.unlink()
+        if replace_parent:
+            replacement.rmdir()
+        selected.rmdir()
+        retired.rename(selected)
+        file.close()
+        file.close()
+
+
+def test_editor_cleanup_refusal_has_no_later_garbage_collector_path_deletion(tmp_path):
+    file = ManifestFile(b"private-original")
+    root = file.path.parent
+    retired = root.with_name(root.name + "-retired")
+    root.rename(retired)
+    root.mkdir(mode=0o700)
+    sentinel = root / "sentinel"
+    sentinel.write_bytes(b"private-replacement")
+    try:
+        with pytest.raises(AppError, match="directory changed"):
+            file.close()
+        reference = weakref.ref(file)
+        del file
+        gc.collect()
+        assert reference() is None and sentinel.read_bytes() == b"private-replacement"
+        assert (retired / "manifest.yaml").read_bytes() == b"private-original"
+    finally:
+        sentinel.unlink()
+        root.rmdir()
+        (retired / "manifest.yaml").unlink()
+        retired.rmdir()
+
+
+@pytest.mark.asyncio
+async def test_cancelled_editor_discard_retains_replacement_refusal_and_never_removes_sentinel(
+    tmp_path,
+):
+    entered, release = threading.Event(), threading.Event()
+    files = []
+
+    def create():
+        file = ManifestFile(b"private-original")
+        files.append(file)
+        entered.set()
+        assert release.wait(10)
+        return file
+
+    task = asyncio.create_task(file_worker(create, discard=lambda value: value.close()))
+    await wait_for(entered.is_set)
+    file = files[0]
+    root = file.path.parent
+    retired = root.with_name(root.name + "-retired")
+    root.rename(retired)
+    root.mkdir(mode=0o700)
+    sentinel = root / "sentinel"
+    sentinel.write_bytes(b"private-replacement")
+    try:
+        task.cancel()
+        release.set()
+        with pytest.raises(AppError, match="directory changed"):
+            await task
+        assert sentinel.read_bytes() == b"private-replacement"
+        assert (retired / "manifest.yaml").read_bytes() == b"private-original"
+    finally:
+        release.set()
+        sentinel.unlink()
+        root.rmdir()
+        retired.rename(root)
+        file.close()

@@ -140,6 +140,11 @@ COMMAND_SPECS = (
         "Browse local YAML, explicitly render Kustomize, edit local files and review guarded apply/delete.",
     ),
     _spec(
+        Command.CREATE,
+        ("create",),
+        "Capture a template, local file or explicit clipboard/paste draft before reviewed creation.",
+    ),
+    _spec(
         Command.BENCHMARK,
         ("benchmark",),
         "Review bounded HTTP load for the selected Service; READY owned forwards offer Benchmark.",

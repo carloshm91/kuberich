@@ -633,6 +633,7 @@ class KubeRichApp(App[None]):
                 Command.BENCHMARK: self.benchmarks.open,
                 Command.BENCHMARKS: self.benchmarks.open_browser,
                 Command.MANIFESTS: self.action_manifests,
+                Command.CREATE: self.action_create,
                 Command.RBAC: lambda: self.authorization.command(authorization_command("rbac")),
                 Command.CAN_I: lambda: self.authorization.command(authorization_command("can-i")),
                 Command.WHO_CAN: lambda: self.authorization.command(
@@ -1569,7 +1570,14 @@ class KubeRichApp(App[None]):
         self.push_screen(screen)
 
     def action_manifests(self) -> None:
+        self._manifest_actions().open_browser()
+
+    def action_create(self) -> None:
+        self._manifest_actions().open_creation()
+
+    def _manifest_actions(self) -> ManifestActions:
         if self.manifests is None:
+            from kuberich.config.paths import config_location
             from kuberich.services.local_manifests import LocalManifestService
             from kuberich.ui.manifest_actions import ManifestActions
 
@@ -1582,8 +1590,11 @@ class KubeRichApp(App[None]):
                 capture_connection=self._manifest_connection,
                 push_screen=self._push_manifest_screen,
                 notice=self._set_notice,
+                config_path=self.preferences.location.path
+                if self.preferences is not None
+                else config_location(None, self._process_environment).path,
             )
-        self.manifests.open_browser()
+        return self.manifests
 
     def _forwarding_preferences(self) -> ForwardPreferences:
         return (

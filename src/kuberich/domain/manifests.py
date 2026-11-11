@@ -5,7 +5,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from difflib import unified_diff
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 from uuid import UUID, uuid4
 
 import yaml
@@ -51,7 +51,9 @@ _SERVER_METADATA = frozenset(
 _MUTABLE_METADATA = frozenset({"annotations", "labels", "finalizers", "ownerReferences"})
 
 type ManifestSourceKind = Literal["file", "directory", "kustomize"]
-type ManifestAction = Literal["apply", "delete"]
+type ManifestAction = Literal["apply", "delete", "create"]
+type ManifestCreatePolicy = Literal["apply", "create-only"]
+type DraftSourceKind = Literal["template", "clipboard", "paste", "file"]
 type ManifestChange = Literal["create", "update", "delete", "unchanged", "absent", "refused"]
 
 
@@ -103,6 +105,38 @@ class FrozenManifestSource:
     rendered_sha256: str
 
 
+class ManifestSource(Protocol):
+    """Only frozen source identity and documents cross into cluster mutation."""
+
+    @property
+    def identity(self) -> UUID: ...
+    @property
+    def documents(self) -> tuple[ManifestDocument, ...]: ...
+    @property
+    def source_sha256(self) -> str: ...
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class FrozenDraftSource:
+    identity: UUID
+    kind: DraftSourceKind
+    title: str
+    generation: int
+    documents: tuple[ManifestDocument, ...]
+    source_sha256: str
+    rendered_sha256: str
+    body: bytes = field(repr=False)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class CreatedResourceReceipt:
+    """Persistent metadata from a verified HTTP 201, never a dry-run identity."""
+
+    resource: ApiResource
+    target: ResourceTarget
+    resource_version: str
+
+
 @dataclass(frozen=True, kw_only=True, slots=True)
 class ManifestScope:
     session: SessionIdentity
@@ -115,6 +149,7 @@ class ManifestCreateIntent:
     target: ResourceAddress
     resource: ApiResource
     body: bytes = field(repr=False)
+    policy: ManifestCreatePolicy = "apply"
 
     @property
     def path(self) -> str:
@@ -307,7 +342,11 @@ def _without_nulls(value: Any) -> Any:
 
 
 def create_manifest_intent(
-    resource: ApiResource, target: ResourceAddress, body: bytes
+    resource: ApiResource,
+    target: ResourceAddress,
+    body: bytes,
+    *,
+    policy: ManifestCreatePolicy = "apply",
 ) -> ManifestCreateIntent:
     value = parse_manifest(body)
     metadata = resource_object(value.get("metadata"))
@@ -322,13 +361,16 @@ def create_manifest_intent(
         or metadata.get("namespace") != target.namespace
         or _SERVER_METADATA.intersection(metadata)
         or "status" in value
+        or policy not in {"apply", "create-only"}
+        or (policy == "create-only" and "generateName" in metadata)
     ):
         raise AppError("Create body does not match the exact discovered resource address.")
     annotations = resource_object(metadata.setdefault("annotations", {}))
     if any(not isinstance(item, str) for item in annotations.values()):
         raise AppError("Manifest annotations must contain strings.")
     annotations.pop(LAST_APPLIED, None)
-    annotations[LAST_APPLIED] = canonical_manifest(value).decode("utf-8") + "\n"
+    if policy == "apply":
+        annotations[LAST_APPLIED] = canonical_manifest(value).decode("utf-8") + "\n"
     if (
         sum(
             len(key.encode("utf-8")) + len(item.encode("utf-8"))
@@ -339,10 +381,18 @@ def create_manifest_intent(
         raise AppError("Combined manifest annotations exceed 256 KiB.")
     # Pinned kubectl records the desired input before pruning map nulls.
     # Array positions (including null entries) remain unchanged.
-    request = canonical_manifest(_without_nulls(value))
+    # Apply preserves kubectl's established null-pruning merge semantics.
+    # Create-only submits literal nulls unchanged for authoritative server handling.
+    request = canonical_manifest(_without_nulls(value) if policy == "apply" else value)
     if len(request) > MAX_MANIFEST_BYTES:
-        raise AppError("Created resource including apply annotation exceeds 1 MiB.")
-    return ManifestCreateIntent(identity=uuid4(), target=target, resource=resource, body=request)
+        raise AppError(
+            "Created resource including apply annotation exceeds 1 MiB."
+            if policy == "apply"
+            else "Created resource request exceeds 1 MiB."
+        )
+    return ManifestCreateIntent(
+        identity=uuid4(), target=target, resource=resource, body=request, policy=policy
+    )
 
 
 def manifest_update_intent(

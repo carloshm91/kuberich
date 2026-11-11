@@ -22,12 +22,14 @@ from kuberich.domain.connections import (
     namespace_name,
 )
 from kuberich.domain.manifests import (
-    FrozenManifestSource,
+    CreatedResourceReceipt,
     ManifestAction,
     ManifestChange,
+    ManifestCreateIntent,
     ManifestPlan,
     ManifestPlanItem,
     ManifestScope,
+    ManifestSource,
     canonical_manifest,
     create_manifest_intent,
     manifest_preview,
@@ -80,7 +82,7 @@ class ManifestMutationService:
         scope: ManifestScope,
         discovery: Discovery,
         policy: AccessPolicy,
-        source: FrozenManifestSource,
+        source: ManifestSource,
         current: Callable[[], bool],
         require_source: Callable[[], Awaitable[None]],
         environment: Mapping[str, str],
@@ -99,6 +101,7 @@ class ManifestMutationService:
         self._approved: ManifestPlan | None = None
         self._versions: tuple[str | None, ...] = ()
         self._results: list[tuple[MutationTarget, MutationResult]] = []
+        self._created: list[CreatedResourceReceipt] = []
         self._operations: set[asyncio.Task[object]] = set()
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
@@ -117,6 +120,10 @@ class ManifestMutationService:
     @property
     def results(self) -> tuple[tuple[MutationTarget, MutationResult], ...]:
         return tuple(self._results)
+
+    @property
+    def created_receipts(self) -> tuple[CreatedResourceReceipt, ...]:
+        return tuple(self._created)
 
     def require_current(self) -> None:
         self.policy.require(Action.MUTATE)
@@ -168,8 +175,10 @@ class ManifestMutationService:
     async def prepare(self, action: ManifestAction) -> ManifestPlan:
         async with self._operation():
             self.invalidate()
-            if action not in {"apply", "delete"}:
-                raise AppError("Choose apply or delete for this manifest review.")
+            if action not in {"apply", "delete", "create"}:
+                raise AppError(
+                    "Choose apply or delete, or explicit create for this manifest review."
+                )
             generation = self._generation
             guard = partial(self._guard, generation)
             await self.require_source()
@@ -211,7 +220,13 @@ class ManifestMutationService:
                             )
                         else:
                             request = await parse_owned(
-                                partial(create_manifest_intent, resource, address, desired)
+                                partial(
+                                    create_manifest_intent,
+                                    resource,
+                                    address,
+                                    desired,
+                                    policy="create-only" if action == "create" else "apply",
+                                )
                             )
                             change = "create"
                             receipt = await self.adapter.validate(request, guard)
@@ -231,7 +246,12 @@ class ManifestMutationService:
                         )
                         version = baseline.resource_version
                         before = await parse_owned(partial(_record_bytes, baseline))
-                        if action == "delete":
+                        if action == "create":
+                            validation = MutationResult(
+                                MutationState.CONFLICT,
+                                "Already exists; use the existing Apply/Edit workflow.",
+                            )
+                        elif action == "delete":
                             request = await parse_owned(
                                 partial(
                                     delete_intent,
@@ -305,6 +325,7 @@ class ManifestMutationService:
             self._versions = tuple(versions)
             self._target = items[0].target
             self._results = []
+            self._created = []
             return self.intent
 
     def confirm(self, intent: ManifestPlan) -> Confirmation:
@@ -438,13 +459,21 @@ class ManifestMutationService:
                     try:
                         result = await self._revalidate(item, version, guard)
                         if result is None:
-                            result = (
-                                MutationResult(
-                                    MutationState.SUCCEEDED, "Reviewed no-op; no request sent."
+                            if intent.action == "create" and isinstance(
+                                item.request, ManifestCreateIntent
+                            ):
+                                response = await self.adapter.execute_creation(item.request, guard)
+                                result = response.result
+                                if response.receipt is not None:
+                                    self._created.append(response.receipt)
+                            else:
+                                result = (
+                                    MutationResult(
+                                        MutationState.SUCCEEDED, "Reviewed no-op; no request sent."
+                                    )
+                                    if item.request is None
+                                    else await self.adapter.execute(item.request, guard)
                                 )
-                                if item.request is None
-                                else await self.adapter.execute(item.request, guard)
-                            )
                             if result.state is MutationState.ACCEPTED and isinstance(
                                 item.request, ResourceIntent
                             ):

@@ -72,7 +72,9 @@ class ManifestReviewScreen(ModalScreen[None]):
             max_length=63,
         )
         self.action_field: Select[str] = Select(
-            (("Apply", "apply"), ("Delete", "delete")),
+            (("Create", "create"),)
+            if action == "create"
+            else (("Apply", "apply"), ("Delete", "delete")),
             value=action,
             allow_blank=False,
             id="manifest-review-action",
@@ -103,7 +105,8 @@ class ManifestReviewScreen(ModalScreen[None]):
         self.namespace.value = scope.namespace or ""
         with Vertical(id="manifest-review-form"):
             yield Static(
-                "Manifest cluster review · Validate / explicit Apply or Delete",
+                "Manifest cluster review · Validate / explicit "
+                + ("Create" if self.action == "create" else "Apply or Delete"),
                 markup=False,
                 id="manifest-review-title",
             )
@@ -171,7 +174,7 @@ class ManifestReviewScreen(ModalScreen[None]):
             return
         busy = self._operation_task is not None and not self._operation_task.done()
         writing = self._write is not None
-        self.action_field.disabled = writing
+        self.action_field.disabled = writing or self.action == "create"
         self.namespace.disabled = writing
         self.query_one("#manifest-review-validate", Button).disabled = (
             busy or self.service.policy.read_only or self._stopped
@@ -307,8 +310,8 @@ class ManifestReviewScreen(ModalScreen[None]):
 
     @on(Select.Changed, "#manifest-review-action")
     def action_changed(self, event: Select.Changed) -> None:
-        if event.value in {"apply", "delete"}:
-            action = cast(Literal["apply", "delete"], event.value)
+        if event.value in ({"create"} if self.action == "create" else {"apply", "delete"}):
+            action = cast(Literal["apply", "delete", "create"], event.value)
             if action != self.action:
                 self.action = action
                 if self.is_mounted:
