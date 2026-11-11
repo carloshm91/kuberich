@@ -96,94 +96,104 @@ async def held_owned_write(
 ) -> AsyncIterator[tuple[str, HeldWrite]]:
     target, tls = await parse_owned(partial(_owned_tls, cluster))
     witness = HeldWrite()
-    async with aiohttp.ClientSession(
+    upstream = aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(ssl=tls),
         trust_env=False,
         cookie_jar=aiohttp.DummyCookieJar(),
         auto_decompress=False,
         timeout=aiohttp.ClientTimeout(total=120),
-    ) as upstream:
+    )
+    listener_cleaned = False
+    try:
+        async with upstream:
 
-        async def handle(request: web.Request) -> web.Response:
-            task = asyncio.current_task()
-            assert task is not None
-            witness.active.add(task)
-            exchange: dict[str, Any] = {
-                "method": request.method,
-                "path": request.path,
-                "request_content_type": request.headers.get("Content-Type"),
-            }
-            witness.exchanges.append(exchange)
-            try:
-                assert owned_api_path(request.path)
-                body = await bounded_body(request.content, 4 * 1024 * 1024)
-                headers = {
-                    key: value
-                    for key, value in request.headers.items()
-                    if key.lower()
-                    not in {
-                        "host",
-                        "connection",
-                        "content-length",
-                        "transfer-encoding",
-                        "accept-encoding",
-                    }
+            async def handle(request: web.Request) -> web.Response:
+                task = asyncio.current_task()
+                assert task is not None
+                witness.active.add(task)
+                exchange: dict[str, Any] = {
+                    "method": request.method,
+                    "path": request.path,
+                    "request_content_type": request.headers.get("Content-Type"),
                 }
-                headers["Accept-Encoding"] = "identity"
-                async with upstream.request(
-                    request.method,
-                    target + request.raw_path,
-                    data=body if body else None,
-                    headers=headers,
-                    allow_redirects=False,
-                ) as response:
-                    data = await bounded_body(response.content, 8 * 1024 * 1024)
-                    exchange.update(
-                        status=response.status,
-                        content_type=response.headers.get("Content-Type", ""),
-                        response_bytes=len(data),
-                        forwarded_content_type=response.request_info.headers.get("Content-Type"),
-                    )
-                    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
-                        if request.query.get("dryRun") == "All":
-                            witness.validations += 1
-                        else:
-                            witness.persistent_writes.append((request.method, request.path))
-                    if (
-                        request.method == "POST"
-                        and request.path == f"/api/v1/namespaces/{namespace}/configmaps"
-                        and request.query.get("dryRun") != "All"
-                        and response.status == 201
-                        and json.loads(body).get("metadata", {}).get("name") == name + "-settings"
-                    ):
-                        witness.entered.set()
-                        await witness.release.wait()
-                    return web.Response(
-                        body=data,
-                        status=response.status,
-                        headers={
-                            "Content-Type": response.headers.get("Content-Type", "application/json")
-                        },
-                    )
-            except BaseException as error:
-                exchange["error_type"] = type(error).__name__
-                raise
-            finally:
-                witness.active.discard(task)
+                witness.exchanges.append(exchange)
+                try:
+                    assert owned_api_path(request.path)
+                    body = await bounded_body(request.content, 4 * 1024 * 1024)
+                    headers = {
+                        key: value
+                        for key, value in request.headers.items()
+                        if key.lower()
+                        not in {
+                            "host",
+                            "connection",
+                            "content-length",
+                            "transfer-encoding",
+                            "accept-encoding",
+                        }
+                    }
+                    headers["Accept-Encoding"] = "identity"
+                    async with upstream.request(
+                        request.method,
+                        target + request.raw_path,
+                        data=body if body else None,
+                        headers=headers,
+                        allow_redirects=False,
+                    ) as response:
+                        data = await bounded_body(response.content, 8 * 1024 * 1024)
+                        exchange.update(
+                            status=response.status,
+                            content_type=response.headers.get("Content-Type", ""),
+                            response_bytes=len(data),
+                            forwarded_content_type=response.request_info.headers.get(
+                                "Content-Type"
+                            ),
+                        )
+                        if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+                            if request.query.get("dryRun") == "All":
+                                witness.validations += 1
+                            else:
+                                witness.persistent_writes.append((request.method, request.path))
+                        if (
+                            request.method == "POST"
+                            and request.path == f"/api/v1/namespaces/{namespace}/configmaps"
+                            and request.query.get("dryRun") != "All"
+                            and response.status == 201
+                            and json.loads(body).get("metadata", {}).get("name")
+                            == name + "-settings"
+                        ):
+                            witness.entered.set()
+                            await witness.release.wait()
+                        return web.Response(
+                            body=data,
+                            status=response.status,
+                            headers={
+                                "Content-Type": response.headers.get(
+                                    "Content-Type", "application/json"
+                                )
+                            },
+                        )
+                except BaseException as error:
+                    exchange["error_type"] = type(error).__name__
+                    raise
+                finally:
+                    witness.active.discard(task)
 
-        app = web.Application(client_max_size=4 * 1024 * 1024)
-        app.router.add_route("*", "/{path:.*}", handle)
-        listener = web.AppRunner(app, shutdown_timeout=1)
-        await listener.setup()
-        site = web.TCPSite(listener, "127.0.0.1", 0)
-        await site.start()
-        try:
-            yield f"http://127.0.0.1:{listener.addresses[0][1]}", witness
-        finally:
-            witness.release.set()
-            await listener.cleanup()
-            assert not witness.active
-    witness.closed = True
+            app = web.Application(client_max_size=4 * 1024 * 1024)
+            app.router.add_route("*", "/{path:.*}", handle)
+            listener = web.AppRunner(app, shutdown_timeout=1)
+            await listener.setup()
+            site = web.TCPSite(listener, "127.0.0.1", 0)
+            await site.start()
+            try:
+                yield f"http://127.0.0.1:{listener.addresses[0][1]}", witness
+            finally:
+                witness.release.set()
+                await listener.cleanup()
+                listener_cleaned = True
+                assert not witness.active
+    finally:
+        witness.closed = upstream.closed and listener_cleaned and not witness.active
 
 
 async def verify_uncertain_lifecycle(
