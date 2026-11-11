@@ -88,6 +88,18 @@ real source CLI variants pass with unchanged effects, cleanup and deadlines.
 Application source is unchanged. The original run remains failed and the next
 complete current matrix and independent artifact audits remain required.
 
+The next run confirms all three actual public source CLI parameters on macOS
+part one, including cancellation and initially offline capture, with original
+JSON/ANSI restoration evidence. Part numbering changed after a new test file;
+the acceptance record binds the exact nodes. The run still fails Linux ARM APT
+index transfer at the unchanged deadline and an existing debug-return test that
+asserted before its queued feedback callback published. Compiler-only setup now
+verifies the pinned image's complete installed package/tool/header cohort before
+avoiding unnecessary APT work; missing tools retain signed setup. A bounded
+process-group guard and the debug UI's held-result publication control pass in
+focused cohorts of 241 and 44 cases respectively. Application bytes, original
+failures and all trust/deadline gates remain intact; fresh full CI is required.
+
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 
 M09 #233 is the active implementation issue. Its source adds public `:helmcharts`,

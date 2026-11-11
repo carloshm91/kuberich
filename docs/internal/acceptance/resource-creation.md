@@ -321,6 +321,40 @@ cancellation, terminal-cleanup assertions and original deadlines remain intact.
 Application bytes are unchanged. The failed run remains unqualified; the next
 genuine complete matrix and independent current artifact audits remain required.
 
+Run `43051492716` passes all three public source CLI variants on macOS in part
+one, job `130635109879`: the exact parameters are `success-False`, `cancel-False`
+and `success-True` of
+`tests/terminal/test_resource_creation_cli.py::test_public_creation_cli_records_actual_uid_or_uncertain_committed_write`.
+Their original XML and six JSON/ANSI files are retained at producer `d834397`;
+all three report exit zero and restored terminal modes. Part assignments changed
+after adding a test file, so part three's separate success alone does not prove
+these nodes. The full run remains failed for two different reasons below.
+
+The Linux ARM native setup downloads authenticated MIT indexes, then reaches the
+original 120-second deadline during package-index transfer. The pinned
+[ARM image inventory](https://github.com/actions/runner-images/blob/ubuntu22-arm64/20261101.179/images/ubuntu/Ubuntu2204-Arm64-Readme.md)
+already includes all three requested compiler packages. The original successful
+ARM setup in the preceding run also reports zero newly installed packages.
+The compiler-only setup now verifies every requested package's installed status
+and version, actual gcc/cc/readelf/objdump availability and a no-output standard
+header syntax check before returning without APT changes. The syntax probe uses
+a bounded GNU timeout process group; an owned TERM-ignoring compiler/child control
+proves escalation/draining while an unrelated process survives. Missing or
+unavailable packages/tools retain the existing signed install flow. Other package
+cohorts, trust settings and 120/180-second/outer-six-minute bounds stay unchanged.
+Focused APT/source/workflow/qualifier and process-ownership checks pass 241 cases
+in 17.82 seconds. An agent-only read-only preflight succeeds with that host's
+different Ubuntu package versions; it establishes no next-hosted setup result.
+
+macOS part two also fails an existing ephemeral-debug return assertion: foreground
+restoration and zero processes preceded the queued callback's feedback publication.
+The test now waits for the actual foreground feedback. A public `push_screen`
+held-result variant demonstrates that ordering explicitly, retaining the real
+append/attach, remote-state, child-liveness and cleanup assertions. All 44 debug UI
+cases pass in 51.26 seconds. This correction changes tests only; all 337 production
+modules remain byte-identical to `f28c954`. Both original failures remain retained,
+and the next complete current-head matrix is still required.
+
 ## Remaining qualification
 
 Whole production/branch/changed-line gates, native workflows and the

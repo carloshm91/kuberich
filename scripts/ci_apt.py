@@ -8,6 +8,7 @@ https://github.com/actions/runner-images/pull/14643
 import argparse
 import os
 import platform
+import re
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -21,6 +22,7 @@ MIRROR_FILE = Path("/etc/apt/apt-mirrors.txt")
 SOURCE_LIST = Path("/etc/apt/sources.list")
 SOURCE_DIRECTORY = Path("/etc/apt/sources.list.d")
 PACKAGES = frozenset({"openssh-server", "tmux", "xclip", "xvfb", "gcc", "libc6-dev", "binutils"})
+COMPILER_PACKAGES = frozenset({"gcc", "libc6-dev", "binutils"})
 APT_OPTIONS = (
     "-o",
     "Acquire::Languages=none",
@@ -48,6 +50,85 @@ def _root_command(command: tuple[str, ...], seconds: int) -> tuple[str, ...]:
         f"{seconds}s",
         *command,
     )
+
+
+def compiler_ready(packages: tuple[str, ...]) -> bool:
+    """Verify the complete preinstalled compiler cohort without changing the host."""
+    result = subprocess.run(
+        (
+            "/usr/bin/dpkg-query",
+            "--show",
+            "--showformat=${Package}\t${Status}\t${Version}\n",
+            "--",
+            *packages,
+        ),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=5,
+    )
+    if (
+        result.returncode != 0
+        or not isinstance(result.stdout, bytes)
+        or not 1 <= len(result.stdout) <= 4096
+    ):
+        return False
+    installed = {}
+    for line in result.stdout.decode("ascii", errors="replace").splitlines():
+        fields = line.split("\t")
+        if len(fields) != 3:
+            return False
+        name, status, version = fields
+        if (
+            name not in packages
+            or name in installed
+            or status != "install ok installed"
+            or re.fullmatch(r"[0-9][A-Za-z0-9.+:~\-]{0,127}", version) is None
+        ):
+            return False
+        installed[name] = version
+    if installed.keys() != set(packages):
+        return False
+    for tool in ("gcc", "cc", "readelf", "objdump"):
+        result = subprocess.run(
+            (f"/usr/bin/{tool}", "--version"),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            timeout=2,
+        )
+        if result.returncode != 0:
+            return False
+    result = subprocess.run(
+        (
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=1s",
+            "5s",
+            "/usr/bin/cc",
+            "-fsyntax-only",
+            "-x",
+            "c",
+            "-",
+        ),
+        input=b"#include <stdio.h>\n#include <stdlib.h>\n#include <stdint.h>\nint main(void) { return 0; }\n",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+        timeout=8,
+    )
+    if result.returncode != 0:
+        return False
+    for name in packages:
+        print(f"CI APT: installed {name}={installed[name]}", flush=True)
+    print(
+        "CI APT: compiler, headers and inspection tools verified; "
+        "all declared packages already installed, no APT changes needed.",
+        flush=True,
+    )
+    return True
 
 
 def bootstrap(packages: Sequence[str]) -> None:
@@ -78,6 +159,13 @@ def bootstrap(packages: Sequence[str]) -> None:
         raise ValueError("CI APT architecture response is missing or oversized.")
     architecture = result.stdout.decode("ascii").strip()
     mirror = mirror_for_architecture(architecture)
+    if frozenset(selected) == COMPILER_PACKAGES:
+        try:
+            if compiler_ready(selected):
+                return
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        print("CI APT: compiler preflight incomplete; retaining signed APT setup.", flush=True)
     changes = source_changes(architecture, SOURCE_LIST, SOURCE_DIRECTORY, MIRROR_FILE)
     print(
         f"CI APT: selecting reviewed MIT SIPB HTTPS mirror for {architecture}: {mirror}", flush=True

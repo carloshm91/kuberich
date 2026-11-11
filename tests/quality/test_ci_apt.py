@@ -32,13 +32,31 @@ def owned_commands(monkeypatch):
         "https://archive.ubuntu.com/ubuntu/\tpriority:2\n"
         "https://security.ubuntu.com/ubuntu/\tpriority:3\n"
     )
-    fixture = SimpleNamespace(calls=[], architecture=b"amd64\n", fail_phase=None, failure=None)
+    fixture = SimpleNamespace(
+        calls=[],
+        architecture=b"amd64\n",
+        fail_phase=None,
+        failure=None,
+        compiler_status_code=1,
+        compiler_status=b"",
+        unavailable_tool=None,
+    )
 
     def command(argv, **kwargs):
         assert isinstance(argv, tuple) and all(isinstance(part, str) for part in argv)
-        assert kwargs["check"] is True and not kwargs.get("shell", False)
+        assert not kwargs.get("shell", False)
         if argv == ("/usr/bin/dpkg", "--print-architecture"):
             phase = "architecture"
+        elif argv[0] == "/usr/bin/dpkg-query":
+            phase = "compiler-status"
+        elif argv[0] in {
+            "/usr/bin/gcc",
+            "/usr/bin/cc",
+            "/usr/bin/readelf",
+            "/usr/bin/objdump",
+            "/usr/bin/timeout",
+        }:
+            phase = "compiler-tool"
         elif "/usr/bin/tee" in argv:
             phase = "mirror"
         elif "update" in argv:
@@ -47,8 +65,17 @@ def owned_commands(monkeypatch):
             assert "install" in argv
             phase = "install"
         fixture.calls.append((phase, argv, kwargs))
+        assert kwargs["check"] is (phase not in {"compiler-status", "compiler-tool"})
         if phase == fixture.fail_phase:
             raise fixture.failure
+        if phase == "compiler-status":
+            return subprocess.CompletedProcess(
+                argv, fixture.compiler_status_code, stdout=fixture.compiler_status
+            )
+        if phase == "compiler-tool":
+            return subprocess.CompletedProcess(
+                argv, int(argv[0] == fixture.unavailable_tool or argv == fixture.unavailable_tool)
+            )
         if phase == "mirror":
             path = Path(argv[-1])
             assert path in {ci_apt.MIRROR_FILE, ci_apt.SOURCE_LIST}
@@ -229,11 +256,185 @@ def test_actual_arm_source_without_mirror_file_reaches_signed_update_and_install
     )
     assert [phase for phase, _, _ in owned_commands.calls] == [
         "architecture",
+        "compiler-status",
         "mirror",
         "update",
         "install",
     ]
     assert not ci_apt.MIRROR_FILE.exists()
+
+
+INSTALLED_COMPILER = (
+    b"gcc\tinstall ok installed\t4:11.2.0-1ubuntu1\n"
+    b"libc6-dev\tinstall ok installed\t2.35-0ubuntu3.15\n"
+    b"binutils\tinstall ok installed\t2.38-4ubuntu2.12\n"
+)
+
+
+@pytest.mark.parametrize("architecture", ["amd64", "arm64"])
+def test_complete_installed_compiler_cohort_checks_real_tool_ports_without_apt_or_source_writes(
+    owned_commands, monkeypatch, capsys, architecture
+):
+    owned_commands.architecture = (architecture + "\n").encode()
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    original = ci_apt.MIRROR_FILE.read_bytes()
+    monkeypatch.setattr(
+        ci_apt,
+        "source_changes",
+        lambda *args: pytest.fail("Installed tools need no APT source plan"),
+    )
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "compiler-status",
+        *["compiler-tool"] * 5,
+    ]
+    assert [kwargs["timeout"] for _, _, kwargs in owned_commands.calls] == [10, 5, 2, 2, 2, 2, 8]
+    query = owned_commands.calls[1][1]
+    assert query == (
+        "/usr/bin/dpkg-query",
+        "--show",
+        "--showformat=${Package}\t${Status}\t${Version}\n",
+        "--",
+        "gcc",
+        "libc6-dev",
+        "binutils",
+    )
+    tools = [argv for _, argv, _ in owned_commands.calls[2:]]
+    assert tools == [
+        ("/usr/bin/gcc", "--version"),
+        ("/usr/bin/cc", "--version"),
+        ("/usr/bin/readelf", "--version"),
+        ("/usr/bin/objdump", "--version"),
+        (
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=1s",
+            "5s",
+            "/usr/bin/cc",
+            "-fsyntax-only",
+            "-x",
+            "c",
+            "-",
+        ),
+    ]
+    assert b"#include <stdio.h>" in owned_commands.calls[-1][2]["input"]
+    assert not any(
+        "sudo" in part or "apt-get" in part for _, argv, _ in owned_commands.calls for part in argv
+    )
+    assert ci_apt.MIRROR_FILE.read_bytes() == original
+    output = capsys.readouterr().out
+    assert "installed gcc=4:11.2.0-1ubuntu1" in output
+    assert "installed libc6-dev=2.35-0ubuntu3.15" in output
+    assert "installed binutils=2.38-4ubuntu2.12" in output
+    assert "compiler, headers and inspection tools verified" in output
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        b"",
+        None,
+        "not bytes",
+        b"x" * 4097,
+        INSTALLED_COMPILER.replace(b"install ok installed", b"deinstall ok config-files", 1),
+        INSTALLED_COMPILER.replace(b"gcc\t", b"unknown\t", 1),
+        INSTALLED_COMPILER.replace(b"gcc\t", b"binutils\t", 1),
+        INSTALLED_COMPILER.replace(b"4:11.2.0-1ubuntu1", b""),
+        INSTALLED_COMPILER.replace(b"4:11.2.0-1ubuntu1", b"private-version-\x1b[31m"),
+        INSTALLED_COMPILER.replace(b"4:11.2.0-1ubuntu1", b"1" * 129),
+        INSTALLED_COMPILER.splitlines()[0] + b"\n",
+        INSTALLED_COMPILER + b"unexpected\n",
+    ],
+)
+def test_missing_partial_or_malformed_compiler_status_keeps_signed_install_flow(
+    owned_commands, capsys, status
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = status
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "compiler-status",
+        "mirror",
+        "update",
+        "install",
+    ]
+    assert owned_commands.calls[-1][1][-3:] == ("gcc", "libc6-dev", "binutils")
+    assert "private-version" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "tool",
+    [
+        "/usr/bin/gcc",
+        "/usr/bin/cc",
+        "/usr/bin/readelf",
+        "/usr/bin/objdump",
+        (
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=1s",
+            "5s",
+            "/usr/bin/cc",
+            "-fsyntax-only",
+            "-x",
+            "c",
+            "-",
+        ),
+    ],
+)
+def test_installed_package_metadata_cannot_skip_missing_compiler_inspection_or_headers(
+    owned_commands, tool
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    owned_commands.unavailable_tool = tool
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [phase for phase, _, _ in owned_commands.calls][-3:] == ["mirror", "update", "install"]
+    assert [kwargs["timeout"] for _, _, kwargs in owned_commands.calls][-3:] == [15, 130, 190]
+
+
+@pytest.mark.parametrize("phase", ["compiler-status", "compiler-tool"])
+@pytest.mark.parametrize(
+    "failure", [FileNotFoundError(), PermissionError(), subprocess.TimeoutExpired(("owned",), 2)]
+)
+def test_unavailable_preflight_retains_the_original_signed_apt_commands(
+    owned_commands, phase, failure
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    owned_commands.fail_phase, owned_commands.failure = phase, failure
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [entry[0] for entry in owned_commands.calls][-3:] == ["mirror", "update", "install"]
+    assert [entry[1][6] for entry in owned_commands.calls[-3:]] == ["5s", "120s", "180s"]
+
+
+@pytest.mark.parametrize(
+    "packages", [["gcc"], ["gcc", "binutils"], ["gcc", "libc6-dev", "binutils", "tmux"]]
+)
+def test_compiler_shortcut_cannot_omit_other_requested_packages(owned_commands, packages):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    ci_apt.bootstrap(packages)
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "mirror",
+        "update",
+        "install",
+    ]
+
+
+def test_installed_compiler_shortcut_cannot_bypass_the_explicit_runner_guard(
+    owned_commands, monkeypatch
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    monkeypatch.delenv("GITHUB_ACTIONS")
+    with pytest.raises(ValueError, match="Linux GitHub Actions"):
+        ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert owned_commands.calls == []
 
 
 def test_late_invalid_source_refuses_before_any_source_write(owned_commands):

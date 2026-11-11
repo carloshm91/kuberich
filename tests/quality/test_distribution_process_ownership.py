@@ -12,6 +12,7 @@ from contextlib import suppress
 
 import pytest
 
+from scripts import ci_apt
 from tests.support.distribution import run
 
 FAILURE_PROGRAM = """
@@ -198,3 +199,69 @@ def test_installer_owns_closed_stdio_term_ignoring_descendant(
                 os.killpg(info["pgid"], signal.SIGKILL)
             assert reap_owned_child(info["child_pid"])
             assert group_absent(info["pgid"])
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="requires GNU timeout and owned-child adoption")
+def test_compiler_syntax_preflight_timeout_drains_its_owned_process_group(
+    tmp_path, monkeypatch, adopt_owned_children
+):
+    metadata, ready = tmp_path / "owned-compiler.json", tmp_path / "compiler-child-ready.json"
+    actual_run = subprocess.run
+    unrelated = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(30)"],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+
+    def command(argv, **kwargs):
+        if argv[0] == "/usr/bin/dpkg-query":
+            return subprocess.CompletedProcess(
+                argv,
+                0,
+                stdout=b"".join(
+                    f"{name}\tinstall ok installed\t1.0\n".encode()
+                    for name in ("gcc", "libc6-dev", "binutils")
+                ),
+            )
+        if argv[0] != "/usr/bin/timeout":
+            assert argv in {
+                ("/usr/bin/gcc", "--version"),
+                ("/usr/bin/cc", "--version"),
+                ("/usr/bin/readelf", "--version"),
+                ("/usr/bin/objdump", "--version"),
+            }
+            return subprocess.CompletedProcess(argv, 0)
+        assert argv[:4] == ("/usr/bin/timeout", "--signal=TERM", "--kill-after=1s", "5s")
+        assert argv[4:] == ("/usr/bin/cc", "-fsyntax-only", "-x", "c", "-")
+        assert kwargs["timeout"] == 8
+        # The compiler and its cc1-like child both ignore TERM, requiring KILL.
+        program = "import signal\nsignal.signal(signal.SIGTERM, signal.SIG_IGN)\n" + LEADER
+        return actual_run(
+            (*argv[:4], sys.executable, "-c", program, str(metadata), str(ready), "timeout"),
+            **kwargs,
+        )
+
+    monkeypatch.setattr(ci_apt.subprocess, "run", command)
+    info = None
+    try:
+        assert not ci_apt.compiler_ready(("gcc", "libc6-dev", "binutils"))
+        info = json.loads(metadata.read_text())
+        assert info["pgid"] not in {os.getpgrp(), os.getpgid(unrelated.pid)}
+        assert reap_owned_child(info["leader_pid"])
+        assert reap_owned_child(info["child_pid"])
+        assert group_absent(info["pgid"])
+        assert unrelated.poll() is None
+    finally:
+        if info is None and metadata.exists():
+            info = json.loads(metadata.read_text())
+        if info is not None:
+            assert info["pgid"] != os.getpgrp()
+            with suppress(ProcessLookupError):
+                os.killpg(info["pgid"], signal.SIGKILL)
+            assert reap_owned_child(info["leader_pid"])
+            assert reap_owned_child(info["child_pid"])
+            assert group_absent(info["pgid"])
+        unrelated.kill()
+        unrelated.wait(timeout=3)

@@ -140,8 +140,27 @@ async def test_open_and_enter_default_to_cancel_without_any_patch(tmp_path, size
 
 
 @pytest.mark.asyncio
-async def test_review_exact_options_add_once_then_explicit_attach_and_return(tmp_path):
+@pytest.mark.parametrize("hold_return", [False, True])
+async def test_review_exact_options_add_once_then_explicit_attach_and_return(
+    tmp_path, monkeypatch, hold_return
+):
     async with debug_app(tmp_path) as (app, api), app.run_test(size=(100, 30)) as pilot:
+        original_push = app.push_screen
+        returned = asyncio.Event()
+        held = []
+
+        def push(screen, callback=None, *args, **kwargs):
+            if hold_return and isinstance(screen, ShellScreen):
+                original_callback = callback
+
+                def capture(result):
+                    held.append((original_callback, result))
+                    returned.set()
+
+                callback = capture
+            return original_push(screen, callback, *args, **kwargs)
+
+        monkeypatch.setattr(app, "push_screen", push)
         screen = await open_debug(app)
         await prepare(screen, pilot)
         assert len(patches(api, dry=True)) == 1 and not patches(api, dry=False)
@@ -184,7 +203,19 @@ async def test_review_exact_options_add_once_then_explicit_attach_and_return(tmp
         await pilot.resize_terminal(40, 12)
         await pilot.press("ctrl+right_square_bracket")
         await wait_for(lambda: app.screen is screen and app.processes.active_count == 0)
-        assert "does not establish remote completion" in str(screen.feedback.content)
+        if hold_return:
+            await wait_for(returned.is_set)
+            assert "Append/startup result: Succeeded" in str(screen.feedback.content)
+            assert len(held) == 1
+            callback, result = held.pop()
+            callback(result)
+        await wait_for(
+            lambda: (
+                app.screen is screen
+                and app.processes.active_count == 0
+                and "does not establish remote completion" in str(screen.feedback.content)
+            )
+        )
         assert screen.selected().state == "running"
         assert not list(Path(app.sessions.client.directory.name).glob("exec-*.json"))
         pid = int((tmp_path / "debug-child-pid").read_text())
