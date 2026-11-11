@@ -203,6 +203,7 @@ async def verify_uncertain_lifecycle(
     observer = independent.client
     assert observer is not None
     receipt: dict[str, Any] = {}
+    storage_observations: list[dict[str, Any]] = []
     witness: HeldWrite | None = None
     try:
         async with held_owned_write(cluster, namespace, name) as (origin, witness):
@@ -246,6 +247,43 @@ async def verify_uncertain_lifecycle(
                 assert (
                     resource["metadata"]["uid"] and resource["data"]["message"] == "synthetic-first"
                 )
+                storage_plural = "secrets" if driver is HelmDriver.SECRET else "configmaps"
+                storage_path = (
+                    f"/api/v1/namespaces/{namespace}/{storage_plural}/sh.helm.release.v1.{name}.v1"
+                )
+
+                async def storage_metadata() -> dict[str, Any]:
+                    data = await observer.get_json(
+                        storage_path,
+                        accept="application/json;as=PartialObjectMetadata;g=meta.k8s.io;v=v1",
+                    )
+                    metadata = data.get("metadata", {})
+                    summary = {
+                        "api_version": data.get("apiVersion"),
+                        "kind": data.get("kind"),
+                        "name": metadata.get("name"),
+                        "uid": metadata.get("uid"),
+                        "resource_version": metadata.get("resourceVersion"),
+                        "status": metadata.get("labels", {}).get("status"),
+                        "revision": metadata.get("labels", {}).get("version"),
+                    }
+                    storage_observations.append(summary)
+                    assert (
+                        summary["api_version"] == "meta.k8s.io/v1"
+                        and summary["kind"] == "PartialObjectMetadata"
+                    )
+                    assert (
+                        summary["name"] == f"sh.helm.release.v1.{name}.v1"
+                        and summary["revision"] == "1"
+                        and isinstance(summary["uid"], str)
+                        and summary["uid"]
+                        and isinstance(summary["resource_version"], str)
+                        and summary["resource_version"]
+                    )
+                    return summary
+
+                before_cancel = await storage_metadata()
+                assert before_cancel["status"] == "pending-install"
                 operation.cancel()
                 try:
                     await operation
@@ -265,23 +303,32 @@ async def verify_uncertain_lifecycle(
                     pass
                 else:
                     raise AssertionError("An uncertain native write was replayed.")
-                assert len(witness.persistent_writes) == before and before >= 2
-                storage_plural = "secrets" if driver is HelmDriver.SECRET else "configmaps"
-                storage = await observer.get_json(
-                    f"/api/v1/namespaces/{namespace}/{storage_plural}/sh.helm.release.v1.{name}.v1",
-                    accept="application/json;as=PartialObjectMetadata;g=meta.k8s.io;v=v1",
+                assert len(witness.persistent_writes) == before
+                assert witness.persistent_writes[:2] == [
+                    ("POST", f"/api/v1/namespaces/{namespace}/{storage_plural}"),
+                    ("POST", f"/api/v1/namespaces/{namespace}/configmaps"),
+                ]
+                assert witness.persistent_writes[2:] in ([], [("PUT", storage_path)])
+                storage = await storage_metadata()
+                assert storage["uid"] == before_cancel["uid"] and storage["status"] in {
+                    "pending-install",
+                    "failed",
+                }
+                after_resource = await observer.get_json(
+                    f"/api/v1/namespaces/{namespace}/configmaps/{name}-settings"
                 )
-                assert (
-                    storage["kind"] == "PartialObjectMetadata"
-                    and storage["metadata"]["labels"]["status"] == "pending-install"
-                )
+                assert after_resource["metadata"]["uid"] == resource["metadata"]["uid"]
+                assert after_resource["data"]["message"] == "synthetic-first"
                 receipt = {
                     "scope": "Production service; real native write response held after API persistence.",
                     "outcome": service.last_operation.outcome.value,
                     "may_have_started": True,
                     "resource_uid": resource["metadata"]["uid"],
-                    "storage_uid": storage["metadata"]["uid"],
-                    "storage_status": "pending-install",
+                    "resource_observed_after_cancel": True,
+                    "storage_uid": storage["uid"],
+                    "storage_status_before_cancel": before_cancel["status"],
+                    "storage_status": storage["status"],
+                    "native_failed_status_bookkeeping": storage["status"] == "failed",
                     "persistent_writes": before,
                     "separate_admission_validations": witness.validations,
                     "one_use_replay_refused": True,
@@ -309,6 +356,7 @@ async def verify_uncertain_lifecycle(
                             "persistent_writes": witness.persistent_writes,
                             "validations": witness.validations,
                             "proxy_drained": witness.closed,
+                            "storage_observations": storage_observations,
                         },
                         output,
                         indent=2,
