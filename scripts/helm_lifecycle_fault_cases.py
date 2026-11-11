@@ -71,6 +71,7 @@ class HeldWrite:
     active: set[asyncio.Task[Any]] = field(default_factory=set)
     persistent_writes: list[tuple[str, str]] = field(default_factory=list)
     validations: int = 0
+    exchanges: list[dict[str, Any]] = field(default_factory=list)
     closed: bool = False
 
 
@@ -107,6 +108,12 @@ async def held_owned_write(
             task = asyncio.current_task()
             assert task is not None
             witness.active.add(task)
+            exchange: dict[str, Any] = {
+                "method": request.method,
+                "path": request.path,
+                "request_content_type": request.headers.get("Content-Type"),
+            }
+            witness.exchanges.append(exchange)
             try:
                 assert owned_api_path(request.path)
                 body = await bounded_body(request.content, 4 * 1024 * 1024)
@@ -126,11 +133,17 @@ async def held_owned_write(
                 async with upstream.request(
                     request.method,
                     target + request.raw_path,
-                    data=body,
+                    data=body if body else None,
                     headers=headers,
                     allow_redirects=False,
                 ) as response:
                     data = await bounded_body(response.content, 8 * 1024 * 1024)
+                    exchange.update(
+                        status=response.status,
+                        content_type=response.headers.get("Content-Type", ""),
+                        response_bytes=len(data),
+                        forwarded_content_type=response.request_info.headers.get("Content-Type"),
+                    )
                     if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
                         if request.query.get("dryRun") == "All":
                             witness.validations += 1
@@ -152,6 +165,9 @@ async def held_owned_write(
                             "Content-Type": response.headers.get("Content-Type", "application/json")
                         },
                     )
+            except BaseException as error:
+                exchange["error_type"] = type(error).__name__
+                raise
             finally:
                 witness.active.discard(task)
 
@@ -187,6 +203,7 @@ async def verify_uncertain_lifecycle(
     observer = independent.client
     assert observer is not None
     receipt: dict[str, Any] = {}
+    witness: HeldWrite | None = None
     try:
         async with held_owned_write(cluster, namespace, name) as (origin, witness):
             catalog = load_catalog(request, {})
@@ -281,4 +298,19 @@ async def verify_uncertain_lifecycle(
         assert witness.closed and not witness.active
         return {**receipt, "proxy_drained": True, "private_tls_staging_removed": True}
     finally:
-        await independent.close()
+        try:
+            await independent.close()
+        finally:
+            if witness is not None:
+                with (directory / "uncertain-proxy.json").open("x") as output:
+                    json.dump(
+                        {
+                            "exchanges": witness.exchanges,
+                            "persistent_writes": witness.persistent_writes,
+                            "validations": witness.validations,
+                            "proxy_drained": witness.closed,
+                        },
+                        output,
+                        indent=2,
+                    )
+                    output.write("\n")
