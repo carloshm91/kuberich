@@ -228,6 +228,25 @@ the unchanged ctx alias. Product source, ordering, result bound and CI gates sta
 unchanged. Original hosted Fast artifacts/logs retain the `5e3c2cf` producer;
 downstream matrix jobs correctly remained skipped and the quality gate failed.
 
+The corrected run `43031735840` passed Fast: 12,613 cases and two platform skips
+in 448.13 seconds. Its actual checkout was PR merge
+`5741190d0105ac32ce3ab304d068b3e93690a3d7`, with ordered parents `7b69e226` and
+`d50faf5`, and tree `5058eb5` equal to the branch head. All twelve Ubuntu source
+parts and both Linux native jobs then failed before behavior: official Ubuntu
+archive/ports DNS resolution failed during signed APT index setup, reaching the
+unchanged 120-second deadline. Microsoft indexes succeeded. The original logs
+retain the infrastructure failure; no Ubuntu application/native qualification
+is inferred. Agent-host DNS/TLS reachability later recovered, which does not
+establish hosted-runner recovery or waive the next complete matrix.
+
+Review of the two Fast platform skips also found that the existing explicitly
+owned macOS clipboard step selected only the write-roundtrip node. That same
+guarded command now selects the dedicated native-read roundtrip as well; the
+hosted-runner, platform and explicit opt-in guard remain unchanged. A policy
+control binds both selected nodes. The focused CI/APT/clipboard family passes
+117 cases with two intentional Linux platform skips. No application, APT mirror,
+signature/TLS check, retry count or deadline changes accompany this correction.
+
 ## Remaining qualification
 
 Whole production/branch/changed-line gates, native workflows and the

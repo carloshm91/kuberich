@@ -61,7 +61,11 @@ validation is authoritative; no offline schema completeness, namespace-UID atomi
 precondition, write replay, provider or final release qualification is claimed.
 The first genuine PR run failed on a remaining old UI completion expectation;
 the fixture now includes create and still navigates to the unchanged ctx alias.
-The complete corrected hosted matrix remains required.
+The second run passes all 12,613 Fast cases (two platform skips), then Ubuntu
+parts/native jobs fail before behavior because official archive DNS is unavailable.
+Original failures remain retained. The explicit owned macOS clipboard step now
+also selects the native-read contract. The complete corrected hosted matrix,
+including hosted dependency recovery, remains required.
 
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 
