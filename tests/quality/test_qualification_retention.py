@@ -17,7 +17,7 @@ from tests.quality.test_qualification import checkout as checkout
 from tests.quality.test_qualification import owned_runner
 
 
-def runtime_fixture(root, round_number):
+def runtime_fixture(root, round_number, nonce_overrides=None, refresh_ui=False):
     """Write deterministic synthetic originals with real source/nonce/hash links."""
     import hashlib
     import json
@@ -58,11 +58,17 @@ def runtime_fixture(root, round_number):
         ),
     ):
         parent = root / "artifacts" / family
-        if family == "ui" and round_number > 1 and (parent / receipt_name).exists():
+        if (
+            family == "ui"
+            and round_number > 1
+            and not refresh_ui
+            and (parent / receipt_name).exists()
+        ):
             continue
         children = {}
         for index, mode in enumerate(modes, 1):
-            nonce = f"{round_number * 100 + index:032x}"
+            nonce = f"{round_number * 100 + index + (10000 if family == 'ui' else 0):032x}"
+            nonce = (nonce_overrides or {}).get(family + ":" + mode, nonce)
             child = parent / child_tree / mode
             names = runtime_names | (
                 {"coverage.data", "coverage.json", "coverage.xml"} if mode == "coverage" else set()
@@ -89,7 +95,11 @@ def runtime_fixture(root, round_number):
             else "aggregate-heartbeat.json"
         )
         write(parent / observation, {"synthetic": round_number})
-    if round_number > 1 and (root / "artifacts/ui/coverage-merge-receipt.json").exists():
+    if (
+        round_number > 1
+        and not refresh_ui
+        and (root / "artifacts/ui/coverage-merge-receipt.json").exists()
+    ):
         return
     before = root / "artifacts/ui/parent-before-merge" / f"{round_number:032x}"
     hashes = {}
@@ -119,10 +129,12 @@ def runtime_fixture(root, round_number):
     )
 
 
-def writer_stage(root, output, name, round_number=1, tail="", timeout=3):
+def writer_stage(
+    root, output, name, round_number=1, tail="", timeout=3, nonce_overrides=None, refresh_ui=False
+):
     junit = "cases.xml" if name == "runtime-controls" else name + ".xml"
     script = inspect.getsource(runtime_fixture) + (
-        f"\nruntime_fixture({str(root)!r},{round_number})\n"
+        f"\nruntime_fixture({str(root)!r},{round_number},{nonce_overrides!r},{refresh_ui!r})\n"
         f"from pathlib import Path\nPath({str(output / junit)!r}).write_text('<testsuite/>')\n"
         "print('original writer output',flush=True)\n" + tail
     )
@@ -162,6 +174,9 @@ def test_each_overwritten_round_keeps_exact_originals_and_first_merge(checkout, 
             retained / "originals" / creation.relative_to(checkout)
         ).read_bytes() == creation.read_bytes()
         assert manifest["complete"] and manifest["source"] == runner.report["source"]
+        identities = manifest["runtime_identities"]
+        assert len(set(identities["backend"]["nonces"] + identities["ui"]["nonces"])) == 5
+        assert identities["ui"] == runner.report["runtime_snapshots"][0]["runtime_identities"]["ui"]
         link = manifest["files"]["artifacts/backend/runtime/positive/stdout.log"]
         assert link == {
             "original_path": str(checkout / "artifacts/backend/runtime/positive/stdout.log"),
@@ -323,6 +338,60 @@ def test_third_round_cannot_replay_the_initial_backend_nonce(checkout, tmp_path)
         runner.run(writer_stage(checkout, runner.output, "contracts-3", 3, tail=tail))
     assert runner.report["gates"][2]["returncode"] == 0
     assert runner.report["gates"][2]["status"] == "failed"
+
+
+def test_initial_backend_and_ui_controls_cannot_share_a_nonce(checkout, tmp_path):
+    runner = runner_for(checkout, tmp_path)
+    stage = writer_stage(
+        checkout,
+        runner.output,
+        "runtime-controls",
+        nonce_overrides={
+            "ui:positive": f"{101:032x}",
+        },
+    )
+    with pytest.raises(ValueError, match="Invalid retained runtime nonce"):
+        runner.run(stage)
+    manifest = json.loads((runner.output / "retained/runtime-controls-1/manifest.json").read_text())
+    assert not manifest["complete"] and manifest["gate"]["returncode"] == 0
+    assert runner.report["gates"][0]["status"] == "failed"
+
+
+@pytest.mark.parametrize("refresh_ui", [False, True])
+def test_new_backend_nonce_cannot_reuse_any_initial_ui_nonce(checkout, tmp_path, refresh_ui):
+    runner = runner_for(checkout, tmp_path)
+    runner.run(writer_stage(checkout, runner.output, "runtime-controls", 1))
+    initial = runner.report["runtime_snapshots"][0]["runtime_identities"]
+    reused = initial["ui"]["nonces"][0]
+    # A refreshed synthetic UI tree makes the earlier UI nonce absent from the
+    # current controls, independently exercising the historical producer union.
+    tail = (
+        (
+            "import json\n"
+            "p=Path('artifacts/ui/coverage-merge-receipt.json')\n"
+            "merge=json.loads(p.read_text())\n"
+            f"merge['backend_runtime_receipt_sha256']={initial['backend']['receipt_sha256']!r}\n"
+            "p.write_text(json.dumps(merge))\n"
+        )
+        if refresh_ui
+        else ""
+    )
+    stage = writer_stage(
+        checkout,
+        runner.output,
+        "contracts-2",
+        2,
+        nonce_overrides={"backend:positive": reused},
+        refresh_ui=refresh_ui,
+        tail=tail,
+    )
+    with pytest.raises(
+        ValueError, match="fresh backend" if refresh_ui else "Invalid retained runtime nonce"
+    ):
+        runner.run(stage)
+    manifest = json.loads((runner.output / "retained/contracts-2/manifest.json").read_text())
+    assert not manifest["complete"] and manifest["gate"]["returncode"] == 0
+    assert runner.report["gates"][1]["status"] == "failed"
 
 
 @pytest.mark.parametrize("fault", ["source", "nonce", "unsafe-merge", "missing-replay"])

@@ -158,6 +158,7 @@ def runtime_originals(
         )
 
     identities = {}
+    producer_nonces: set[str] = set()
     for family, receipt_name, child_tree, modes in (
         ("backend", "runtime-receipt.json", "runtime", ("positive", "negative")),
         (
@@ -182,10 +183,11 @@ def runtime_originals(
             require(
                 isinstance(nonce, str)
                 and re.fullmatch("[0-9a-f]{32}", nonce) is not None
-                and nonce not in nonces,
+                and nonce not in producer_nonces,
                 "Invalid retained runtime nonce.",
             )
             nonces.add(nonce)
+            producer_nonces.add(nonce)
             child = parent / child_tree / mode
             artifacts = result.get("artifacts")
             require(
@@ -484,8 +486,9 @@ class Runner:
                 old = {
                     nonce
                     for record in earlier
+                    for family in ("backend", "ui")
                     for nonce in record.get("runtime_identities", {})
-                    .get("backend", {})
+                    .get(family, {})
                     .get("nonces", [])
                 }
                 new = manifest["runtime_identities"]["backend"]["nonces"]
