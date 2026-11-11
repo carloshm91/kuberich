@@ -22,6 +22,10 @@ PUBLISHED_WHEELS = {
         "url": "https://files.pythonhosted.org/packages/cf/d8/875a967347bea2110137838860eb02d37247282acf4c5145b68d506ae0dd/kuberich-0.3.0-py3-none-any.whl",
         "sha256": "dfe73877f7bacfa33b8b0fb3f57306be789d2a82b24707ad6f092895a23dcd59",
     },
+    "0.4.0": {
+        "url": "https://files.pythonhosted.org/packages/9c/0a/c9dcb00c48593b2a83a29e94b185aa72577c6fdd3e18edea899d45d57e39/kuberich-0.4.0-py3-none-any.whl",
+        "sha256": "a3168424374dceb2b804900ff4b6a25bbead14ffa5c6d132b5b872f0b73676fd",
+    },
 }
 MAX_WHEEL_BYTES = 10 * 1024 * 1024
 
@@ -66,8 +70,10 @@ def verify_published_wheel(path: Path, version: str, pin: dict[str, str]) -> dic
     return {"filename": path.name, "version": version, "url": pin["url"], "sha256": actual}
 
 
-def published_upgrade_wheel(directory: Path, candidate: str) -> tuple[Path, dict]:
-    baseline = published_baseline(candidate)
+def published_upgrade_wheel(
+    directory: Path, candidate: str, *, predecessor: str | None = None
+) -> tuple[Path, dict]:
+    baseline = published_baseline(candidate, predecessor=predecessor)
     pin = PUBLISHED_WHEELS.get(baseline["version"])
     if pin is None:
         raise ValueError("Selected predecessor needs a reviewed immutable public wheel pin")

@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -14,6 +15,8 @@ import threading
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+
+from packaging.version import Version
 
 from scripts.check_standalone import inspect_bundle, inspect_candidate
 from scripts.owned_kind import capture_docker
@@ -24,6 +27,15 @@ from tests.support.plugins_terminal import (
     exercise_plugins,
     exercise_view_preferences,
     plugin_definitions,
+)
+from tests.support.published_standalone import (
+    BASE_URL,
+    CHECKSUM_NAME,
+    CHECKSUM_SHA256,
+    PINS,
+    SOURCE,
+    VERSION,
+    predecessor,
 )
 from tests.support.resource_creation_cli import terminal_resource_creation_cli
 from tests.support.resource_creation_terminal import terminal_resource_creation
@@ -173,7 +185,14 @@ def environment(directory: Path, *, helpers: bool, bundle: str) -> dict[str, str
     }
 
 
-def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> dict[str, Any]:
+def browser(
+    host: Host,
+    directory: Path,
+    evidence: Path,
+    *,
+    helpers: bool,
+    evidence_name: str | None = None,
+) -> dict[str, Any]:
     directory.mkdir()
     (directory / "preferences.yaml").write_text(
         json.dumps(
@@ -278,7 +297,9 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             exercise_plugins(terminal)
             terminal.send(b"\x11")
             terminal.finish()
-            name = "standalone-" + native_target() + ("-auth-exec" if helpers else "-missing-tool")
+            name = evidence_name or (
+                "standalone-" + native_target() + ("-auth-exec" if helpers else "-missing-tool")
+            )
             terminal.save_evidence(name)
             assert b"synthetic-pty" not in terminal.transcript
         assert kubeconfig.read_bytes() == before
@@ -499,6 +520,178 @@ def creation_requests(host: Host, directory: Path, evidence: Path) -> dict[str, 
     }
 
 
+def retained_configuration(paths: tuple[Path, ...]) -> dict[str, Any]:
+    return {
+        path.name: {
+            "sha256": digest(path),
+            "uid": path.stat().st_uid,
+            "gid": path.stat().st_gid,
+            "mode": stat.S_IMODE(path.stat().st_mode),
+        }
+        for path in paths
+    }
+
+
+def replacement(
+    candidate: Path, manifest: dict[str, Any], directory: Path, evidence: Path
+) -> dict[str, Any]:
+    """Replace only an owned complete install; never touch a user installation."""
+    directory.mkdir(mode=0o700)
+    originals = evidence / "upgrade"
+    old_archive, old_manifest = predecessor(originals, manifest["version"], manifest["target"])
+    if old_manifest["source_commit"] == manifest["source_commit"]:
+        raise ValueError("Native predecessor must be genuinely different from the candidate source")
+    install = directory / "install"
+    install.mkdir()
+    bundle = install / "kuberich"
+    new_archive = candidate / manifest["archive"]["name"]
+    with tarfile.open(old_archive, "r:gz") as archive:
+        archive.extractall(install, filter="data")
+    inspect_bundle(bundle, old_manifest)
+    state = directory / "state"
+    state.mkdir(mode=0o700)
+    preferences, caller = state / "preferences.yaml", state / "never-use-a-real-cluster"
+    preferences.write_text("schema_version: 1\nread_only: true\nrefresh_seconds: 1.5\n")
+    caller.write_bytes(b"owned caller sentinel; no cluster credentials\n")
+    for path in (preferences, caller):
+        path.chmod(0o600)
+    preserved = retained_configuration((preferences, caller))
+    old_only = bundle / ".owned-predecessor-only"
+    old_only.write_text("This owned marker must disappear with the complete old directory.\n")
+    host = Host(bundle, directory, originals)
+    commands: list[dict[str, Any]] = []
+    receipt: dict[str, Any] = {
+        "schema_version": 1,
+        "result": "failed",
+        "source_commit": manifest["source_commit"],
+        "target": manifest["target"],
+        "old_version": VERSION,
+        "old_source_commit": SOURCE,
+        "new_version": manifest["version"],
+        "old_archive": old_archive.name,
+        "old_archive_sha256": PINS[manifest["target"]]["archive"],
+        "old_provenance_sha256": PINS[manifest["target"]]["provenance"],
+        "old_checksum_sha256": CHECKSUM_SHA256,
+        "old_url": BASE_URL + old_archive.name,
+        "new_archive": new_archive.name,
+        "new_archive_sha256": manifest["archive"]["sha256"],
+        "commands": commands,
+        "configuration_before": preserved,
+        "publication_performed": False,
+    }
+    failure: BaseException | None = None
+    try:
+        overrides = environment(state, helpers=False, bundle="/app" if host.linux else str(bundle))
+        for phase, version in (("old", VERSION), ("new", manifest["version"])):
+            if phase == "new":
+                staged = directory / "staged"
+                with tarfile.open(new_archive, "r:gz") as archive:
+                    archive.extractall(staged, filter="data")
+                inspect_bundle(staged / "kuberich", manifest)
+                shutil.rmtree(bundle)
+                shutil.move(str(staged / "kuberich"), bundle)
+                staged.rmdir()
+                if old_only.exists() or old_only.is_symlink():
+                    raise ValueError("Complete replacement retained a predecessor-only file")
+                inspect_bundle(bundle, manifest)
+                receipt["complete_directory_replaced"] = True
+            for operation in ("version", "help", "info"):
+                name = phase + "-" + operation
+                output = host.observe(
+                    name,
+                    [host.executable, "--" + operation if operation != "info" else "info"],
+                    overrides,
+                )
+                commands.append(
+                    {
+                        "phase": phase,
+                        "operation": operation,
+                        **json.loads((originals / (name + ".json")).read_bytes()),
+                    }
+                )
+                if operation == "version" and output != "kuberich " + version + "\n":
+                    raise ValueError("Replacement CLI differs from its original archive version")
+                if operation == "info":
+                    info = json.loads(output)
+                    if (
+                        info["version"] != version
+                        or info["cluster_connected"] is not False
+                        or info["preferences"]["read_only"] is not True
+                        or info["preferences"]["refresh_seconds"] != 1.5
+                    ):
+                        raise ValueError("Replacement did not retain offline caller preferences")
+            if retained_configuration((preferences, caller)) != preserved:
+                raise ValueError("Replacement changed caller configuration or ownership")
+        receipt["post_replacement_pty"] = browser(
+            host,
+            directory / "browser",
+            evidence,
+            helpers=False,
+            evidence_name="standalone-" + manifest["target"] + "-upgraded",
+        )
+        if (
+            digest(old_archive) != receipt["old_archive_sha256"]
+            or digest(new_archive) != receipt["new_archive_sha256"]
+        ):
+            raise ValueError("Original archives changed during native replacement")
+        provenance = old_archive.with_name(
+            old_archive.name.removesuffix(".tar.gz") + ".provenance.json"
+        )
+        if (
+            digest(provenance) != receipt["old_provenance_sha256"]
+            or digest(originals / CHECKSUM_NAME) != CHECKSUM_SHA256
+        ):
+            raise ValueError("Original predecessor provenance changed during replacement")
+        receipt["original_archive_hashes_unchanged"] = True
+        receipt["configuration_after"] = retained_configuration((preferences, caller))
+        if receipt["configuration_after"] != preserved:
+            raise ValueError("Native replacement changed preserved configuration")
+        receipt["result"] = "passed"
+    except BaseException as error:
+        receipt["error"] = type(error).__name__
+        failure = error
+        raise
+    finally:
+        cleanup_errors: list[BaseException] = []
+        cleanup_failures: list[dict[str, str]] = []
+        try:
+            host.close()
+        except BaseException as error:
+            cleanup_errors.append(error)
+            cleanup_failures.append({"stage": "host_close", "error": type(error).__name__})
+        try:
+            if bundle.exists():
+                shutil.rmtree(bundle)
+            receipt["owned_installation_removed"] = not bundle.exists() and not bundle.is_symlink()
+            if not receipt["owned_installation_removed"]:
+                raise ValueError("Native replacement cleanup retained its owned installation")
+        except BaseException as error:
+            cleanup_errors.append(error)
+            cleanup_failures.append({"stage": "owned_installation", "error": type(error).__name__})
+        try:
+            receipt["configuration_after_cleanup"] = retained_configuration((preferences, caller))
+            if receipt["configuration_after_cleanup"] != preserved:
+                raise ValueError("Native replacement cleanup changed caller configuration")
+        except BaseException as error:
+            cleanup_errors.append(error)
+            cleanup_failures.append({"stage": "configuration", "error": type(error).__name__})
+        if cleanup_errors:
+            receipt.update(result="failed", cleanup_errors=cleanup_failures)
+        try:
+            write_original(evidence / "upgrade-replacement.json", receipt)
+        except BaseException as error:
+            cleanup_errors.append(error)
+        if cleanup_errors:
+            raise BaseExceptionGroup(
+                "Native replacement failed after attempting every owned cleanup",
+                ([failure] if failure is not None else []) + cleanup_errors,
+            )
+    return {
+        "receipt": "upgrade-replacement.json",
+        "sha256": digest(evidence / "upgrade-replacement.json"),
+    }
+
+
 def verify(
     source: Path, candidate: Path, evidence: Path, *, benchmark_tool: Path | None = None
 ) -> dict[str, Any]:
@@ -657,6 +850,11 @@ def verify(
                 )
         finally:
             host.close()
+        upgraded = (
+            replacement(candidate, manifest, directory / "upgrade", evidence)
+            if Version(manifest["version"]).release >= (0, 5, 0)
+            else None
+        )
         receipt = {
             "schema_version": 1,
             "source_commit": manifest["source_commit"],
@@ -675,6 +873,7 @@ def verify(
             "helm_catalog_and_values": charts,
             "resource_creation": creation,
             "http_benchmarks": benchmarks,
+            "predecessor_replacement": upgraded,
             "private_credential_child": True,
             "scope": "Exact extracted archive, native CLI, owned loopback API, C credential and kubectl fixtures with real /bin/sh. Not provider or real Kubernetes exec certification.",
             "runtime_qualified": False,

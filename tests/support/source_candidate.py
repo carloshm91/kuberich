@@ -22,7 +22,10 @@ BOTTLE_REVISIONS = {"0.2.0": "a878dbd38d7ae0ac81fd9fcba37b4b104bad641d"}
 
 
 def published_baseline(
-    candidate: str, releases: dict[str, dict[str, Any]] | None = None
+    candidate: str,
+    releases: dict[str, dict[str, Any]] | None = None,
+    *,
+    predecessor: str | None = None,
 ) -> dict[str, Any]:
     """Select a real stable predecessor, never the candidate's own publication."""
     if releases is None:
@@ -33,6 +36,7 @@ def published_baseline(
         if not Version(version).is_prerelease
         and not Version(version).is_devrelease
         and Version(version) < Version(candidate)
+        and (predecessor is None or version == predecessor)
     ]
     if not versions:
         raise ValueError("No published stable predecessor for this candidate")
@@ -44,6 +48,11 @@ def published_baseline(
             "homebrew_bottle_commit", BOTTLE_REVISIONS.get(version)
         ),
     }
+
+
+def published_has_legacy_alias(version: str) -> bool:
+    """The published 0.4 transition removed both the shim and console entry."""
+    return Version(version) < Version("0.4.0")
 
 
 def source_upgrade_versions(

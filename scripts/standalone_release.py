@@ -3,15 +3,19 @@
 import base64
 import hashlib
 import json
+import re
 import shutil
 import tarfile
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from packaging.version import Version
+
 from scripts.check_standalone import inspect_original
 from scripts.standalone import TARGETS, asset_name, check_executable, glibc_versions, macos_minimum
 from scripts.standalone_python import pin_for
 from scripts.supply_chain import digest
+from tests.support.published_standalone import BASE_URL, CHECKSUM_SHA256, PINS, SOURCE, VERSION
 
 REQUIRED_ASSETS = (
     "THIRD-PARTY-NOTICES/CPYTHON-LICENSE.txt",
@@ -117,6 +121,126 @@ def json_record(records: dict[str, bytes], name: str) -> dict[str, Any]:
     return value
 
 
+def check_replacement(
+    records: dict[str, bytes],
+    host: dict[str, Any],
+    archive: Path,
+    sha: str,
+    version: str,
+    target: str,
+) -> None:
+    """A fresh archive run cannot substitute for the required real predecessor."""
+    reference = host.get("predecessor_replacement", {})
+    original = records.get("runtime/upgrade-replacement.json", b"")
+    if (
+        not isinstance(reference, dict)
+        or reference.get("receipt") != "upgrade-replacement.json"
+        or hashlib.sha256(original).hexdigest() != reference.get("sha256")
+    ):
+        raise ValueError("Native upgrade requires its original replacement receipt")
+    upgrade = json_record(records, "runtime/upgrade-replacement.json")
+    expected = {
+        "schema_version": 1,
+        "result": "passed",
+        "source_commit": sha,
+        "target": target,
+        "old_version": VERSION,
+        "old_source_commit": SOURCE,
+        "new_version": version,
+        "old_archive": asset_name(VERSION, target),
+        "old_archive_sha256": PINS[target]["archive"],
+        "old_provenance_sha256": PINS[target]["provenance"],
+        "old_checksum_sha256": CHECKSUM_SHA256,
+        "old_url": BASE_URL + asset_name(VERSION, target),
+        "new_archive": archive.name,
+        "new_archive_sha256": digest(archive),
+        "complete_directory_replaced": True,
+        "original_archive_hashes_unchanged": True,
+        "owned_installation_removed": True,
+        "publication_performed": False,
+    }
+    if any(
+        type(upgrade.get(key)) is not type(value) or upgrade[key] != value
+        for key, value in expected.items()
+    ):
+        raise ValueError("Native replacement differs from the genuine predecessor or candidate")
+    configuration = upgrade.get("configuration_before")
+    for snapshot in ("configuration_before", "configuration_after", "configuration_after_cleanup"):
+        observation = upgrade.get(snapshot)
+        if (
+            not isinstance(observation, dict)
+            or set(observation) != {"preferences.yaml", "never-use-a-real-cluster"}
+            or any(
+                not isinstance(item, dict)
+                or set(item) != {"sha256", "uid", "gid", "mode"}
+                or not isinstance(item["sha256"], str)
+                or re.fullmatch(r"[0-9a-f]{64}", item["sha256"]) is None
+                or any(type(item[name]) is not int or item[name] < 0 for name in ("uid", "gid"))
+                or type(item["mode"]) is not int
+                or item["mode"] != 0o600
+                for item in observation.values()
+            )
+            or observation != configuration
+        ):
+            raise ValueError(
+                "Native replacement did not preserve caller configuration and ownership"
+            )
+    commands = upgrade.get("commands", [])
+    if len(commands) != 6:
+        raise ValueError("Native replacement requires actual old and new CLI commands")
+    for command, (phase, operation) in zip(
+        commands,
+        (
+            (phase, operation)
+            for phase in ("old", "new")
+            for operation in ("version", "help", "info")
+        ),
+        strict=True,
+    ):
+        if (
+            command.get("phase") != phase
+            or command.get("operation") != operation
+            or type(command.get("exit")) is not int
+            or command["exit"] != 0
+            or not command.get("argv")
+            or not command.get("cwd")
+        ):
+            raise ValueError("Native replacement CLI evidence failed or is incomplete")
+        observed = VERSION if phase == "old" else version
+        if operation == "version" and command.get("stdout") != "kuberich " + observed + "\n":
+            raise ValueError("Native replacement CLI version does not match its archive")
+        if operation == "help" and not command.get("stdout", "").startswith("usage: kuberich"):
+            raise ValueError("Native replacement help did not execute the installed CLI")
+        if operation == "info":
+            info = json.loads(command["stdout"])
+            if (
+                info.get("version") != observed
+                or info.get("cluster_connected") is not False
+                or info.get("preferences", {}).get("read_only") is not True
+                or info["preferences"].get("refresh_seconds") != 1.5
+            ):
+                raise ValueError("Native replacement info did not retain offline preferences")
+    terminal_reference = upgrade.get("post_replacement_pty", {})
+    name = terminal_reference.get("receipt", "")
+    if (
+        name != "standalone-" + target + "-upgraded.json"
+        or terminal_reference.get("caller_kubeconfig_unchanged") is not True
+    ):
+        raise ValueError("Native replacement requires its actual post-upgrade terminal")
+    terminal_original = records.get("runtime/" + name, b"")
+    if hashlib.sha256(terminal_original).hexdigest() != terminal_reference.get("sha256"):
+        raise ValueError("Native replacement terminal differs from its original digest")
+    terminal = json.loads(terminal_original)
+    if (
+        type(terminal.get("exit")) is not int
+        or terminal["exit"] != 0
+        or any(terminal.get(key) is not True for key in RESTORATION)
+        or set(terminal.get("reporting_modes_disabled", {})) != REPORTING_MODES
+        or any(value is not True for value in terminal["reporting_modes_disabled"].values())
+    ):
+        raise ValueError("Native replacement terminal did not restore its caller")
+
+
 def check_records(
     root: Path, archive: Path, records: dict[str, bytes], sha: str, version: str, target: str
 ) -> None:
@@ -160,6 +284,8 @@ def check_records(
         raise ValueError(
             "Native execution evidence is not bound to the original archive and source"
         )
+    if Version(version).release >= (0, 5, 0):
+        check_replacement(records, host, archive, sha, version, target)
     for scenario in ("missing_optional_tool", "auth_and_shell"):
         reference = host[scenario]
         name = reference["receipt"]

@@ -11,7 +11,7 @@ import pytest
 
 from scripts.build_standalone import source_inputs
 from scripts.standalone import TARGETS, asset_name
-from scripts.standalone_release import check_records, enroll, verify
+from scripts.standalone_release import check_records, check_replacement, enroll, verify
 from tests.support.native_release import candidates
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,7 +54,7 @@ def original(source, tmp_path):
     return root, sha, tmp_path
 
 
-def records_for(directory, target):
+def records_for(directory, target, version=VERSION):
     source = directory / "standalone" / target
     records = {
         "candidate/build-manifest.json": (source / "candidate/build-manifest.json").read_bytes()
@@ -64,7 +64,163 @@ def records_for(directory, target):
     )
     if target.startswith("linux-"):
         records["owned-kind-shell.json"] = (source / "owned-kind-shell.json").read_bytes()
-    return source / "candidate" / asset_name(VERSION, target), records
+    return source / "candidate" / asset_name(version, target), records
+
+
+@pytest.fixture(params=TARGETS)
+def upgrade_original(request, source, tmp_path):
+    root, sha = source
+    version = "0.5.0rc1"
+    candidates(root, sha, version, tmp_path)
+    archive, records = records_for(tmp_path, request.param, version)
+    host = json.loads(records["runtime/host-runtime.json"])
+    return root, sha, version, request.param, archive, records, host
+
+
+def test_05_and_prereleases_require_bound_predecessor_and_post_replacement_terminal(
+    upgrade_original,
+):
+    root, sha, version, target, archive, records, host = upgrade_original
+    assert len(records) <= 32
+    check_records(root, archive, records, sha, version, target)
+    host.pop("predecessor_replacement")
+    records["runtime/host-runtime.json"] = json.dumps(host).encode()
+    with pytest.raises(ValueError, match="replacement receipt"):
+        check_records(root, archive, records, sha, version, target)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "old_version",
+        "old_source_commit",
+        "old_archive_sha256",
+        "old_provenance_sha256",
+        "old_checksum_sha256",
+        "old_url",
+        "new_archive_sha256",
+        "source_commit",
+        "target",
+        "complete_directory_replaced",
+        "original_archive_hashes_unchanged",
+        "owned_installation_removed",
+        "publication_performed",
+        "configuration",
+        "ownership",
+        "command_missing",
+        "command_failed",
+        "old_cli_version",
+        "new_cli_version",
+        "info_connected",
+        "help_missing",
+        "terminal_digest",
+        "terminal_mode",
+        "caller_config",
+        "receipt_digest",
+    ],
+)
+def test_changed_upgrade_originals_or_fresh_install_claims_are_refused(upgrade_original, fault):
+    _, sha, version, target, archive, records, host = upgrade_original
+    upgrade = json.loads(records["runtime/upgrade-replacement.json"])
+    if fault in {
+        "complete_directory_replaced",
+        "original_archive_hashes_unchanged",
+        "owned_installation_removed",
+    }:
+        upgrade[fault] = False
+    elif fault == "publication_performed":
+        upgrade[fault] = True
+    elif fault == "configuration":
+        upgrade["configuration_after"]["preferences.yaml"]["sha256"] = "b" * 64
+    elif fault == "ownership":
+        upgrade["configuration_after_cleanup"]["never-use-a-real-cluster"]["uid"] += 1
+    elif fault == "command_missing":
+        upgrade["commands"].pop()
+    elif fault == "command_failed":
+        upgrade["commands"][0]["exit"] = 1
+    elif fault in {"old_cli_version", "new_cli_version"}:
+        upgrade["commands"][0 if fault == "old_cli_version" else 3]["stdout"] = "kuberich wrong\n"
+    elif fault == "info_connected":
+        upgrade["commands"][5]["stdout"] = json.dumps(
+            {"version": version, "cluster_connected": True}
+        )
+    elif fault == "help_missing":
+        upgrade["commands"][4]["stdout"] = ""
+    elif fault == "terminal_digest":
+        upgrade["post_replacement_pty"]["sha256"] = "b" * 64
+    elif fault == "caller_config":
+        upgrade["post_replacement_pty"]["caller_kubeconfig_unchanged"] = False
+    elif fault == "terminal_mode":
+        name = "runtime/" + upgrade["post_replacement_pty"]["receipt"]
+        terminal = json.loads(records[name])
+        terminal["terminal_mode_restored"] = False
+        records[name] = json.dumps(terminal).encode()
+        upgrade["post_replacement_pty"]["sha256"] = hashlib.sha256(records[name]).hexdigest()
+    elif fault != "receipt_digest":
+        upgrade[fault] = "changed original identity"
+    records["runtime/upgrade-replacement.json"] = json.dumps(upgrade).encode()
+    host["predecessor_replacement"]["sha256"] = (
+        "b" * 64
+        if fault == "receipt_digest"
+        else hashlib.sha256(records["runtime/upgrade-replacement.json"]).hexdigest()
+    )
+    with pytest.raises(ValueError):
+        check_replacement(records, host, archive, sha, version, target)
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "float_mode",
+        "float_mode_after",
+        "float_mode_cleanup",
+        "nonhex_hash",
+        "uppercase_hash",
+        "configuration_null",
+        "configuration_list",
+        "configuration_scalar",
+        "item_null",
+        "item_list",
+        "item_scalar",
+        "missing_field",
+    ],
+)
+def test_replacement_configuration_requires_exact_shapes_integer_modes_and_hex_hashes(
+    upgrade_original, fault
+):
+    _, sha, version, target, archive, records, host = upgrade_original
+    upgrade = json.loads(records["runtime/upgrade-replacement.json"])
+    for snapshot in ("configuration_before", "configuration_after", "configuration_after_cleanup"):
+        if fault == "configuration_null":
+            upgrade[snapshot] = None
+        elif fault == "configuration_list":
+            upgrade[snapshot] = []
+        elif fault == "configuration_scalar":
+            upgrade[snapshot] = 384
+        elif fault == "item_null":
+            upgrade[snapshot]["preferences.yaml"] = None
+        elif fault == "item_list":
+            upgrade[snapshot]["preferences.yaml"] = []
+        elif fault == "item_scalar":
+            upgrade[snapshot]["preferences.yaml"] = 384
+        elif fault == "missing_field":
+            upgrade[snapshot]["preferences.yaml"].pop("mode")
+        elif fault == "nonhex_hash":
+            upgrade[snapshot]["preferences.yaml"]["sha256"] = "g" * 64
+        elif fault == "uppercase_hash":
+            upgrade[snapshot]["preferences.yaml"]["sha256"] = "A" * 64
+        elif (
+            fault == "float_mode"
+            or (fault == "float_mode_after" and snapshot == "configuration_after")
+            or (fault == "float_mode_cleanup" and snapshot == "configuration_after_cleanup")
+        ):
+            upgrade[snapshot]["preferences.yaml"]["mode"] = 384.0
+    records["runtime/upgrade-replacement.json"] = json.dumps(upgrade).encode()
+    host["predecessor_replacement"]["sha256"] = hashlib.sha256(
+        records["runtime/upgrade-replacement.json"]
+    ).hexdigest()
+    with pytest.raises(ValueError, match="configuration and ownership"):
+        check_replacement(records, host, archive, sha, version, target)
 
 
 def test_enrollment_preserves_four_exact_archives_and_every_original_json(original, tmp_path):
