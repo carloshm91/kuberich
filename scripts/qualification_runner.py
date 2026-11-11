@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shutil
 import signal
 import subprocess
@@ -36,6 +37,233 @@ from scripts.qualification import (
 )
 from scripts.release_policy import REPOSITORY, qualified_run, successful_jobs
 
+ARCHIVE_TREES = (
+    "ui",
+    "backend",
+    "terminal",
+    "security",
+    "cluster",
+    "quickstart",
+    "distribution",
+    "releases",
+    "container-inspection",
+    "helm",
+    "manifests",
+    "ephemeral-debug",
+    "packaging",
+    "startup",
+    "pulse",
+    "relationships",
+    "authorization",
+    "diagnostics",
+    "metric-history",
+    "curated-resources",
+    "node-shell",
+    "node-maintenance",
+    "benchmarks",
+    "resource-creation",
+)
+RETENTION_MAX_FILES = 32768
+RETENTION_MAX_BYTES = 1024 * 1024 * 1024
+
+
+def regular_files(path: Path, boundary: Path) -> list[Path]:
+    """Bound all traversal entries, including empty directories, before sorting."""
+    entries = 1
+
+    def visit(current: Path) -> list[Path]:
+        nonlocal entries
+        try:
+            physical = current.resolve()
+        except (OSError, RuntimeError) as error:
+            raise ValueError(f"Unsafe retention path: {current}") from error
+        if not current.is_relative_to(boundary) or physical != current.absolute():
+            raise ValueError(f"Unsafe retention path: {current}")
+        if len(current.relative_to(boundary).parts) > 64:
+            raise ValueError("Retention directory-depth bound exceeded.")
+        if not current.exists():
+            return []
+        if current.is_file():
+            return [current]
+        if not current.is_dir():
+            raise ValueError(f"Retention requires regular files/directories: {current}")
+        children = []
+        with os.scandir(current) as iterator:
+            for child in iterator:
+                entries += 1
+                if entries > RETENTION_MAX_FILES:
+                    raise ValueError("Retention traversal-entry bound exceeded.")
+                children.append(current / child.name)
+        return [file for child in sorted(children) for file in visit(child)]
+
+    return visit(path)
+
+
+def retention_hash(path: Path) -> str:
+    """Read a finite declared size, rejecting evidence that grows or shrinks."""
+    size = path.stat().st_size
+    if size > RETENTION_MAX_BYTES:
+        raise ValueError("Retention byte bound exceeded.")
+    checksum = hashlib.sha256()
+    with path.open("rb") as stream:
+        remaining = size
+        while remaining:
+            block = stream.read(min(remaining, 1024 * 1024))
+            if not block:
+                raise ValueError("Retained evidence shrank while hashing.")
+            checksum.update(block)
+            remaining -= len(block)
+        if stream.read(1):
+            raise ValueError("Retained evidence grew while hashing.")
+    return checksum.hexdigest()
+
+
+def retained_inventory(directory: Path) -> dict[str, dict[str, Any]]:
+    """Hash exact retained bytes with a finite file/byte inventory."""
+    inventory = {}
+    total = 0
+    for path in regular_files(directory, directory):
+        size = path.stat().st_size
+        total += size
+        if total > RETENTION_MAX_BYTES:
+            raise ValueError("Retention byte bound exceeded.")
+        inventory[path.relative_to(directory).as_posix()] = {
+            "size": size,
+            "sha256": retention_hash(path),
+        }
+    return inventory
+
+
+def runtime_originals(
+    directory: Path, source: dict[str, Any], initial_backend_receipt: str | None = None
+) -> dict[str, Any]:
+    """Check referenced originals without changing or replacing producer receipts."""
+    from scripts.merge_runtime_coverage import ARTIFACTS, RUNTIME_ARTIFACTS, digest, document
+
+    def require(condition: bool, message: str) -> None:
+        if not condition:
+            raise ValueError(message)
+
+    def identity(value: Any) -> None:
+        require(
+            isinstance(value, dict)
+            and value.get("tested_checkout_commit") == source["commit"]
+            and value.get("tested_checkout_tree") == source["tree"]
+            and isinstance(value.get("files"), dict)
+            and bool(value["files"])
+            and all(
+                source["files"].get(name) == checksum for name, checksum in value["files"].items()
+            ),
+            "Retained runtime source identity differs from the frozen candidate.",
+        )
+
+    identities = {}
+    producer_nonces: set[str] = set()
+    for family, receipt_name, child_tree, modes in (
+        ("backend", "runtime-receipt.json", "runtime", ("positive", "negative")),
+        (
+            "ui",
+            "aggregate-runtime-receipt.json",
+            "aggregate-runtime",
+            ("positive", "negative", "coverage"),
+        ),
+    ):
+        parent = directory / "artifacts" / family
+        receipt = document(parent / receipt_name)
+        expected = receipt.get("source")
+        identity(expected)
+        require(
+            isinstance(receipt.get("children"), dict) and set(receipt["children"]) == set(modes),
+            "Missing retained runtime child receipt.",
+        )
+        nonces = set()
+        for mode in modes:
+            result = receipt["children"][mode]
+            nonce = result.get("nonce")
+            require(
+                isinstance(nonce, str)
+                and re.fullmatch("[0-9a-f]{32}", nonce) is not None
+                and nonce not in producer_nonces,
+                "Invalid retained runtime nonce.",
+            )
+            nonces.add(nonce)
+            producer_nonces.add(nonce)
+            child = parent / child_tree / mode
+            artifacts = result.get("artifacts")
+            require(
+                isinstance(artifacts, dict)
+                and set(artifacts) == (ARTIFACTS if mode == "coverage" else RUNTIME_ARTIFACTS),
+                "Incomplete retained runtime child inventory.",
+            )
+            for name, checksum in artifacts.items():
+                require(
+                    Path(name).name == name and digest(child / name) == checksum,
+                    "Missing or changed retained runtime child bytes.",
+                )
+            request, observed = (
+                document(child / name) for name in ("request.json", "source-receipt.json")
+            )
+            require(
+                request.get("nonce") == observed.get("nonce") == nonce
+                and request.get("mode") == observed.get("mode") == mode
+                and request.get("source")
+                == observed.get("source_before")
+                == observed.get("source_after")
+                == expected,
+                "Retained child source/nonce identity mismatch.",
+            )
+        identities[family] = {
+            "source": expected,
+            "nonces": sorted(nonces),
+            "receipt_sha256": digest(parent / receipt_name),
+        }
+    for path in (
+        "artifacts/backend/aggregate-tiny-lines-heartbeat.json",
+        "artifacts/ui/aggregate-heartbeat.json",
+    ):
+        require((directory / path).is_file(), "Missing retained runtime parent observation.")
+    merge = document(directory / "artifacts/ui/coverage-merge-receipt.json")
+    identity(merge.get("source"))
+    require(
+        isinstance(merge.get("parent_before"), dict)
+        and isinstance(merge.get("merged"), dict)
+        and set(merge["parent_before"])
+        == set(merge["merged"])
+        == {"coverage.data", "coverage.json", "coverage.xml"},
+        "Incomplete retained coverage merge inventory.",
+    )
+    before = Path(merge["before_directory"])
+    require(
+        not before.is_absolute() and ".." not in before.parts,
+        "Unsafe runtime parent-before-merge path.",
+    )
+    for name, checksum in merge["parent_before"].items():
+        require(
+            Path(name).name == name
+            and digest(directory / "artifacts/ui" / before / name) == checksum,
+            "Missing retained parent-before-merge original.",
+        )
+    for name, checksum in merge["merged"].items():
+        original = directory / (".coverage" if name == "coverage.data" else name)
+        require(
+            Path(name).name == name and digest(original) == checksum,
+            "Retained merged coverage differs from its producer receipt.",
+        )
+    require(
+        digest(directory / "artifacts/ui/merged-coverage.data") == merge["merged"]["coverage.data"],
+        "Missing retained merged coverage data.",
+    )
+    require(
+        merge.get("outer_receipt_sha256")
+        == digest(directory / "artifacts/ui/aggregate-runtime-receipt.json")
+        and merge.get("replay_coverage_data_sha256")
+        == digest(directory / "artifacts/ui/aggregate-runtime/coverage/coverage.data")
+        and merge.get("backend_runtime_receipt_sha256")
+        == (initial_backend_receipt or identities["backend"]["receipt_sha256"]),
+        "Retained merge receipt does not identify the original runtime inputs.",
+    )
+    return identities
+
 
 def git(root: Path, *arguments: str) -> str:
     return subprocess.check_output(("git", *arguments), cwd=root, text=True).strip()
@@ -55,25 +283,16 @@ def snapshot(root: Path) -> dict[str, Any]:
 
 def archive(root: Path, destination: Path) -> None:
     """Preserve canonical originals before another command can overwrite them."""
+    sources = (root / "dist", *(root / "artifacts" / name for name in ARCHIVE_TREES))
+    if any(destination.is_relative_to(source) for source in sources):
+        raise ValueError("Retention cannot recursively collect the qualification output.")
     destination.mkdir(parents=True, exist_ok=False)
     for name in (".coverage", "coverage.json", "coverage.xml", "diff-coverage.json"):
         if (root / name).is_file():
             shutil.copy2(root / name, destination / name)
     if (root / "dist").is_dir():
         shutil.copytree(root / "dist", destination / "dist", symlinks=True)
-    for name in (
-        "ui",
-        "backend",
-        "terminal",
-        "security",
-        "cluster",
-        "quickstart",
-        "distribution",
-        "container-inspection",
-        "helm",
-        "manifests",
-        "ephemeral-debug",
-    ):
+    for name in ARCHIVE_TREES:
         source = root / "artifacts" / name
         if source.is_dir():
             shutil.copytree(source, destination / name, symlinks=True)
@@ -155,6 +374,149 @@ class Runner:
     def unchanged(self) -> None:
         if snapshot(self.root) != self.report["source"]:
             raise ValueError("Tracked candidate inputs changed during qualification.")
+
+    def verify_retained(self) -> None:
+        for retained in self.report.get("runtime_snapshots", []):
+            directory = self.output / retained["directory"]
+            inventory = retained_inventory(directory)
+            if inventory != retained["inventory"]:
+                raise ValueError("Previously retained runtime snapshot is missing or changed.")
+
+    def retain_runtime(self, stage: Stage, gate: dict[str, Any]) -> None:
+        """Exclusive snapshots are taken only after every owned writer drained."""
+        name = "runtime-controls-1" if stage.name == "runtime-controls" else stage.name
+        directory = self.output / "retained" / name
+        if "pid" in gate and gate.get("group_drained") is not True:
+            raise ValueError("Runtime evidence writers have not drained; retention failed.")
+        regular_files(directory, self.output)
+        directory.mkdir(parents=True, exist_ok=False)
+        originals = directory / "originals"
+        originals.mkdir()
+        manifest: dict[str, Any] = {
+            "schema_version": 1,
+            "stage": stage.name,
+            "status": gate["status"],
+            "gate": dict(gate),
+            "source": self.report["source"],
+            "bounds": {
+                "files": RETENTION_MAX_FILES,
+                "traversal_entries": RETENTION_MAX_FILES,
+                "bytes": RETENTION_MAX_BYTES,
+            },
+            "complete": False,
+            "files": {},
+        }
+        failure: Exception | None = None
+        try:
+            sources = [
+                (path, path.relative_to(self.root))
+                for name in (
+                    ".coverage",
+                    "coverage.json",
+                    "coverage.xml",
+                    "diff-coverage.json",
+                    "artifacts/backend",
+                    "artifacts/ui",
+                    "artifacts/resource-creation",
+                )
+                for path in regular_files(self.root / name, self.root)
+            ]
+            campaign_paths = {
+                self.output / "cases.xml",
+                *(
+                    self.output / (gate["name"] + suffix)
+                    for gate in self.report["gates"]
+                    for suffix in (".log", ".xml")
+                ),
+            }
+            sources.extend(
+                (file, Path("campaign") / file.name)
+                for path in sorted(campaign_paths)
+                for file in regular_files(path, self.output)
+            )
+            if (
+                len(sources) > RETENTION_MAX_FILES
+                or sum(path.stat().st_size for path, _ in sources) > RETENTION_MAX_BYTES
+            ):
+                raise ValueError("Runtime snapshot exceeds its retention bounds.")
+            copied_bytes = 0
+            for path, relative in sources:
+                regular_files(path, self.root if path.is_relative_to(self.root) else self.output)
+                size = path.stat().st_size
+                copied_bytes += size
+                if copied_bytes > RETENTION_MAX_BYTES:
+                    raise ValueError("Original runtime evidence exceeded its byte bound.")
+                copied = originals / relative
+                copied.parent.mkdir(parents=True, exist_ok=True)
+                with path.open("rb") as source, copied.open("xb") as target:
+                    remaining = size
+                    while remaining:
+                        block = source.read(min(remaining, 1024 * 1024))
+                        if not block:
+                            raise ValueError("Original runtime evidence shrank during retention.")
+                        target.write(block)
+                        remaining -= len(block)
+                    if source.read(1):
+                        raise ValueError("Original runtime evidence grew during retention.")
+                checksum = retention_hash(copied)
+                if checksum != retention_hash(path):
+                    raise ValueError("Original runtime evidence changed while retaining it.")
+                manifest["files"][relative.as_posix()] = {
+                    "original_path": str(path),
+                    "size": copied.stat().st_size,
+                    "sha256": checksum,
+                    "status": "retained_original",
+                }
+            earlier = self.report.get("runtime_snapshots", [])
+            initial_backend_receipt = None
+            if stage.name.startswith("contracts-"):
+                if (
+                    not earlier
+                    or earlier[0]["stage"] != "runtime-controls"
+                    or not earlier[0]["complete"]
+                ):
+                    raise ValueError("Repeated contracts require the retained initial controls.")
+                initial_backend_receipt = earlier[0]["runtime_identities"]["backend"][
+                    "receipt_sha256"
+                ]
+            manifest["runtime_identities"] = runtime_originals(
+                originals, self.report["source"], initial_backend_receipt
+            )
+            if stage.name.startswith("contracts-"):
+                old = {
+                    nonce
+                    for record in earlier
+                    for family in ("backend", "ui")
+                    for nonce in record.get("runtime_identities", {})
+                    .get(family, {})
+                    .get("nonces", [])
+                }
+                new = manifest["runtime_identities"]["backend"]["nonces"]
+                if old & set(new):
+                    raise ValueError("Repeated contracts did not produce fresh backend controls.")
+            required_junit = (
+                "cases.xml" if stage.name == "runtime-controls" else stage.name + ".xml"
+            )
+            if not (originals / "campaign" / required_junit).is_file():
+                raise ValueError("Missing original stage JUnit evidence.")
+            manifest["complete"] = True
+        except (OSError, ValueError, KeyError, TypeError, AttributeError) as error:
+            failure = error
+            manifest["retention_error"] = f"{type(error).__name__}: {error}"
+        finally:
+            (directory / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+            self.report.setdefault("runtime_snapshots", []).append(
+                {
+                    "stage": stage.name,
+                    "directory": directory.relative_to(self.output).as_posix(),
+                    "complete": manifest["complete"],
+                    "status": gate["status"],
+                    "runtime_identities": manifest.get("runtime_identities", {}),
+                    "inventory": retained_inventory(directory),
+                }
+            )
+        if failure is not None:
+            raise ValueError(f"Runtime originals retention failed: {failure}") from failure
 
     def drain(self, gate: dict[str, Any]) -> None:
         process = self.current
@@ -278,7 +640,16 @@ class Runner:
             gate.update(elapsed_seconds=time.monotonic() - started, log=path.name)
             if gate["reason"] == "Local command started.":
                 gate["reason"] = f"Local command {gate['status']}; see its retained log."
-            self.save()
+            try:
+                if stage.name == "runtime-controls" or re.fullmatch(r"contracts-[23]", stage.name):
+                    self.retain_runtime(stage, gate)
+                self.verify_retained()
+            except (OSError, ValueError) as error:
+                gate.update(status="failed", retention_error=f"{type(error).__name__}: {error}")
+                self.report["retention_error"] = gate["retention_error"]
+                raise
+            finally:
+                self.save()
         try:
             self.unchanged()
         except ValueError:
@@ -545,7 +916,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             print(f"Qualification failed before execution: {error}", file=sys.stderr)
         code = 1
-        if runner is not None and runner.cancelled is not None:
+        if (
+            runner is not None
+            and runner.cancelled is not None
+            and "retention_error" not in runner.report
+        ):
             assert report is not None
             report["status"] = "cancelled"
             code = 128 + runner.cancelled
@@ -555,6 +930,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 try:
                     if not args.collect_only:
                         archive(root, output / "after")
+                    runner.verify_retained()
                     report["source_unchanged"] = snapshot(root) == report["source"]
                     if not report["source_unchanged"]:
                         report.update(
@@ -567,7 +943,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         status="failed", retention_error=f"{type(error).__name__}: {error}"
                     )
                     code = 1
-                if runner.cancelled is not None:
+                if runner.cancelled is not None and "retention_error" not in report:
                     report["status"] = "cancelled"
                     code = 128 + runner.cancelled
                 report["finished"] = time.time()

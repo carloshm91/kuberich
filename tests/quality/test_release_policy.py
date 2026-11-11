@@ -80,6 +80,11 @@ def main_protection():
         "required_status_checks": {
             "strict": True,
             "contexts": ["Quality gate", "Repository checks", "DCO"],
+            "checks": [
+                {"context": "Quality gate", "app_id": 15368},
+                {"context": "Repository checks", "app_id": 15368},
+                {"context": "DCO", "app_id": 1861},
+            ],
         },
         "enforce_admins": {"enabled": True},
         "required_pull_request_reviews": {"require_code_owner_reviews": False},
@@ -125,8 +130,10 @@ def release_environment():
 def test_unenforced_main_or_environment_cannot_publish(change):
     main, env = main_protection(), release_environment()
     protection(main, env)
-    if change in {"strict", "contexts"}:
-        main["required_status_checks"][change] = False if change == "strict" else []
+    if change == "strict":
+        main["required_status_checks"]["strict"] = False
+    elif change == "contexts":
+        main["required_status_checks"]["checks"] = []
     elif change == "admins":
         main["enforce_admins"]["enabled"] = False
     elif change == "reviews":
@@ -151,6 +158,53 @@ def test_unenforced_main_or_environment_cannot_publish(change):
         main = None
     with pytest.raises(ValueError):
         protection(main, env)
+
+
+@pytest.mark.parametrize("context", ["Quality gate", "Repository checks", "DCO"])
+@pytest.mark.parametrize("app", [None, -1, 0, 1, 15369, "15368", True, 15368.0, 1861.0])
+def test_required_context_names_cannot_substitute_for_the_exact_app_binding(context, app):
+    main = main_protection()
+    matching = next(
+        item for item in main["required_status_checks"]["checks"] if item["context"] == context
+    )
+    matching["app_id"] = app
+    with pytest.raises(ValueError, match="Main branch protections"):
+        protection(main, release_environment())
+
+
+@pytest.mark.parametrize("context", ["Quality gate", "Repository checks", "DCO"])
+@pytest.mark.parametrize("change", ["missing", "wildcard", "unbound", "duplicate", "conflicting"])
+def test_each_required_app_pair_must_be_present_once_without_ambiguity(context, change):
+    main = main_protection()
+    bindings = main["required_status_checks"]["checks"]
+    matching = next(item for item in bindings if item["context"] == context)
+    if change == "missing":
+        bindings.remove(matching)
+    elif change == "wildcard":
+        matching["context"] += "*"
+    elif change == "unbound":
+        matching.pop("app_id")
+    elif change == "duplicate":
+        bindings.append(deepcopy(matching))
+    else:
+        bindings.append({"context": context, "app_id": -1})
+    with pytest.raises(ValueError, match="Main branch protections"):
+        protection(main, release_environment())
+
+
+@pytest.mark.parametrize("bindings", [None, {}, "names only", [None]])
+def test_malformed_app_binding_evidence_cannot_publish(bindings):
+    main = main_protection()
+    main["required_status_checks"]["checks"] = bindings
+    with pytest.raises(ValueError, match="Main branch protections"):
+        protection(main, release_environment())
+
+
+def test_legacy_context_list_alone_cannot_publish():
+    main = main_protection()
+    main["required_status_checks"].pop("checks")
+    with pytest.raises(ValueError, match="Main branch protections"):
+        protection(main, release_environment())
 
 
 @pytest.mark.parametrize(

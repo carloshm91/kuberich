@@ -47,8 +47,9 @@ missing afterward, add the executable directory reported by your tool manager
 to PATH through your normal shell setup.
 
 To install a trusted local wheel, replace `kuberich` in the install command with
-its absolute file path. A file-path install or an exact version pin does not
-select future versions automatically.
+its absolute file path. Reinstalling that path selects the same wheel. Pipx
+reinstall also retains an exact installation requirement; `pipx upgrade` can
+advance beyond that original pin.
 
 ## Standalone archives
 
@@ -116,7 +117,19 @@ directory, check its version, then switch your launcher. Keep the previous
 archive directory until the replacement works.
 
 Homebrew keeps old versions until `brew cleanup` removes them; it has no general
-downgrade command. An exact Python version pin needs an explicit version change.
+downgrade command. To select a particular Python package version, deliberately
+replace the recorded requirement through your manager.
+
+### Prepared 0.5 upgrade
+
+Development source prepares 0.5.0; the published channels above remain 0.4.0.
+After separate approval and channel activation, unpinned 0.4 installations use
+the normal uv, pipx or Homebrew upgrade commands above. No console-alias migration
+is needed between these versions. To choose an exact replacement version, replace
+the installation requirement deliberately; pipx reinstall retains an old pin,
+whereas pipx upgrade can advance it. For standalone archives, replace the complete
+verified directory; keep preferences and kubeconfig outside it. Candidate tests
+use owned unpublished installations and do not establish public channel availability.
 
 ### Upgrade from 0.3 to 0.4
 
@@ -137,8 +150,8 @@ pipx install --python python3.12 kuberich==0.4.0
 ```
 
 These operations keep application preferences, diagnostic logs and kubeconfig.
-Uv and Homebrew retain their normal upgrade commands; explicit version pins
-still need deliberate replacement. The [release notes](release-notes/0.4.0.md)
+Uv and Homebrew retain their normal upgrade commands. Use explicit requirement
+replacement to select a particular version. The [release notes](release-notes/0.4.0.md)
 describe the remaining compatibility changes.
 
 ## Remove the application

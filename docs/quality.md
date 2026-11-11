@@ -40,7 +40,7 @@ with `uv sync --locked --group dev`. Installed metadata must match
 `pyproject.toml`, and the imported application must belong to that checkout.
 Refresh the runtime before `--no-sync` trials; keep source/version guards enabled.
 
-`uv run python scripts/qualify.py 0.4.0` runs the actual strict target union,
+`uv run python scripts/qualify.py 0.5.0` runs the actual strict target union,
 private-access/startup stages, full suite and existing gates; see
 [phase verification](releases.md#reproduce-phase-verification). Individual tools:
 

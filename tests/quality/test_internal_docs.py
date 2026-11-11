@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 383
-    assert validate_documentation_plan(ROOT, list(mapped)) == 383
+    assert len(mapped) == 385
+    assert validate_documentation_plan(ROOT, list(mapped)) == 385
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -240,7 +240,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(helm["documents"]) == 370
     assert current["documents"][:370] == helm["documents"]
-    assert len(current["documents"]) == 383
+    assert len(current["documents"]) == 385
     assert current["documents"][366:370] == [
         {
             "source": "docs/adr/0041-helm-release-identity.md",
@@ -432,9 +432,9 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
         )
     )
     assert len(helm["documents"]) == 382
-    assert len(current["documents"]) == 383
+    assert len(current["documents"]) == 385
     assert current["documents"][:382] == helm["documents"]
-    assert current["documents"][382:] == [
+    assert current["documents"][382:383] == [
         {
             "source": "docs/internal/acceptance/resource-creation.md",
             "audience": "contributor acceptance evidence",
@@ -443,6 +443,31 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "reason": "Retain create-only template, source, schema, clipboard and ownership observations, original failures and qualification limits outside public navigation.",
             "baseline_sha256": None,
         }
+    ]
+    creation = json.loads(
+        git_bytes(
+            ROOT, "show", "6e80c78ed8c982141d3c743356a76a6c5d3ba3f5:docs/documentation-plan.json"
+        )
+    )
+    assert len(creation["documents"]) == 383
+    assert current["documents"][:383] == creation["documents"]
+    assert current["documents"][383:] == [
+        {
+            "source": "docs/release-notes/0.5.0.md",
+            "audience": "user release notes",
+            "action": "keep",
+            "destinations": ["docs/release-notes/0.5.0.md"],
+            "reason": "Keep authored advanced-operations features, compatibility, genuine predecessor upgrade commands and known limits source-bound before separately approved activation.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "docs/internal/acceptance/operations-qualification.md",
+            "audience": "contributor acceptance evidence",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/operations-qualification.md"],
+            "reason": "Retain operations qualification preparation, immutable runtime-original retention, exact-byte upgrade observations and pending engineering evidence outside user navigation.",
+            "baseline_sha256": None,
+        },
     ]
     assert all(item["baseline_sha256"] is None for item in current["documents"][348:381])
     assert authorization["canonical_user_pages"] == 23

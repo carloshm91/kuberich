@@ -18,6 +18,7 @@ from tests.support.distribution import PROJECT, ROOT, clean_environment, run
 from tests.support.navigation import terminal_navigation
 from tests.support.published_wheel import published_upgrade_wheel, require_wheelhouse
 from tests.support.shell import terminal_shell
+from tests.support.source_candidate import published_has_legacy_alias
 
 
 def installed_identity(python, directory, environment):
@@ -136,7 +137,7 @@ def upgrade_dependencies(tmp_path_factory):
     return dependencies
 
 
-@pytest.fixture(scope="session", params=["private-rc", "published"])
+@pytest.fixture(scope="session", params=["private-rc", "published", "published-alias"])
 def upgrade_artifacts(request, artifacts, upgrade_dependencies, tmp_path_factory):
     kind = request.param
     if kind == "private-rc":
@@ -144,10 +145,13 @@ def upgrade_artifacts(request, artifacts, upgrade_dependencies, tmp_path_factory
         provenance = {"baseline_kind": kind, "published_predecessor": False}
     else:
         old, published = published_upgrade_wheel(
-            tmp_path_factory.mktemp("published-upgrade") / "original", PROJECT["version"]
+            tmp_path_factory.mktemp("published-upgrade") / "original",
+            PROJECT["version"],
+            predecessor="0.3.0" if kind == "published-alias" else None,
         )
         newer, old_version, version = artifacts[0], published["version"], PROJECT["version"]
         assert Version(version) > Version(old_version)
+        assert published["source_commit"] != run(["git", "rev-parse", "HEAD"], ROOT).stdout.strip()
         provenance = {"baseline_kind": kind, "published_predecessor": published}
     for wheel in (old, newer):
         require_wheelhouse(wheel, upgrade_dependencies)
@@ -233,7 +237,9 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
         prefix = Path(environment["PIPX_HOME"]) / "venvs/kuberich"
     python = prefix / "bin/python"
     retired = (binary.with_name("kubetrol"), prefix / "bin/kubetrol")
-    old_has_alias = baseline_kind == "published"
+    old_has_alias = bool(provenance["published_predecessor"]) and published_has_legacy_alias(
+        old_version
+    )
     reinstall = [*manager, "reinstall", "--skip-maintenance", "kuberich"]
     if pinned_spec:
         install[-1] = f"kuberich=={old_version}"
@@ -243,7 +249,9 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
         if installer == "uv"
         else "pipx-uninstall-install-spec-replacement"
         if pinned_spec
-        else "pipx-reinstall"
+        else "pipx-reinstall-alias-removal"
+        if old_has_alias
+        else "pipx-upgrade"
     )
     scenario = "pinned" if pinned_spec else "unversioned"
     identities = []
@@ -318,8 +326,8 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
         )
         assert json.loads(before_default.stdout)["config_file"] == str(legacy_config)
         assert "owned-upgrade-private-value" not in before_default.stdout + before_default.stderr
-        # Reinstall preserves the recorded pipx spec. An explicit old version
-        # therefore requires a deliberate supported spec replacement.
+        # pipx upgrade strips install-time version requirements. Reinstall uses
+        # the captured requirement, so verify it before deliberate replacement.
         shutil.copyfile(newer, wheelhouse / newer.name)
         if pinned_spec:
             result = run(reinstall, outside, 180, environment=environment)
@@ -332,6 +340,8 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
             assert unchanged["legacy_main"] is old_has_alias
             for path in retired:
                 assert path.exists() is old_has_alias
+                if not old_has_alias:
+                    assert not path.is_symlink()
             removed = run([*manager, "uninstall", "kuberich"], outside, environment=environment)
             commands.append(
                 {"command": [*manager, "uninstall", "kuberich"], "exit": removed.returncode}
@@ -342,7 +352,7 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
                 assert not path.exists() and not path.is_symlink()
             transition = [*install[:-1], f"kuberich=={version}"]
         else:
-            transition = upgrade if installer == "uv" else reinstall
+            transition = reinstall if installer == "pipx" and old_has_alias else upgrade
         result = run(transition, outside, 180, environment=environment)
         installed = True
         commands.append({"command": transition, "exit": result.returncode})
@@ -434,7 +444,7 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
                 "new_version": version,
                 "original_artifacts": originals,
                 "commands": commands,
-                "normal_manager_upgrade": installer == "uv",
+                "normal_manager_upgrade": transition_method in {"uv-tool-upgrade", "pipx-upgrade"},
                 "normal_manager_transition": True,
                 "transition_method": transition_method,
                 "original_spec": f"kuberich=={old_version}" if pinned_spec else "kuberich",

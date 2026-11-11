@@ -4,11 +4,79 @@ import json
 import struct
 from pathlib import Path
 
+from packaging.version import Version
+
 from scripts.build_standalone import source_inputs
 from scripts.standalone import TARGETS, asset_name, create_archive
 from scripts.standalone_python import pin_for
 from scripts.standalone_release import KIND_CONTROLS, REPORTING_MODES, REQUIRED_ASSETS, RESTORATION
 from scripts.supply_chain import digest
+from tests.support.published_standalone import BASE_URL, CHECKSUM_SHA256, PINS, SOURCE, VERSION
+
+
+def replacement_fixture(runtime, target, sha, version, archive, terminal):
+    """Controlled reader input only; this never claims an actual upgrade trial."""
+    upgraded = runtime / ("standalone-" + target + "-upgraded.json")
+    upgraded.write_text(json.dumps(terminal))
+    configuration = {
+        name: {"sha256": "a" * 64, "uid": 123, "gid": 456, "mode": 0o600}
+        for name in ("preferences.yaml", "never-use-a-real-cluster")
+    }
+    commands = []
+    for phase, observed in (("old", VERSION), ("new", version)):
+        for operation in ("version", "help", "info"):
+            commands.append(
+                {
+                    "phase": phase,
+                    "operation": operation,
+                    "exit": 0,
+                    "argv": ["/owned/install/kuberich", operation],
+                    "cwd": "/owned/outside",
+                    "stdout": f"kuberich {observed}\n"
+                    if operation == "version"
+                    else "usage: kuberich\n"
+                    if operation == "help"
+                    else json.dumps(
+                        {
+                            "version": observed,
+                            "cluster_connected": False,
+                            "preferences": {"read_only": True, "refresh_seconds": 1.5},
+                        }
+                    ),
+                }
+            )
+    receipt = {
+        "schema_version": 1,
+        "result": "passed",
+        "source_commit": sha,
+        "target": target,
+        "old_version": VERSION,
+        "old_source_commit": SOURCE,
+        "new_version": version,
+        "old_archive": asset_name(VERSION, target),
+        "old_archive_sha256": PINS[target]["archive"],
+        "old_provenance_sha256": PINS[target]["provenance"],
+        "old_checksum_sha256": CHECKSUM_SHA256,
+        "old_url": BASE_URL + asset_name(VERSION, target),
+        "new_archive": archive.name,
+        "new_archive_sha256": digest(archive),
+        "complete_directory_replaced": True,
+        "original_archive_hashes_unchanged": True,
+        "owned_installation_removed": True,
+        "publication_performed": False,
+        "configuration_before": configuration,
+        "configuration_after": configuration,
+        "configuration_after_cleanup": configuration,
+        "commands": commands,
+        "post_replacement_pty": {
+            "receipt": upgraded.name,
+            "sha256": digest(upgraded),
+            "caller_kubeconfig_unchanged": True,
+        },
+    }
+    path = runtime / "upgrade-replacement.json"
+    path.write_text(json.dumps(receipt))
+    return {"receipt": path.name, "sha256": digest(path)}
 
 
 def candidates(root: Path, commit: str, version: str, destination: Path) -> None:
@@ -99,6 +167,10 @@ def candidates(root: Path, commit: str, version: str, destination: Path) -> None
             "system_python_absent": linux,
             "external_python_execution_denied": not linux,
         }
+        if Version(version).release >= (0, 5, 0):
+            host["predecessor_replacement"] = replacement_fixture(
+                runtime, target, commit, version, archive, terminal
+            )
         (runtime / "host-runtime.json").write_text(json.dumps(host))
         controls = {
             "version": {"exit": 0, "stdout": "kuberich " + version + "\n"},

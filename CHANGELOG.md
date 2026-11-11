@@ -5,6 +5,11 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-11
+
+Prepared, unpublished source candidate. Channel activation requires separate approval.
+[Release notes](docs/release-notes/0.5.0.md). Changes by [Carlos J. Herrera](https://github.com/carloshm91).
+
 ### Added
 
 - Create named resources from templates, files or explicit clipboard capture, with strict server dry-run, separate confirmation and read-only guards ([#234](https://github.com/carloshm91/kuberich/issues/234)).

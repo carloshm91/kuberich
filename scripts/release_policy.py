@@ -27,6 +27,7 @@ SHA = re.compile(r"[0-9a-f]{40}")
 HASH = re.compile(r"[0-9a-f]{64}")
 API = Callable[[str], Any]
 FIRST_PUBLIC_VERSION = "0.1.0"
+REQUIRED_CHECK_APPS = {"Quality gate": 15368, "Repository checks": 15368, "DCO": 1861}
 RELEASE_GATES = {"D10"}
 QUALIFICATION_GATES = {"D04", "D06", "D07", "D08", "D09", "D11", "D16", "D17", "D18", "D19"}
 # Phase plan revised on 2026-10-19 (#221): foundations precede observability.
@@ -251,12 +252,27 @@ def protection(main: dict[str, Any], environment: dict[str, Any]) -> None:
     if not isinstance(main, dict) or not isinstance(environment, dict):
         raise ValueError("Main protection and release environment must exist")
     checks = main.get("required_status_checks") or {}
-    required = {item["context"] for item in checks.get("checks", [])}
-    required.update(checks.get("contexts", []))
+    bindings = checks.get("checks") if isinstance(checks, dict) else None
+    bound_checks = (
+        isinstance(bindings, list)
+        and all(isinstance(item, dict) for item in bindings)
+        and all(
+            len(
+                app_ids := [
+                    item.get("app_id") for item in bindings if item.get("context") == context
+                ]
+            )
+            == 1
+            and type(app_ids[0]) is int
+            and app_ids[0] == app
+            for context, app in REQUIRED_CHECK_APPS.items()
+        )
+    )
     reviews = main.get("required_pull_request_reviews") or {}
     if (
-        checks.get("strict") is not True
-        or not {"Quality gate", "Repository checks", "DCO"} <= required
+        not isinstance(checks, dict)
+        or checks.get("strict") is not True
+        or not bound_checks
         or main.get("enforce_admins", {}).get("enabled") is not True
         or main.get("required_conversation_resolution", {}).get("enabled") is not True
         or main.get("required_linear_history", {}).get("enabled") is not True

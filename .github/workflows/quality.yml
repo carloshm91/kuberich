@@ -346,6 +346,7 @@ jobs:
             artifacts/backend/*
             artifacts/ui/*
             artifacts/terminal/*
+            artifacts/resource-creation/**
             artifacts/packaging/*
             artifacts/security/*
             artifacts/releases/*
@@ -438,6 +439,7 @@ jobs:
             artifacts/standalone/${{ matrix.target }}/benchmark-tool-provenance/*
             artifacts/standalone/${{ matrix.target }}/owned-kind-shell.json
             artifacts/terminal/*
+            artifacts/resource-creation/**
           if-no-files-found: error
           retention-days: 7
   quality-gate:

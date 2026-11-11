@@ -15,6 +15,15 @@ def test_04_candidate_has_a_reviewed_real_03_predecessor_pin():
     assert baseline["version"] in published.PUBLISHED_WHEELS
 
 
+def test_05_candidate_has_the_reviewed_real_04_predecessor_pin():
+    baseline = published.published_baseline("0.5.0")
+    assert baseline["version"] == "0.4.0"
+    assert baseline["source_commit"] == "78ff8f720d4ffde34ea91193593823685433515f"
+    assert published.PUBLISHED_WHEELS["0.4.0"]["sha256"] == (
+        "a3168424374dceb2b804900ff4b6a25bbead14ffa5c6d132b5b872f0b73676fd"
+    )
+
+
 def wheel(tmp_path, *, version="0.2.0", filename_version="0.2.0", name="kuberich", requires=()):
     path = tmp_path / f"kuberich-{filename_version}-py3-none-any.whl"
     with zipfile.ZipFile(path, "w") as archive:
@@ -29,7 +38,9 @@ def wheel(tmp_path, *, version="0.2.0", filename_version="0.2.0", name="kuberich
     }
 
 
-@pytest.mark.parametrize("baseline,candidate", [("0.2.0", "0.3.0"), ("0.3.0", "0.4.0")])
+@pytest.mark.parametrize(
+    "baseline,candidate", [("0.2.0", "0.3.0"), ("0.3.0", "0.4.0"), ("0.4.0", "0.5.0")]
+)
 def test_immutable_wheel_is_checked_before_use_and_download_is_exclusive(
     tmp_path, monkeypatch, baseline, candidate
 ):
@@ -86,9 +97,23 @@ def test_unreviewed_url_is_refused_before_a_network_request(tmp_path, monkeypatc
 
 
 def test_a_later_predecessor_requires_its_own_reviewed_wheel_pin(tmp_path, monkeypatch):
-    monkeypatch.setattr(published, "published_baseline", lambda _: {"version": "0.4.0"})
+    monkeypatch.setattr(published, "PUBLISHED_WHEELS", {})
     with pytest.raises(ValueError, match="reviewed immutable"):
         published.published_upgrade_wheel(tmp_path / "download", "0.5.0")
+
+
+@pytest.mark.parametrize("fault", ["bytes", "candidate-version", "wrong-name"])
+def test_reviewed_04_predecessor_refuses_corruption_or_candidate_identity(tmp_path, fault):
+    path, pin = wheel(
+        tmp_path,
+        version="0.5.0" if fault == "candidate-version" else "0.4.0",
+        filename_version="0.4.0",
+        name="other" if fault == "wrong-name" else "kuberich",
+    )
+    if fault == "bytes":
+        path.write_bytes(path.read_bytes() + b"changed original")
+    with pytest.raises(ValueError):
+        published.verify_published_wheel(path, "0.4.0", pin)
 
 
 def test_existing_locked_wheels_must_satisfy_actual_old_and_new_metadata(tmp_path):

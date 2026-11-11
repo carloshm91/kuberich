@@ -117,7 +117,7 @@ Run the checked-in coordinator on a clean, committed candidate. It uses the
 existing checks and never publishes packages, tags, sites or releases:
 
 ```sh
-uv run python scripts/qualify.py 0.4.0 --output artifacts/qualification/candidate
+uv run python scripts/qualify.py 0.5.0 --output artifacts/qualification/candidate
 ```
 
 The default runs lint, formatting, the private-access audit, every strict type
@@ -131,7 +131,7 @@ The changed-coverage base is the branch merge base, or `HEAD^` on main; use
 To collect completed hosted verification without rerunning those checks locally:
 
 ```sh
-uv run python scripts/qualify.py 0.4.0 --collect-only \
+uv run python scripts/qualify.py 0.5.0 --collect-only \
   --quality-run FULL_MATRIX_RUN_ID --repository-run REPOSITORY_RUN_ID \
   --output artifacts/qualification/collected
 ```

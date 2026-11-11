@@ -12,13 +12,35 @@ from tests.support.distribution import ROOT, run
 
 @pytest.mark.parametrize(
     "candidate,expected",
-    [("0.3.0rc1", "0.2.0"), ("0.3.0", "0.2.0"), ("0.3.1", "0.3.0"), ("0.4.0", "0.3.0")],
+    [
+        ("0.3.0rc1", "0.2.0"),
+        ("0.3.0", "0.2.0"),
+        ("0.3.1", "0.3.0"),
+        ("0.4.0", "0.3.0"),
+        ("0.5.0", "0.4.0"),
+    ],
 )
 def test_newest_stable_publication_is_strictly_before_the_candidate(candidate, expected):
-    releases = {v: {} for v in ("0.1.0", "0.2.0", "0.3.0rc1", "0.3.0", "0.4.0.dev1")}
+    releases = {v: {} for v in ("0.1.0", "0.2.0", "0.3.0rc1", "0.3.0", "0.4.0.dev1", "0.4.0")}
     assert candidates.published_baseline(candidate, releases)["version"] == expected
     with pytest.raises(ValueError, match="predecessor"):
         candidates.published_baseline("0.1.0", releases)
+
+
+@pytest.mark.parametrize("version,alias", [("0.3.0", True), ("0.4.0", False), ("0.5.0", False)])
+def test_predecessor_alias_contract_is_version_aware(version, alias):
+    assert candidates.published_has_legacy_alias(version) is alias
+
+
+def test_05_keeps_a_distinct_03_alias_migration_and_actual_04_formula_pins():
+    baseline = candidates.published_baseline("0.5.0")
+    assert baseline["version"] == "0.4.0"
+    assert baseline["homebrew_formula_commit"] == "d5c4d4203353c1801c286ead0e0c3570a4be70da"
+    assert baseline["homebrew_bottle_commit"] == "6a1d0dcace8499cf78344a47158f4c2f53a39854"
+    assert candidates.published_baseline("0.5.0", predecessor="0.3.0")["version"] == "0.3.0"
+    for refused in ("0.5.0", "0.4.0rc1", "9.0.0"):
+        with pytest.raises(ValueError, match="predecessor"):
+            candidates.published_baseline("0.5.0", predecessor=refused)
 
 
 def test_prepared_source_keeps_private_rc_and_real_published_upgrade_paths():
@@ -36,8 +58,9 @@ def test_prepared_source_keeps_private_rc_and_real_published_upgrade_paths():
         candidates.source_upgrade_versions("0.2.0", baseline)
 
 
-@pytest.fixture
-def published_repository(tmp_path, monkeypatch):
+@pytest.fixture(params=["0.2.0", "0.4.0"])
+def published_repository(request, tmp_path, monkeypatch):
+    version = request.param
     repository = tmp_path / "upstream"
     repository.mkdir()
     run(["git", "init", "--initial-branch=main"], repository)
@@ -45,9 +68,9 @@ def published_repository(tmp_path, monkeypatch):
     formula.parent.mkdir()
     source_commit = "a" * 40
     source = (
-        f"# Source version: 0.2.0\n# Source commit: {source_commit}\n"
+        f"# Source version: {version}\n# Source commit: {source_commit}\n"
         "class Kuberich < Formula\n"
-        '  url "https://files.pythonhosted.org/packages/owned/kuberich-0.2.0.tar.gz"\n'
+        f'  url "https://files.pythonhosted.org/packages/owned/kuberich-{version}.tar.gz"\n'
         f'  sha256 "{hashlib.sha256(b"owned published source").hexdigest()}"\n'
         '  license "Apache-2.0"\nend\n'
     )
@@ -60,13 +83,13 @@ def published_repository(tmp_path, monkeypatch):
         return run(["git", "rev-parse", "HEAD"], repository).stdout.strip()
 
     baseline = {
-        "version": "0.2.0",
+        "version": version,
         "source_commit": source_commit,
         "homebrew_formula_commit": commit(source),
     }
     digest = hashlib.sha256(b"owned published bottle").hexdigest()
     text = with_bottles(
-        source, {"x86_64_linux": {"cellar": ":any", "sha256": digest}}, bottle_root("0.2.0")
+        source, {"x86_64_linux": {"cellar": ":any", "sha256": digest}}, bottle_root(version)
     )
     baseline["homebrew_bottle_commit"] = commit(text)
     monkeypatch.setattr(candidates, "TAP_URL", repository.as_uri())
@@ -113,14 +136,14 @@ def test_bottle_upgrade_requires_a_reviewed_revision_and_an_actual_pour(
             tmp_path / "unreviewed", {**baseline, "homebrew_bottle_commit": None}, bottled=True
         )
     actual = candidates.published_tap(tmp_path / "tap", baseline, bottled=True)
-    poured = "Pouring kuberich--0.2.0.x86_64_linux.bottle.tar.gz"
+    poured = f"Pouring kuberich--{baseline['version']}.x86_64_linux.bottle.tar.gz"
     assert candidates.published_bottle_pour(actual, poured) == {
         "tag": "x86_64_linux",
         "sha256": digest,
     }
     for wrong in (
         "Building from source",
-        poured.replace("0.2.0", "0.3.0"),
+        poured.replace(baseline["version"], "9.0.0"),
         poured + " Resource kuberich--dep",
         poured + " files.pythonhosted.org",
     ):

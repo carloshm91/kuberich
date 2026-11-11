@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import re
+import subprocess
 import threading
 import time
 from collections.abc import Callable, Mapping
@@ -10,6 +13,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import Any, Literal, cast
 from urllib.parse import parse_qs, urlsplit
+from uuid import uuid4
 
 from tests.support.resources import descriptor, legacy_roots
 from tests.support.terminal_api import Handler, Server, config
@@ -19,6 +23,113 @@ type CommandWrap = Callable[[list[str], dict[str, str], Path], list[str]]
 
 COLLECTION = "/api/v1/namespaces/team/configmaps"
 PRIVATE = "owned-creation-cli-private-value"
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def retain_creation_cli_receipt(
+    directory: Path, producer: Literal["source", "installed"], scenario: str
+) -> Path:
+    """Export the actual completed HTTP control receipt without rewriting it."""
+    if (
+        producer not in {"source", "installed"}
+        or re.fullmatch(r"[a-z0-9][a-z0-9-]{0,99}", scenario) is None
+    ):
+        raise ValueError("Creation receipt requires an owned producer/scenario identity.")
+    original = directory / "creation-cli-receipt.json"
+    if original.resolve() != original.absolute() or not original.is_file():
+        raise ValueError("Creation control original must be a regular owned file.")
+    if original.stat().st_size > 64 * 1024:
+        raise ValueError("Creation control receipt exceeds its 64 KiB retention bound.")
+    with original.open("rb") as stream:
+        raw = stream.read(64 * 1024 + 1)
+    if len(raw) > 64 * 1024:
+        raise ValueError("Creation control receipt exceeds its 64 KiB retention bound.")
+    receipt = json.loads(raw)
+    if (
+        not isinstance(receipt, dict)
+        or set(receipt)
+        != {
+            "mode",
+            "initially_offline",
+            "source_capture_network_absent",
+            "wrapped",
+            "server_validation",
+            "dry_runs",
+            "persistent_posts",
+            "created_uid",
+            "created_version",
+            "application_result",
+            "known_application_receipt",
+            "request_bytes_identical",
+            "later_item_unsent",
+            "no_replay",
+            "source_and_kubeconfig_unchanged",
+            "external_tool_executed",
+            "api_handlers_drained",
+            "complete_ansi_and_log_private_value_absent",
+        }
+        or receipt.get("mode") not in {"success", "cancel"}
+        or receipt.get("api_handlers_drained") is not True
+        or type(receipt.get("persistent_posts")) is not int
+        or receipt.get("persistent_posts") != 1
+        or receipt.get("request_bytes_identical") is not True
+        or receipt.get("no_replay") is not True
+        or receipt.get("source_and_kubeconfig_unchanged") is not True
+        or receipt.get("external_tool_executed") is not False
+        or receipt.get("complete_ansi_and_log_private_value_absent") is not True
+        or receipt.get("later_item_unsent") is not (receipt["mode"] == "cancel")
+        or type(receipt.get("dry_runs")) is not int
+        or receipt.get("dry_runs") != (2 if receipt["mode"] == "cancel" else 1)
+        or type(receipt.get("initially_offline")) is not bool
+        or receipt.get("source_capture_network_absent") is not receipt.get("initially_offline")
+        or type(receipt.get("wrapped")) is not bool
+        or not isinstance(receipt.get("server_validation"), str)
+        or not isinstance(receipt.get("created_uid"), str)
+        or not receipt["created_uid"]
+        or not isinstance(receipt.get("created_version"), str)
+        or not receipt["created_version"]
+        or receipt.get("known_application_receipt") is not (receipt["mode"] == "success")
+        or receipt.get("application_result")
+        != ("Succeeded" if receipt["mode"] == "success" else "Write outcome uncertain")
+    ):
+        raise ValueError("Missing or partial creation control receipt cannot establish success.")
+    destination = ROOT / "artifacts/resource-creation" / producer / scenario / uuid4().hex
+    if destination.resolve() != destination.absolute():
+        raise ValueError("Creation receipt destination must not traverse symbolic links.")
+    destination.mkdir(parents=True, exist_ok=False)
+    retained = destination / original.name
+    with retained.open("xb") as stream:
+        stream.write(raw)
+    caller = ROOT / (
+        "tests/terminal/test_resource_creation_cli.py"
+        if producer == "source"
+        else "tests/packaging/test_resource_creation_cli.py"
+    )
+    head = subprocess.check_output(
+        ("git", "rev-parse", "HEAD", "HEAD^{tree}"), cwd=ROOT, text=True
+    ).splitlines()
+    provenance = {
+        "schema_version": 1,
+        "producer": producer,
+        "scenario": scenario,
+        "original_path": str(original),
+        "original_producer": str(Path(__file__)),
+        "caller": caller.relative_to(ROOT).as_posix(),
+        "commit": head[0],
+        "tree": head[1],
+        "producer_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "caller_sha256": hashlib.sha256(caller.read_bytes()).hexdigest(),
+        "size": len(raw),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "mode": receipt["mode"],
+        "application_result": receipt["application_result"],
+        "known_application_receipt": receipt["known_application_receipt"],
+        "status": "retained_original",
+    }
+    (destination / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
+    if retained.read_bytes() != original.read_bytes():
+        raise ValueError("Creation control receipt changed during retention.")
+    return retained
 
 
 class CreationHandler(Handler):

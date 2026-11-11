@@ -159,8 +159,9 @@ signatures from Developer ID and does not claim notarization. Actual Linux
 x86_64/ARM64 and macOS Intel/ARM64 archives passed native runtime qualification.
 Linux checks use a Python-free environment and exact-archive owned-kind exec;
 Mac checks sandbox-deny outside Python and checkout/interpreter reads, including
-Python invoked through the permitted system shell. Actual Mac hosts were macOS
-14 ARM and macOS 15 Intel. Physical Python absence and macOS 14 Intel trials
+Python invoked through the permitted system shell. Earlier D05 trials used macOS
+14 ARM and macOS 15 Intel; current qualification uses macOS 15 on both architectures.
+Physical Python absence and macOS 14 Intel trials
 remain unclaimed. The [D05 acceptance evidence](internal/acceptance/standalone-executables.md)
 retains original execution records, archive digests and compatibility limits.
 Required full candidate checks and publication remain separate.
@@ -178,7 +179,7 @@ uv run python -m scripts.verify_standalone --candidate artifacts/standalone-loca
 ```
 
 Application quality now selects four native jobs independently of the source
-Python matrix: Ubuntu 22.04 x86_64/ARM64, macOS 14 ARM64 and macOS 15 Intel. The
+Python matrix: Ubuntu 22.04 x86_64/ARM64 and macOS 15 ARM64/Intel. The
 labels are recorded in GitHub's [standard runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 Intel job measures the declared macOS 14 deployment floor but does not establish
 an actual macOS 14 Intel host trial. The required aggregate refuses missing,
@@ -259,7 +260,7 @@ website and custom domains.
 
 ## Extended channels
 
-v0.5.0 tracks Windows/PowerShell, shell completion, an OCI terminal image and
+v0.8.0 tracks Windows/PowerShell, shell completion, an OCI terminal image and
 Linux/BSD/macOS package recipes. Each channel needs its own installation and
 upgrade evidence. Registry submissions and third-party integrations have external
 maintainers; acceptance is not guaranteed by creating a recipe. See D12-D14 in

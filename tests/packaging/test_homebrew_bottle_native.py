@@ -22,6 +22,7 @@ from tests.support.shell import terminal_shell
 from tests.support.source_candidate import (
     published_baseline,
     published_bottle_pour,
+    published_has_legacy_alias,
     published_tap,
     source_candidate,
 )
@@ -172,7 +173,10 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
             baseline, installed_baseline.stdout + installed_baseline.stderr
         )
         assert installed() == f"kuberich {baseline['version']}\n"
-        assert (prefix / "bin/kubetrol").is_file()
+        for alias in (prefix / "bin/kubetrol", prefix / "opt/kuberich/libexec/bin/kubetrol"):
+            assert alias.exists() is published_has_legacy_alias(baseline["version"])
+            if not published_has_legacy_alias(baseline["version"]):
+                assert not alias.is_symlink()
         (tap / FORMULA).write_text(with_bottles(candidate, bottle, root_url))
         commit("test: owned unpublished bottle formula")
         execute(["style", "kuberich/tap/kuberich"])

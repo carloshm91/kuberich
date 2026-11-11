@@ -148,17 +148,17 @@ the selected CronJob template. The schedule and concurrency policy do not govern
 **partial** — ConfigMap and Secret keys have explicit reveal/copy and editing. Version 0.4 also
 traces container environment sources and image facts; values require fresh disclosure.
 ### Local manifests, reviewed apply/delete, Kustomize and create-only resource templates
-**partial** — Development source for 0.5 adds local manifests/Kustomize and separate create-only
-templates, file or explicit clipboard imports, with strict server review and per-resource outcomes.
-Published 0.4.0 predates these workflows.
+**partial** — Prepared 0.5 source adds local manifests/Kustomize and distinct create-only templates,
+file or explicit clipboard imports, with strict server review and per-resource outcomes. Published
+0.4.0 predates these workflows; cumulative candidate qualification remains pending.
 ### Helm list/status/notes/values/all-values/manifest/history
-**partial** — Development source for 0.5 adds Helm release browsing and a private
-classic/registered-OCI chart catalog with exact version selection. Public 0.4.0 predates these
-controls; final development qualification remains in progress.
+**partial** — Prepared 0.5 source adds Helm release browsing and a private classic/registered-OCI
+chart catalog with exact version selection. Published 0.4.0 predates these controls; cumulative
+candidate qualification remains pending.
 ### Helm rollback and uninstall with history options
-**partial** — Development source for 0.5 adds reviewed Helm install, upgrade, rollback and uninstall
-with private values, dry-run/live comparison and explicit history choices. Final qualification is
-pending; published 0.4.0 predates Helm management.
+**partial** — Prepared 0.5 source adds reviewed Helm install, upgrade, rollback and uninstall with
+private values, dry-run/live comparison and explicit history choices. Cumulative candidate
+qualification remains pending; published 0.4.0 predates Helm management.
 ### Global/per-context themes, transparent colors, light/dark inversion, icon settings
 **partial** — Themes support global/context palettes, terminal-default background, preview, explicit
 save, live reload, and session inversion. Icon preferences are unavailable.
