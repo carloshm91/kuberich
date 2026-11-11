@@ -101,19 +101,17 @@ class FrozenManifestSource:
     relative_path: str
     files: tuple[ManifestFileSnapshot, ...]
     documents: tuple[ManifestDocument, ...]
-    source_sha256: str
-    rendered_sha256: str
+    source_sha256: str = field(repr=False)
+    rendered_sha256: str = field(repr=False)
 
 
+@dataclass(frozen=True, kw_only=True)
 class ManifestSource(Protocol):
     """Only frozen source identity and documents cross into cluster mutation."""
 
-    @property
-    def identity(self) -> UUID: ...
-    @property
-    def documents(self) -> tuple[ManifestDocument, ...]: ...
-    @property
-    def source_sha256(self) -> str: ...
+    identity: UUID
+    documents: tuple[ManifestDocument, ...]
+    source_sha256: str = field(repr=False)
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -123,9 +121,10 @@ class FrozenDraftSource:
     title: str
     generation: int
     documents: tuple[ManifestDocument, ...]
-    source_sha256: str
-    rendered_sha256: str
+    source_sha256: str = field(repr=False)
+    rendered_sha256: str = field(repr=False)
     body: bytes = field(repr=False)
+    private_preview: bool = False
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -176,7 +175,7 @@ class ManifestPlanItem:
 class ManifestPlan:
     identity: UUID
     source_identity: UUID
-    source_sha256: str
+    source_sha256: str = field(repr=False)
     scope: ManifestScope
     action: ManifestAction
     items: tuple[ManifestPlanItem, ...]
@@ -464,7 +463,15 @@ def _preview_document(data: bytes) -> tuple[str, tuple[bytes, ...]]:
     )
 
 
-def manifest_preview(before: bytes | None, after: bytes) -> tuple[str, ...]:
+def manifest_preview(
+    before: bytes | None, after: bytes, *, private: bool = False
+) -> tuple[str, ...]:
+    if private:
+        return (
+            "Content withheld: this template declares sensitive input. "
+            "Submitted, server-returned and edited content remain private. "
+            "Review the separate exact destination metadata; use explicit trusted-editor disclosure to inspect values.\n",
+        )
     new, current = _preview_document(after)
     if before is None:
         return manifest_pages(new)

@@ -107,8 +107,11 @@ class ResourceCreationService:
         title: str,
         *,
         require_origin: Callable[[], Awaitable[None]] | None = None,
+        private_preview: bool = False,
     ) -> FrozenDraftSource:
-        return await self._operate(self._capture(data, kind, title, require_origin))
+        return await self._operate(
+            self._capture(data, kind, title, require_origin, private_preview=private_preview)
+        )
 
     async def _capture(
         self,
@@ -116,6 +119,8 @@ class ResourceCreationService:
         kind: DraftSourceKind,
         title: str,
         require_origin: Callable[[], Awaitable[None]] | None,
+        *,
+        private_preview: bool = False,
     ) -> FrozenDraftSource:
         self._require()
         self.invalidate()
@@ -123,7 +128,9 @@ class ResourceCreationService:
         await self.close_draft()
         if require_origin is not None:
             await require_origin()
-        source = await file_worker(lambda: self._freeze(data, kind, title, generation))
+        source = await file_worker(
+            lambda: self._freeze(data, kind, title, generation, private_preview=private_preview)
+        )
         if require_origin is not None:
             await require_origin()
         self._require(generation)
@@ -131,7 +138,13 @@ class ResourceCreationService:
         return source
 
     def _freeze(
-        self, data: bytes, kind: DraftSourceKind, title: str, generation: int
+        self,
+        data: bytes,
+        kind: DraftSourceKind,
+        title: str,
+        generation: int,
+        *,
+        private_preview: bool = False,
     ) -> FrozenDraftSource:
         if kind not in {"template", "clipboard", "paste", "file"}:
             raise AppError("Choose an explicit template, file, clipboard or paste source.")
@@ -146,6 +159,7 @@ class ResourceCreationService:
             source_sha256=hashlib.sha256(data).hexdigest(),
             rendered_sha256=hashlib.sha256(rendered).hexdigest(),
             body=data,
+            private_preview=private_preview,
         )
 
     async def capture_file(self, path: Path) -> FrozenDraftSource:
@@ -192,7 +206,11 @@ class ResourceCreationService:
             raise AppError("Choose an available unambiguous resource template.")
         data = await file_worker(lambda: render_resource_template(template, values))
         return await self._capture(
-            data, "template", template.title, lambda: catalog.require_current(entry)
+            data,
+            "template",
+            template.title,
+            lambda: catalog.require_current(entry),
+            private_preview=any(parameter.sensitive for parameter in template.parameters),
         )
 
     async def require_source(self, source: FrozenDraftSource) -> None:
@@ -279,7 +297,13 @@ class ResourceCreationService:
                 return None
             generation = self._generation + 1
             source = await file_worker(
-                lambda: self._freeze(data, original.kind, original.title, generation)
+                lambda: self._freeze(
+                    data,
+                    original.kind,
+                    original.title,
+                    generation,
+                    private_preview=original.private_preview,
+                )
             )
             await self._require_source(original)
             self.require_editor_current()

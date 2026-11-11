@@ -4,10 +4,17 @@ import asyncio
 import json
 import threading
 from dataclasses import replace
+from uuid import uuid4
 
 import pytest
 
-from kuberich.domain.manifests import LAST_APPLIED, canonical_manifest, create_manifest_intent
+from kuberich.domain.manifests import (
+    LAST_APPLIED,
+    FrozenDraftSource,
+    canonical_manifest,
+    create_manifest_intent,
+    manifest_documents,
+)
 from kuberich.domain.mutations import MutationState
 from kuberich.errors import AppError
 from tests.contract.test_manifest_writes import (
@@ -166,3 +173,63 @@ async def test_cancellation_during_verified_201_decode_preserves_known_receipt_a
             assert len(api.requests) == 2
         finally:
             release.set()
+
+
+@pytest.mark.asyncio
+async def test_private_template_server_copies_never_enter_submitted_or_default_review(tmp_path):
+    from kuberich.services.manifests import ManifestMutationService
+
+    async with live_service_fixture(tmp_path) as (existing, api):
+        body = canonical_manifest(
+            {
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "metadata": {"name": "owned-one"},
+                "data": {"private-key-sentinel": "private-value-sentinel"},
+                "spec": {"literal": "private-arbitrary-sentinel"},
+            }
+        )
+        source = FrozenDraftSource(
+            identity=uuid4(),
+            kind="template",
+            title="Owned private template",
+            generation=1,
+            documents=manifest_documents(body, source_path="owned private template"),
+            source_sha256="private-source-digest",
+            rendered_sha256="private-rendered-digest",
+            body=body,
+            private_preview=True,
+        )
+
+        async def current():
+            return None
+
+        service = ManifestMutationService(
+            existing.client,
+            existing.scope,
+            existing.discovery,
+            existing.policy,
+            source,
+            lambda: True,
+            current,
+            {},
+            tmp_path,
+            adapter=existing.adapter,
+        )
+
+        def copy_to_other_parent(value):
+            value["metadata"].setdefault("annotations", {})["example.io/copied"] = (
+                "private-arbitrary-sentinel"
+            )
+
+        api.receipt_change = copy_to_other_parent
+        try:
+            plan = await service.prepare("create")
+            assert plan.ready and api.value is None
+            assert "Content withheld" in "".join(plan.items[0].preview_pages)
+            assert "private-" not in repr(plan)
+            result = await service.execute(service.confirm(plan))
+            assert result.state is MutationState.SUCCEEDED
+            assert "private-" not in repr(result)
+        finally:
+            await service.close()

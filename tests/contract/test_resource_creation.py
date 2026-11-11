@@ -38,6 +38,77 @@ async def test_capture_is_offline_immutable_and_preserves_private_source(tmp_pat
 
 
 @pytest.mark.asyncio
+async def test_declared_private_template_stays_opaque_after_editor_moves_value(tmp_path):
+    from kuberich.domain.manifests import manifest_preview
+    from kuberich.domain.resource_templates import TemplateCatalogEntry, parse_resource_template
+    from kuberich.services.resource_templates import TemplateCatalogService
+
+    template = parse_resource_template(
+        canonical_manifest(
+            {
+                "schema_version": 1,
+                "kind": "ResourceTemplate",
+                "id": "private-image",
+                "revision": 1,
+                "title": "Private image",
+                "parameters": {
+                    "image": {
+                        "type": "string",
+                        "required": True,
+                        "sensitive": True,
+                        "paths": ["/0/spec/containers/0/image"],
+                    },
+                },
+                "objects": [
+                    {
+                        "apiVersion": "v1",
+                        "kind": "Pod",
+                        "metadata": {"name": "owned"},
+                        "spec": {"containers": [{"name": "owned", "image": ""}]},
+                    }
+                ],
+            }
+        )
+    )
+    entry = TemplateCatalogEntry(
+        origin="builtin",
+        relative_path="private-image",
+        identity=("builtin", template.id, 1, template.source_sha256),
+        template=template,
+    )
+    catalog = TemplateCatalogService(tmp_path / "config.yaml", tmp_path)
+    catalog.entries = (entry,)
+    service = ResourceCreationService(AccessPolicy(False), {}, tmp_path)
+    try:
+        source = await service.capture_template(entry, {"image": PRIVATE}, catalog)
+        assert source.private_preview and PRIVATE in source.body.decode()
+        assert PRIVATE not in repr(source)
+        before = "".join(manifest_preview(None, source.body, private=source.private_preview))
+        assert PRIVATE not in before and "containers" not in before
+        disclosure = await service.prepare_editor()
+        command = await service.open_editor(service.confirm_disclosure(disclosure))
+        value = json.loads(source.body)
+        private = value["spec"]["containers"][0].pop("image")
+        value["metadata"]["annotations"] = {PRIVATE: private}
+        Path(command.argv[-1]).write_bytes(
+            canonical_manifest(
+                {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": "added-first"}}
+            )
+            + b"\n---\n"
+            + canonical_manifest(value)
+        )
+        changed = await service.finish_editor(succeeded=True)
+        assert changed is not None and changed.private_preview
+        assert tuple(item.name for item in changed.documents) == ("added-first", "owned")
+        assert PRIVATE in changed.body.decode() and PRIVATE not in repr(changed)
+        after = "".join(manifest_preview(None, changed.body, private=changed.private_preview))
+        assert PRIVATE not in after and "annotations" not in after
+    finally:
+        await service.close()
+        await catalog.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("mode", ["success", "noop", "failure", "invalid"])
 async def test_editor_adopts_only_valid_success_in_memory_and_retires_private_file(tmp_path, mode):
     path = tmp_path / "owned.yaml"

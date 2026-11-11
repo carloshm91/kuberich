@@ -23,6 +23,7 @@ from kuberich.domain.connections import (
 )
 from kuberich.domain.manifests import (
     CreatedResourceReceipt,
+    FrozenDraftSource,
     ManifestAction,
     ManifestChange,
     ManifestCreateIntent,
@@ -92,6 +93,7 @@ class ManifestMutationService:
     ) -> None:
         self.client, self.scope, self.discovery, self.policy = client, scope, discovery, policy
         self.source = self._source = source
+        self._private_preview = isinstance(source, FrozenDraftSource) and source.private_preview
         self._scope = scope
         self.current, self.require_source = current, require_source
         self.adapter = adapter or ManifestAdapter(client, policy, environment, directory)
@@ -233,8 +235,36 @@ class ManifestMutationService:
                             validation = receipt.result
                             if receipt.body is not None:
                                 pages = await parse_owned(
-                                    partial(manifest_preview, None, receipt.body)
+                                    partial(
+                                        manifest_preview,
+                                        None,
+                                        receipt.body,
+                                        private=self._private_preview,
+                                    )
                                 )
+                                if action == "create":
+                                    submitted = await parse_owned(
+                                        partial(
+                                            manifest_preview,
+                                            None,
+                                            request.body,
+                                            private=self._private_preview,
+                                        )
+                                    )
+                                    defaults = await parse_owned(
+                                        partial(
+                                            manifest_preview,
+                                            request.body,
+                                            receipt.body,
+                                            private=self._private_preview,
+                                        )
+                                    )
+                                    pages = (
+                                        "Submitted create-only request (redacted):\n",
+                                        *submitted,
+                                        "Server strict dry-run changes (not persisted or reserved):\n",
+                                        *defaults,
+                                    )
                     else:
                         target = ResourceTarget(
                             address.session,

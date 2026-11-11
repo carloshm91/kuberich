@@ -168,7 +168,11 @@ class ResourceCreationScreen(ModalScreen[None]):
     async def _show_source(self) -> None:
         source = self.service.current_source
         self.pages = (
-            await file_worker(lambda: manifest_preview(None, source.body)) if source else ()
+            await file_worker(
+                lambda: manifest_preview(None, source.body, private=source.private_preview)
+            )
+            if source
+            else ()
         )
         self.page = 0
         if self._current():
