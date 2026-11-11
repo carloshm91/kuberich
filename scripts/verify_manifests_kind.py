@@ -892,7 +892,7 @@ async def creation_admission_cases(h: Harness) -> None:
             plan = await h.prepare(service, "create")
     h.check(
         "create-only-real-validating-admission-refusal-hides-freeform-private-message",
-        plan.items[0].validation.state is MutationState.DENIED
+        plan.items[0].validation.state is MutationState.REJECTED
         and "private-" not in plan.items[0].validation.message
         and await h.cm("owned-creation-policy-denied") is None,
     )
@@ -1569,8 +1569,14 @@ async def ui_case(h: Harness) -> None:
 
             await click("#manifest-review-validate")
             async with asyncio.timeout(30):
-                while screen.plan is None or screen.operation_count:
+                while (
+                    app.screen is not screen
+                    or screen.plan is None
+                    or screen.operation_count
+                    or "All resources validated" not in str(screen.status.render())
+                ):
                     await asyncio.sleep(0.01)
+                assert await screen.wait_for_refresh()
             h.report["last_review"] = review_diagnostics(screen.plan)
             h.check(
                 "actual-ui-" + action + "-explicit-server-review",
@@ -1583,8 +1589,14 @@ async def ui_case(h: Harness) -> None:
             )
             await click("#manifest-review-confirm")
             async with asyncio.timeout(30):
-                while screen.result is None or screen.operation_count:
+                while (
+                    app.screen is not screen
+                    or screen.result is None
+                    or screen.operation_count
+                    or screen.result.state.value not in str(screen.status.render())
+                ):
                     await asyncio.sleep(0.01)
+                assert await screen.wait_for_refresh()
             h.record_result(screen.result)
             h.check(
                 "actual-ui-" + action + "-confirmed-api-effect",
