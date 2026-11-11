@@ -57,7 +57,7 @@ async def test_actual_cli_and_http_end_to_end_list_inspect_documents_and_rollbac
         assert result.outcome is HelmOutcome.SUCCEEDED and result.observed.revision == 4
         assert result.may_have_started and PRIVATE_VALUE not in repr(result)
         commands = calls(record)
-        assert len([item for item in commands if item["argv"][0] == "version"]) == 1
+        assert len([item for item in commands if "version" in item["argv"]]) == 1
         rollback = next(item for item in commands if "rollback" in item["argv"])
         assert "--no-hooks=true" in rollback["argv"] and "--history-max=0" in rollback["argv"]
         assert all(
@@ -94,7 +94,10 @@ async def test_exact_prepared_object_and_exact_owned_approval_only(tmp_path):
             service.confirm(intent)
         with pytest.raises(HelmProblem, match="expired"):
             await service.disclose(replace(approval))
-        assert (await service.disclose(approval)).disclosed
+        with pytest.raises(HelmProblem, match="expired"):
+            await service.disclose(approval)
+        fresh = await service.prepare_disclosure(inspection.target, 1, HelmDocumentKind.NOTES)
+        assert (await service.disclose(service.confirm(fresh))).disclosed
 
 
 @pytest.mark.asyncio

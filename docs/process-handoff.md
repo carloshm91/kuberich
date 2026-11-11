@@ -76,6 +76,24 @@ This foundation checkpoint records its local-process scope. S04 adds the CLI
 shell shortcut and actual Kubernetes exec evidence; cloud and remote SSH/tmux
 qualification remain separate.
 
+## Helm tools, values and private files
+
+The development Helm catalog uses application HTTP, not `helm repo`, `registry`
+or `pull`. The CLI consumes checked frozen local chart/values bytes only. Every
+verb and version probe receives literal kubeconfig/context/namespace arguments;
+private Helm config/cache/plugin/repository/registry and Docker paths prevent
+ambient repositories or credential helpers from becoming authority. Debug is
+disabled and raw CLI output is never a normal UI/error/evidence document.
+
+Values editing uses the same terminal lease after a separate one-use disclosure
+of full values to the trusted editor. Scope/cover changes retire disclosure and
+review authority immediately. Parser/file threads, HTTP requests and process
+groups drain before their private drafts, chart copies or delegation disappear.
+Stop after launch preserves an uncertain operation observation; it does not
+replay the write or undo effects already accepted by Kubernetes. The editor and
+Helm renderer remain trusted local executables, without a sandbox guarantee.
+See [Helm lifecycle acceptance](internal/acceptance/helm-lifecycle.md).
+
 ## Trial and references
 
 Developers can reproduce the owned local-process and native-PTY behavior without

@@ -272,7 +272,11 @@ def parse_storage_identity(
 
 
 def helm_environment(
-    environment: Mapping[str, str], driver: HelmDriver, kubeconfig: Path | None = None
+    environment: Mapping[str, str],
+    driver: HelmDriver,
+    kubeconfig: Path | None = None,
+    *,
+    isolation: Path | None = None,
 ) -> tuple[tuple[str, str], ...]:
     if not isinstance(driver, HelmDriver):
         raise HelmProblem(
@@ -284,15 +288,30 @@ def helm_environment(
         "HELM_DEBUG",
         "HELM_MAX_HISTORY",
         "HELM_DRIVER_SQL_CONNECTION_STRING",
+        "DOCKER_CONFIG",
     }
     result = {
         key: value
         for key, value in environment.items()
-        if key not in removed and not key.startswith("HELM_KUBE")
+        if key not in removed and not key.startswith("HELM_")
     }
     result.update(HELM_DRIVER=driver.value, HELM_NO_PLUGINS="1", NO_COLOR="1")
     if kubeconfig is not None:
         result["KUBECONFIG"] = _kubeconfig(kubeconfig)
+    if isolation is not None:
+        _kubeconfig(isolation)
+        result.update(
+            HELM_CONFIG_HOME=str(isolation / "config"),
+            HELM_CACHE_HOME=str(isolation / "cache"),
+            HELM_DATA_HOME=str(isolation / "data"),
+            HELM_PLUGINS=str(isolation / "plugins"),
+            HELM_REGISTRY_CONFIG=str(isolation / "registry.json"),
+            HELM_REPOSITORY_CONFIG=str(isolation / "repositories.yaml"),
+            HELM_REPOSITORY_CACHE=str(isolation / "repository"),
+            HELM_CONTENT_CACHE=str(isolation / "content"),
+            DOCKER_CONFIG=str(isolation / "docker"),
+            HELM_DEBUG="false",
+        )
     return tuple(result.items())
 
 
@@ -313,6 +332,17 @@ def _scope(
 ) -> tuple[str, ...]:
     if not isinstance(version, HelmVersion) or settings.driver != scope.driver:
         raise HelmProblem("stale", "Helm command settings do not match the captured scope.")
+    return helm_scope_argv(settings, scope, kubeconfig, key)
+
+
+def helm_scope_argv(
+    settings: HelmSettings,
+    scope: HelmScope,
+    kubeconfig: Path,
+    key: HelmReleaseKey | None = None,
+) -> tuple[str, ...]:
+    if settings.driver != scope.driver:
+        raise HelmProblem("stale", "Helm command settings differ from the captured scope.")
     namespace = scope.namespace if key is None else key.namespace
     if key is not None and scope.namespace is not None and key.namespace != scope.namespace:
         raise HelmProblem("stale", "Helm release namespace does not match the captured scope.")
@@ -325,8 +355,10 @@ def _scope(
     )
 
 
-def helm_version_argv(settings: HelmSettings) -> tuple[str, ...]:
-    return (settings.executable, "version", "--template={{.Version}}")
+def helm_version_argv(
+    settings: HelmSettings, scope: HelmScope, kubeconfig: Path
+) -> tuple[str, ...]:
+    return (*helm_scope_argv(settings, scope, kubeconfig), "version", "--template={{.Version}}")
 
 
 def helm_list_argv(

@@ -3,6 +3,7 @@
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from aiohttp import web
 
@@ -12,7 +13,7 @@ from kuberich.services.resources import ResourceReader
 from tests.support.connections import catalog_fixture
 
 
-def descriptor(name: str = "pods", *, namespaced: bool = True, kind: str = "Pod") -> dict:
+def descriptor(name: str = "pods", *, namespaced: bool = True, kind: str = "Pod") -> dict[str, Any]:
     return {
         "name": name,
         "kind": kind,
@@ -27,21 +28,25 @@ def pod_resource() -> ApiResource:
     return api_resource("v1", descriptor())
 
 
-def item(name: str = "one", *, namespace: str | None = "team", uid: str | None = None) -> dict:
+def item(
+    name: str = "one", *, namespace: str | None = "team", uid: str | None = None
+) -> dict[str, Any]:
     metadata = {"name": name, "uid": uid or f"owned-{name}", "resourceVersion": "opaque/object"}
     if namespace is not None:
         metadata["namespace"] = namespace
     return {"metadata": metadata, "spec": {"containers": [{"name": "app", "image": "synthetic"}]}}
 
 
-def collection(*items: dict, rv: str | None = "opaque/snapshot", token: str = "") -> dict:
+def collection(
+    *items: dict[str, Any], rv: str | None = "opaque/snapshot", token: str = ""
+) -> dict[str, Any]:
     metadata = {"continue": token}
     if rv is not None:
         metadata["resourceVersion"] = rv
     return {"apiVersion": "v1", "kind": "PodList", "metadata": metadata, "items": list(items)}
 
 
-def legacy_roots() -> dict[str, dict]:
+def legacy_roots() -> dict[str, dict[str, Any]]:
     return {
         "/api": {"kind": "APIVersions", "apiVersion": "v1", "versions": ["v1"]},
         "/apis": {"kind": "APIGroupList", "apiVersion": "v1", "groups": []},
@@ -57,7 +62,7 @@ def legacy_roots() -> dict[str, dict]:
     }
 
 
-def aggregated_resource(name: str = "pods", *, scope: str = "Namespaced") -> dict:
+def aggregated_resource(name: str = "pods", *, scope: str = "Namespaced") -> dict[str, Any]:
     return {
         "resource": name,
         "scope": scope,
@@ -68,7 +73,9 @@ def aggregated_resource(name: str = "pods", *, scope: str = "Namespaced") -> dic
     }
 
 
-def aggregated_group(name: str = "", version: str = "v1", *, freshness: str = "Current") -> dict:
+def aggregated_group(
+    name: str = "", version: str = "v1", *, freshness: str = "Current"
+) -> dict[str, Any]:
     return {
         "metadata": {"name": name},
         "versions": [
@@ -77,7 +84,7 @@ def aggregated_group(name: str = "", version: str = "v1", *, freshness: str = "C
     }
 
 
-def aggregated(*groups: dict) -> dict:
+def aggregated(*groups: dict[str, Any]) -> dict[str, Any]:
     return {
         "apiVersion": "apidiscovery.k8s.io/v2",
         "kind": "APIGroupDiscoveryList",
@@ -91,7 +98,7 @@ async def reader_fixture(
     handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
     *,
     timeout: float = 5,
-    user: dict | None = None,
+    user: dict[str, Any] | None = None,
 ) -> AsyncIterator[ResourceReader]:
     app = web.Application()
     app.router.add_get("/{path:.*}", handler)

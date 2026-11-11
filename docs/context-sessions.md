@@ -109,6 +109,15 @@ override the cluster, user, server, token, TLS, and impersonation for this
 invocation; see the [command reference](cli-reference.md). They also apply after
 context changes and to the private connection passed to kubectl.
 
+Development Helm operations use that selected connection and pass an explicit
+kubeconfig, context and namespace on every invocation, including the version
+probe. All-namespace browsing does not authorize installation without a concrete
+existing active namespace. Upgrade/uninstall keep the selected release namespace.
+Catalog HTTPS authentication and CA trust are configured separately; no
+Kubernetes credentials are forwarded to chart repositories. Context changes
+retire reviews and stop their work before the previous client closes. See
+[Helm changes](workloads.md#install-or-upgrade-after-a-separate-review).
+
 Shells, attach, transfers, forwards, and plugins use a private connection file.
 Changing the source kubeconfig after connection cannot redirect those actions.
 Provider helpers remain external programs and may update their own caches.

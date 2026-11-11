@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import yaml
 from aiohttp import web
@@ -20,7 +21,10 @@ from kuberich.domain.connections import ConnectionRequest
 
 
 def catalog_fixture(
-    directory: Path, server: str, user: dict | None = None, cluster: dict | None = None
+    directory: Path,
+    server: str,
+    user: dict[str, Any] | None = None,
+    cluster: dict[str, Any] | None = None,
 ) -> KubeCatalog:
     data = {
         "current-context": "kuberich-test-one",
@@ -88,7 +92,7 @@ def certificate(
     client_auth: bool = False,
     common_name: str = "kuberich-test-local",
     dns_name: str | None = None,
-) -> tuple[ssl.SSLContext, dict]:
+) -> tuple[ssl.SSLContext, dict[str, Any]]:
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
     now = datetime.now(UTC)

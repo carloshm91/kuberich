@@ -1299,12 +1299,13 @@
       "id": "HELM01",
       "capability": "Helm list/status/notes/values/all-values/manifest/history",
       "tasks": [
-        "M06"
+        "M06",
+        "M09"
       ],
       "source": "internal/dao/helm_chart.go",
       "status": "planned",
-      "difference": "M06 development source adds a native Helm release workspace using an optional external CLI, initially pinned to 3.22.1 and 4.3.1 with Secret or ConfigMap storage. Metadata identity, bounded reads, default document redaction and deliberate disclosure are implemented; cumulative phase qualification remains separate. Published 0.4.0 predates this feature.",
-      "public_summary": "Development source for 0.5 adds Helm release browsing, status, notes, supplied/computed values, manifests and revision history with an optional supported CLI. Published 0.4.0 does not include this workspace.",
+      "difference": "M06 adds a native optional-CLI release workspace for Helm 3.22.1/4.3.1 and Secret/ConfigMap storage, with exact metadata identity, bounded reads, default redaction and one-use disclosure. M09 extends public :helmcharts with private classic/registered-OCI catalogs and immutable version selection; read-only cached browsing does not refresh or download. Focused HTTP/UI and historical native component evidence exists; final coherent current-source native, installed and ordinary CI qualification remains pending. Published 0.4.0 predates these controls; cumulative phase qualification remains separate.",
+      "public_summary": "Development source for 0.5 adds Helm release browsing and a private classic/registered-OCI chart catalog with exact version selection. Public 0.4.0 predates these controls; final development qualification remains in progress.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/workloads.md",
@@ -1319,7 +1320,16 @@
         "tests/ui/test_helm_inspection.py",
         "tests/terminal/test_helm.py",
         "scripts/verify_helm_kind.py",
-        "docs/internal/acceptance/helm-releases.md"
+        "docs/internal/acceptance/helm-releases.md",
+        "src/kuberich/services/helm_catalog.py",
+        "tests/unit/test_helm_catalog.py",
+        "tests/unit/test_helm_archive.py",
+        "tests/contract/test_helm_catalog_http.py",
+        "tests/contract/test_helm_catalog_oci.py",
+        "tests/contract/test_helm_catalog_downloads.py",
+        "tests/ui/test_helm_catalog.py",
+        "scripts/verify_helm_registry.py",
+        "docs/internal/acceptance/helm-lifecycle.md"
       ]
     },
     {
@@ -1331,15 +1341,24 @@
       ],
       "source": "internal/dao/helm_history.go",
       "status": "planned",
-      "difference": "M06 development source adds reviewed prior-revision rollback with read-only enforcement, fresh actual storage identity and one-use approvals; Helm offers no atomic identity condition and partial/uncertain effects remain explicit. Cumulative phase qualification remains separate. M09 owns the still-planned install, upgrade and uninstall lifecycle.",
-      "public_summary": "Development source for 0.5 adds reviewed Helm rollback; installation, upgrade and uninstall remain planned. Published 0.4.0 predates Helm management.",
+      "difference": "M06 adds reviewed prior-revision rollback with read-only enforcement and exact actual storage identity. M09 implements public chart/values selection, separate editor disclosure, mandatory native dry-run, current live desired-state diff, supplemental supported named-CREATE dryRun=All admission and one-use install/upgrade/uninstall. Hooks default off, CRDs are skipped, history retention defaults on; non-atomic final rendering, resource retention and uncertain writes never imply automatic replay or rollback. Catalog310/live48, authority286, teardown111 and current UI40 plus actual-root CLI2 are distinct focused measurements, not whole coverage. Final coherent native/installed/current-head ordinary CI and cumulative phase qualification remain pending.",
+      "public_summary": "Development source for 0.5 adds reviewed Helm install, upgrade, rollback and uninstall with private values, dry-run/live comparison and explicit history choices. Final qualification is pending; published 0.4.0 predates Helm management.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/workloads.md",
         "tests/contract/test_helm.py",
         "tests/ui/test_helm_inspection.py",
         "scripts/verify_helm_kind.py",
-        "docs/internal/acceptance/helm-releases.md"
+        "docs/internal/acceptance/helm-releases.md",
+        "src/kuberich/services/helm_lifecycle.py",
+        "tests/unit/test_helm_lifecycle.py",
+        "tests/contract/test_helm_lifecycle.py",
+        "tests/contract/test_helm_lifecycle_faults.py",
+        "tests/contract/test_helm_live.py",
+        "tests/ui/test_helm_lifecycle.py",
+        "tests/terminal/test_helm_catalog.py",
+        "scripts/helm_lifecycle_cases.py",
+        "docs/internal/acceptance/helm-lifecycle.md"
       ]
     },
     {

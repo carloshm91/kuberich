@@ -237,7 +237,97 @@ outcome is unverified; refresh status/history and inspect the cluster before
 another review. No automatic retry or compensating rollback runs. Closing the
 screen stops owned work without undoing changes already accepted by Kubernetes.
 
-Installing, upgrading, uninstalling and repository/OCI management remain planned.
+### Choose a chart and version
+
+Use `:helmcharts` in development source to open the chart catalog. Select a
+concrete namespace before installing. **Add repository** accepts a classic
+HTTPS chart repository or an `oci://registry.example/charts/demo` chart path.
+Review its URL, optional CA certificate, authentication and approved origins,
+then confirm. Search filters cached chart/version rows; opening the catalog or
+**Reload cache** does not refresh a remote index or probe Helm.
+
+OCI search covers explicitly registered chart paths, including SemVer build
+tags. It does not search every registry or Artifact Hub. Denied tag enumeration
+stays an error; a separately registered `@sha256:...` reference selects that
+exact manifest. **Update repository** fetches the selected entry again;
+**Remove repository** removes its local entry, cached versions and private
+credentials, leaving the remote repository unchanged.
+
+Repository HTTPS trust is separate from Kubernetes authentication. Basic or
+bearer credentials belong only to this application. Additional token origins
+approve authentication realms; additional download origins approve package or
+blob hosts. These are separate lists of at most eight exact origins each, with
+no wildcards or signed query URLs. Repository credentials never accompany a
+cross-origin download. Plain HTTP requires an explicit choice of a loopback
+development endpoint; TLS failures never trigger an insecure fallback. See
+[Helm configuration](configuration.md#configure-optional-helm-tools-and-catalogs).
+
+Select one version and enter the new release name, then choose **Select version**.
+KubeRich freezes the checked chart bytes and checksums for that review. A changed
+catalog requires another selection; applying never silently fetches a newer tag.
+Read-only mode permits cached search and release inspection, but blocks catalog
+changes, chart downloads, values editing and release-change preparation.
+
+Supported packages are v2 application charts with already bundled dependencies.
+Limits are 16 MiB compressed, 64 MiB expanded across subcharts, 2,000 files, eight
+nested chart levels and 1 MiB of values. Each index or OCI metadata set has an 8 MiB limit,
+with at most 10,000 versions and 20 pages. Missing dependencies, legacy
+`requirements.yaml`/`requirements.lock`, unsafe archives and external schema
+references are refused. Supported dependency constraints are a subset of Helm
+syntax: write `>=1.0.0`, not `>= 1.0.0`; repeated dependency names with different
+aliases are unsupported. Schemas allow local fragments and the supported draft-07,
+2019-09 and 2020-12 dialects only. OCI digest checks do not verify chart signatures.
+
+### Install or upgrade after a separate review
+
+For upgrade, open a release with Enter in `:helm`, choose **Upgrade**, then select
+the replacement chart version. Choose chart defaults or fresh current supplied
+values explicitly; computed values are never silently reused. Upgrades reset
+values and apply the complete selected override file.
+
+**Edit values** requires the separate one-use permission to disclose full values,
+including credentials, to your trusted local editor. The editor receives a private
+file and has your local privileges. Returning malformed values or an editor error
+blocks use of that edit. Editing, changing values source or changing options
+invalidates the previous review. Previews keep sensitive fields hidden.
+
+Choose **Prepare review** to run native Helm dry-run and compare rendered objects
+with current live objects, including removals from the previous manifest. This
+desired-state diff is not Helm's final three-way or server-side-apply patch.
+For supported absent named resources, separate Kubernetes CREATE requests use
+`dryRun=All`; their individual admission results do not reserve whole-release
+quota. Update, server-side-apply and deletion admission are not simulated.
+Unreadable destinations, live collisions, incomplete identity checks or missing
+served CRD prerequisites block confirmation. The live comparison allows at most
+256 unique ordinary destinations and 8 MiB of bodies across old and new objects.
+
+Review context, namespace, version, values source, hooks, timeout and effects;
+then choose **Confirm install** or **Confirm upgrade** separately. Hooks start
+disabled, waiting starts enabled, and timeout is 300 seconds (1–600 allowed).
+Helm 4 installs use explicit client-side apply; upgrades preserve the release's
+observed apply method. KubeRich skips chart CRD files and never downloads missing
+dependencies, adopts existing objects or forces conflicts.
+
+Each confirmation works once. Namespace, release, catalog, input or live-identity
+changes require a new review. Helm renders again and writes several objects, so
+another actor or admission can still intervene after the final checks. A timeout,
+Stop or lost response can leave partial effects. **Unknown** requires refreshing
+status and inspecting the cluster before another review. KubeRich never replays
+an uncertain write or automatically rolls back or cleans up a failed operation.
+
+### Uninstall with explicit history and retention choices
+
+Open the release and choose **Uninstall**. **Keep release history** starts enabled;
+disable it deliberately to purge history. Choose background, foreground or orphan
+cascade, prepare the review and choose **Confirm uninstall** separately. Review
+ordinary live objects, cluster scope, hooks, kept resources, PVCs and finalizers.
+Hooks can execute cluster code when explicitly enabled. Kept resources, hook
+effects, CRDs, PVC data and finalizers can outlive release removal; KubeRich does
+not remove finalizers. Stored release JSON cannot provide a complete bundled
+subchart CRD inventory. Helm 3 deletion remains name-based; Helm 4 ownership
+checks can skip unverifiable resources. A successful history removal does not
+prove that every resource or dependent has disappeared. Purged names are never
+automatically reused; a later install requires a fresh review.
 
 ## Local manifests and Kustomize in development source
 

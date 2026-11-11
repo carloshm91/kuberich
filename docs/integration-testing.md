@@ -23,6 +23,7 @@ provider helpers do not establish real cloud-provider certification.
 | Unsafe node/config refusal, setup failure, repeated cancellation and process timeout | `tests/quality/test_owned_kind.py`; real lifecycle verifier |
 | Reviewed Node cordon/drain/uncordon, PDB refusal/recovery and final scheduling observation | node-maintenance contracts/Pilot/PTY; three-node maintenance verifier |
 | Conditional irreversible debug addition, real attach, remote completion/detach and target-instance invalidation | ephemeral-debug contracts/Pilot/PTY; ephemeral-debug kind verifier |
+| Private chart catalogs, immutable inputs, live Helm diff and reviewed install/upgrade/uninstall | catalog/live/lifecycle contracts, public Pilot/editor PTYs; Helm and owned OCI registry verifiers |
 
 AWS/EKS and Azure/AKS certification remain Q05 #87. Maximum-workload performance
 belongs to Q03 #50; repeated bounded contracts do not establish a benchmark.
@@ -48,6 +49,13 @@ Owned process groups have deadlines and terminate/kill cleanup. SIGINT/SIGTERM
 exit with 130/143 after cleanup; repeated signals are ignored during deletion and
 previous handlers are restored. SIGKILL cannot run Python cleanup and is outside
 this graceful-cancellation claim.
+
+Helm catalog qualification uses a separately owned official Distribution 3.1.2
+registry, pinned by manifest and image-config digest in `scripts/helm_registry.py`.
+It uses the same explicitly captured local Docker socket, private credential-empty
+configuration and exact container ID/label/image cleanup checks. Setup alone
+uploads synthetic chart bytes; production catalog operations use their independent
+GET-only HTTP transport. The application never starts a registry or downloads Helm.
 
 ## Reproduce the real trials
 
@@ -82,6 +90,8 @@ uv run python -m scripts.verify_container_inspection_kind --kind /absolute/path/
 uv run python -m scripts.verify_history_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl --evidence artifacts/local-metric-history/evidence.json
 uv run python -m scripts.verify_curated_resources_kind --kind /absolute/path/to/kind --evidence artifacts/local-curated-resources/evidence.json
 uv run python -m scripts.verify_node_maintenance_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl --evidence artifacts/local-node-maintenance/evidence.json
+uv run python -m scripts.verify_helm_kind --kind /absolute/path/to/kind --helm3 /absolute/owned/helm-tools/3.22.1/helm --helm4 /absolute/owned/helm-tools/4.3.1/helm --evidence artifacts/local-helm/evidence.json
+uv run python -m scripts.verify_helm_registry --docker /absolute/path/to/docker --evidence artifacts/local-helm-registry/evidence.json
 uv build
 uv run python -m scripts.verify_quickstart --wheel /absolute/path/to/candidate.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 ```
@@ -91,6 +101,16 @@ verified readiness, then injects a body failure. Every case must remove its own
 cluster, preserve the initial node inventory and retain an owned caller kubeconfig
 sentinel unchanged. Run cluster trials sequentially so inventory comparisons do
 not overlap another process creating/removing clusters.
+
+The Helm verifier preserves the earlier release browse/disclosure/rollback
+regressions separately from product catalog/install/upgrade/uninstall checks.
+Each current run must bind both exact Helm versions and Secret/ConfigMap drivers
+to its input hashes, public controls, actual release/resource effects and cleanup.
+Native Helm dry-run is not an admission simulation: supplemental named CREATE
+`dryRun=All` requests are separate evidence, with update/SSA/delete and whole-batch
+quota limits explicit. Historical component passes do not qualify changed source.
+See [current lifecycle acceptance](internal/acceptance/helm-lifecycle.md) for
+measured checkpoints and pending final native, installed and hosted checks.
 
 ## Release-time repetition
 

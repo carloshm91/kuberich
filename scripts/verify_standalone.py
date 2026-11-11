@@ -19,6 +19,7 @@ from scripts.check_standalone import inspect_bundle, inspect_candidate
 from scripts.owned_kind import capture_docker
 from scripts.standalone import native_target
 from scripts.supply_chain import digest
+from tests.support.helm_catalog_terminal import terminal_helm_catalog
 from tests.support.plugins_terminal import (
     exercise_plugins,
     exercise_view_preferences,
@@ -311,6 +312,65 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             raise ValueError("Owned standalone API was not reaped")
 
 
+def helm_catalog(host: Host, directory: Path, evidence: Path) -> dict[str, Any]:
+    """Run public Helm controls without adding an interpreter to the native host."""
+    overrides = environment(
+        directory, helpers=False, bundle="/app" if host.linux else str(host.bundle)
+    )
+
+    def command(argv: list[str], child_environment: dict[str, str]) -> list[str]:
+        wrapped = host.command(argv, child_environment, tty=True)
+        if host.linux:
+            return wrapped
+        # Darwin's sandbox argv inherits its environment. Assign only the child's
+        # owned paths before entering that sandbox; keep the controller separate.
+        return [
+            "/usr/bin/env",
+            *(name + "=" + value for name, value in sorted(child_environment.items())),
+            *wrapped,
+        ]
+
+    name = "standalone-" + native_target() + "-helm-catalog"
+    result = terminal_helm_catalog(
+        [host.executable],
+        directory,
+        name,
+        wrap=command,
+        environment=overrides,
+        controller_environment=host.environment,
+    )
+    original_receipt = directory / "helm-catalog-cli-receipt.json"
+    retained_receipt = evidence / (name + "-controls.json")
+    shutil.copyfile(original_receipt, retained_receipt)
+    if json.loads(retained_receipt.read_text()) != result:
+        raise ValueError("Native Helm controls receipt differs from its owned original")
+    terminal_receipts = []
+    for suffix in ("-editor", "-cached-readonly"):
+        original = ROOT / "artifacts/terminal" / (name + suffix + ".json")
+        retained = evidence / original.name
+        shutil.copyfile(original, retained)
+        receipt = json.loads(retained.read_text())
+        if (
+            receipt["exit"] != 0
+            or not receipt["terminal_mode_restored"]
+            or not receipt["alternate_screen_closed"]
+            or not receipt["cursor_restored"]
+            or not all(receipt["reporting_modes_disabled"].values())
+        ):
+            raise ValueError("Native Helm controls did not restore their caller's terminal")
+        terminal_receipts.append({"receipt": retained.name, "sha256": digest(retained)})
+    return {
+        "receipt": retained_receipt.name,
+        "sha256": digest(retained_receipt),
+        "terminal_receipts": terminal_receipts,
+        "public_cli_repository_and_exact_chart_selection": True,
+        "repeated_private_values_shell_editor_and_resize": True,
+        "cached_readonly_and_missing_helm": True,
+        "owned_home_xdg_and_private_files_removed": True,
+        "scope": "Owned HTTP chart repository and API, optional Helm absent, real /bin/sh editor; native Helm lifecycle is qualified separately.",
+    }
+
+
 def verify(
     source: Path, candidate: Path, evidence: Path, *, benchmark_tool: Path | None = None
 ) -> dict[str, Any]:
@@ -458,6 +518,7 @@ def verify(
                 raise ValueError("Native info must report the artifact and avoid cluster access")
             missing = browser(host, directory / "missing", evidence, helpers=False)
             external = browser(host, directory / "external", evidence, helpers=True)
+            charts = helm_catalog(host, directory / "helm-catalog", evidence)
             benchmarks = None
             if benchmark_tool is not None:
                 from scripts.benchmark_native import verify_native_benchmarks
@@ -482,6 +543,7 @@ def verify(
             "owned_helper_sha256": digest(helper),
             "missing_optional_tool": missing,
             "auth_and_shell": external,
+            "helm_catalog_and_values": charts,
             "http_benchmarks": benchmarks,
             "private_credential_child": True,
             "scope": "Exact extracted archive, native CLI, owned loopback API, C credential and kubectl fixtures with real /bin/sh. Not provider or real Kubernetes exec certification.",

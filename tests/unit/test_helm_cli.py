@@ -365,7 +365,15 @@ def test_unsupported_storage_never_falls_back(value):
 @pytest.mark.parametrize("text,expected", [(b"v3.22.1", V3), (b"v4.3.1\n", V4)])
 def test_exact_supported_cli_versions(text, expected):
     assert parse_helm_version(text) == expected
-    assert helm_version_argv(SETTINGS) == ("helm", "version", "--template={{.Version}}")
+    assert helm_version_argv(SETTINGS, SCOPE, KUBECONFIG) == (
+        "helm",
+        "--kubeconfig=/private/scope/config",
+        "--kube-context=owned-context",
+        "--namespace=team",
+        "--debug=false",
+        "version",
+        "--template={{.Version}}",
+    )
 
 
 @pytest.mark.parametrize(

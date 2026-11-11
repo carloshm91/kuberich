@@ -189,6 +189,31 @@ results for up to 24 hours, and shows a validated newer version in the header.
 `:about` shows installed version, license, and check state. Local info/help/version
 and config check stay offline. Nothing is downloaded or installed automatically.
 
+## Configure optional Helm tools and catalogs
+
+Development source for 0.5 uses an optional Helm **3.22.1** or **4.3.1** executable
+from the selected launch environment. KubeRich does not install it or probe it
+during ordinary startup. `HELM_DRIVER=secret` is the default; `configmap` selects
+ConfigMap storage. SQL, memory and unknown storage drivers are unsupported.
+Published 0.4.0 predates these controls.
+
+Use `:helmcharts` to manage this application's catalog. Metadata and credentials
+are separate private files beneath the platform's KubeRich state directory
+(`$XDG_STATE_HOME/kuberich/helm`, normally `~/.local/state/kuberich/helm` on Linux).
+Directories use mode 0700 and files 0600. A missing catalog stays empty; no
+existing Helm or Docker repositories, credentials, plugins or caches are imported.
+
+The repository form accepts an optional absolute CA certificate path, private
+Basic credentials or an explicit bearer token. Token origins approve additional
+OCI authentication realms for the registered chart's pull scope. Download origins
+approve separate package/blob hosts without forwarding repository credentials.
+Each list permits eight exact origins; no wildcard, URL userinfo, secret query,
+TLS downgrade or implicit proxy/helper credential lookup is supported. Kubernetes
+credentials and Kubernetes TLS overrides do not configure this transport.
+Helm itself receives private config/cache and credential-empty registry/Docker
+files, debug disabled, explicit kubeconfig/context/namespace and no plugins.
+Read the [chart workflow](workloads.md#choose-a-chart-and-version) before a change.
+
 ## Legacy files and diagnostic logs
 
 Published 0.3 retains the deprecated `kubetrol` command with a fixed stderr

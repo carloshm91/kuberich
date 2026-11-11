@@ -83,12 +83,17 @@ async def test_supported_probe_is_offline_then_explicit_scope_and_private_cleanu
         record,
     ):
         assert not record.exists()
-        assert (await adapter.version(lambda: None)).text == version
+        assert (await adapter.version(request, lambda: None)).text == version
         assert not api.requests and not list(Path(client.directory.name).glob("helm-*"))
         assert len((await adapter.list(request, lambda: None)).releases) == 1
         probe, read = calls(record)
-        assert probe["argv"] == ["version", "--template={{.Version}}"]
-        assert "KUBECONFIG" not in probe["environment"] and probe["config_mode"] is None
+        assert probe["argv"][-2:] == ["version", "--template={{.Version}}"]
+        assert probe["config_mode"] == 0o600
+        probe_path = probe["environment"]["KUBECONFIG"]
+        assert f"--kubeconfig={probe_path}" in probe["argv"]
+        assert "--kube-context=kuberich-test-one" in probe["argv"]
+        assert "--namespace=team" in probe["argv"]
+        assert not Path(probe_path).exists()
         assert read["config_mode"] == 0o600
         path = read["environment"]["KUBECONFIG"]
         assert f"--kubeconfig={path}" in read["argv"]
@@ -120,7 +125,7 @@ async def test_frozen_environment_ignores_helm_auth_overrides_and_ambient_kubeco
         }
         before = dict(os.environ)
         adapter = HelmAdapter(client, AccessPolicy(False), original.settings, environment, tmp_path)
-        environment["HELM_TEST_RECORD"] = str(tmp_path / "late-record")
+        environment["KUBERICH_HELM_FIXTURE_RECORD"] = str(tmp_path / "late-record")
         environment["PATH"] = "/invalid"
         try:
             await adapter.list(request, lambda: None)
@@ -135,17 +140,17 @@ async def test_frozen_environment_ignores_helm_auth_overrides_and_ambient_kubeco
                 key in observed
                 for key in (
                     "HELM_NAMESPACE",
-                    "HELM_DEBUG",
                     "HELM_MAX_HISTORY",
                     "HELM_DRIVER_SQL_CONNECTION_STRING",
                 )
             )
+            assert observed["HELM_DEBUG"] == "false"
             assert observed.get("KUBECONFIG") != "caller-private-config"
         assert not (tmp_path / "late-record").exists()
 
 
 @pytest.mark.asyncio
-async def test_missing_tool_and_rejected_probe_never_stage_or_read_cluster(tmp_path):
+async def test_missing_tool_and_rejected_scoped_probe_leave_no_files_or_cluster_reads(tmp_path):
     async with adapter_source(tmp_path, version="v4.3.2") as (
         adapter,
         client,
@@ -182,7 +187,7 @@ async def test_executable_removed_after_successful_probe_is_feature_local_and_cl
     tmp_path,
 ):
     async with adapter_source(tmp_path) as (adapter, client, _, request, *_):
-        await adapter.version(lambda: None)
+        await adapter.version(request, lambda: None)
         Path(adapter.settings.executable).unlink()
         with pytest.raises(HelmProblem) as failure:
             await adapter.list(request, lambda: None)
@@ -242,7 +247,7 @@ async def test_cancellation_reaps_process_groups_before_private_file_removal(
         assert os.getpgid(child) == calls(record)[-1]["pid"]
         before_cancel = owned_process_state(child)
         owned_paths = list(Path(client.directory.name).glob("helm-*"))
-        assert bool(owned_paths) is not version_probe
+        assert owned_paths  # The version probe also stages an explicit private connection.
         operation.cancel()
         operation.cancel()
         with pytest.raises(asyncio.CancelledError):
@@ -330,7 +335,7 @@ async def test_staging_thread_is_drained_after_cancellation_before_file_cleanup(
             release.set()
         with pytest.raises(asyncio.CancelledError):
             await operation
-        assert len(calls(record)) == 1 and not list(Path(client.directory.name).glob("helm-*"))
+        assert not calls(record) and not list(Path(client.directory.name).glob("helm-*"))
 
 
 @pytest.mark.asyncio

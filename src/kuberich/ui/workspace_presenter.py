@@ -173,7 +173,9 @@ class WorkspacePresenter:
                         from kuberich.ui.container_inspection import ContainerInspectionScreen
                         from kuberich.ui.containers import ContainerScreen
                         from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
+                        from kuberich.ui.helm_catalog import HelmCatalogScreen, HelmRepositoryScreen
                         from kuberich.ui.helm_inspection import HelmInspectionScreen
+                        from kuberich.ui.helm_lifecycle import HelmLifecycleScreen
                         from kuberich.ui.inspection import InspectionScreen
                         from kuberich.ui.logs import LogScreen
                         from kuberich.ui.terminal import ShellScreen
@@ -183,6 +185,9 @@ class WorkspacePresenter:
                             (
                                 InspectionScreen,
                                 HelmInspectionScreen,
+                                HelmLifecycleScreen,
+                                HelmCatalogScreen,
+                                HelmRepositoryScreen,
                                 LogScreen,
                                 ContainerScreen,
                                 ShellScreen,
@@ -233,6 +238,9 @@ class WorkspacePresenter:
                                             ContainerScreen,
                                             InspectionScreen,
                                             HelmInspectionScreen,
+                                            HelmLifecycleScreen,
+                                            HelmCatalogScreen,
+                                            HelmRepositoryScreen,
                                             DiagnosticEvidenceScreen,
                                             ContainerInspectionScreen,
                                         ),

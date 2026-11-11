@@ -26,6 +26,7 @@ from tests.support.ephemeral_debug_terminal import terminal_ephemeral_debug
 from tests.support.export_browser_geometry import terminal_export_browser_geometry
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
+from tests.support.helm_catalog_terminal import terminal_helm_catalog
 from tests.support.history_terminal import terminal_history
 from tests.support.interactions_terminal import terminal_interactions
 from tests.support.local_exports import terminal_local_exports
@@ -45,6 +46,23 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_helm_catalog_uses_private_shell_editor_and_cached_readonly(
+    installed_wheel, tmp_path, entry_point
+):
+    binary, _ = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    owned = tmp_path / f"helm-catalog-{entry_point}"
+    receipt = terminal_helm_catalog(command, owned, f"installed-helm-catalog-{entry_point}")
+    assert receipt["editor_sessions"] == 2
+    assert receipt["private_files_absent"] and receipt["owned_state_removed"]
+    assert receipt["cached_readonly_reopened"] and receipt["api_writes"] == 0
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])

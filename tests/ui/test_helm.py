@@ -41,7 +41,7 @@ async def helm_app(
     api.connection_status = connection_status
     marker = tmp_path / "rollback-effect"
     api.rollback_marker = marker
-    environment["HELM_TEST_ROLLBACK_MARKER"] = str(marker)
+    environment["KUBERICH_HELM_FIXTURE_ROLLBACK_MARKER"] = str(marker)
     services = []
 
     async def namespace_response(request):
@@ -90,7 +90,13 @@ async def helm_app(
 
         def factory(client, current):
             service = HelmService(
-                client, AccessPolicy(read_only), settings, environment, tmp_path, current
+                client,
+                AccessPolicy(read_only),
+                settings,
+                environment,
+                tmp_path,
+                current,
+                catalog_directory=tmp_path / "owned-catalog",
             )
             services.append(service)
             return service
@@ -186,7 +192,11 @@ async def test_initial_helm_routes_probe_only_after_explicit_command(tmp_path, i
                     "views",
                 )
             )
-            assert calls(record)[0]["argv"] == ["version", "--template={{.Version}}"]
+            probe = calls(record)[0]["argv"]
+            assert probe[-2:] == ["version", "--template={{.Version}}"]
+            assert "--kube-context=kuberich-test-one" in probe
+            assert any(argument.startswith("--kubeconfig=") for argument in probe)
+            assert any(argument.startswith("--namespace=") for argument in probe)
         assert services and all(service.operation_count == 0 for service in services)
 
 
@@ -470,3 +480,48 @@ async def test_initial_helm_connection_failure_is_visible_and_retry_preserves_na
         assert app.helm_table.capture_viewport().selected == "team/demo"
         assert app.helm_table.selected_release().key == HelmReleaseKey("team", "demo")
         assert len(services) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("read_only", [False, True])
+@pytest.mark.parametrize("initial_catalog", [False, True])
+async def test_root_catalog_route_is_cached_without_helm_probe_and_drains_on_departure(
+    tmp_path, read_only, initial_catalog
+):
+    from pathlib import Path
+
+    from textual.widgets import Button
+
+    from kuberich.ui.helm_catalog import HelmCatalogScreen
+
+    initial = Command.HELM_CATALOG if initial_catalog else Command.EMPTY
+    async with (
+        helm_app(tmp_path, read_only=read_only, initial=initial) as (app, _, services, _, record),
+        app.run_test(size=(80, 24)) as pilot,
+    ):
+        if not initial_catalog:
+            await wait_for(lambda: app.state.scope is not None)
+            await app.run_command("helmcharts")
+        await wait_for(lambda: isinstance(app.screen, HelmCatalogScreen))
+        screen = app.screen
+        await pilot.pause()
+        await wait_for(lambda: screen.is_mounted)
+        await wait_for(lambda: screen.operation_count == 0)
+        assert screen.service is app.workspace.helm_service
+        assert screen.service.current(screen.request)
+        assert screen.service.catalog.snapshot.repositories == ()
+        assert not record.exists()  # Cached catalog navigation never launches Helm.
+        assert screen.query_one("#helm-catalog-add", Button).disabled is read_only
+        assert not list(Path(screen.service.client.directory.name).glob("helm-*"))
+        assert not (tmp_path / "owned-catalog").exists()
+        app.action_navigation_help()
+        await pilot.pause()
+        await pilot.press("escape")
+        await wait_for(lambda: app.screen is screen)
+        assert not record.exists()
+        await app.run_command("pods")
+        await wait_for(lambda: app.state.scope is not None and app.screen is not screen)
+        assert screen.invalidated and screen.operation_count == 0
+        assert not screen.service.current(screen.request)
+        assert not record.exists()
+    assert all(service.operation_count == 0 for service in services)

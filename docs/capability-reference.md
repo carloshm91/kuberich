@@ -152,12 +152,13 @@ traces container environment sources and image facts; values require fresh discl
 rendering and reviewed server validation before apply/delete, with explicit per-resource partial and
 uncertain outcomes. Published 0.4.0 predates this workflow.
 ### Helm list/status/notes/values/all-values/manifest/history
-**partial** — Development source for 0.5 adds Helm release browsing, status, notes,
-supplied/computed values, manifests and revision history with an optional supported CLI. Published
-0.4.0 does not include this workspace.
+**partial** — Development source for 0.5 adds Helm release browsing and a private
+classic/registered-OCI chart catalog with exact version selection. Public 0.4.0 predates these
+controls; final development qualification remains in progress.
 ### Helm rollback and uninstall with history options
-**partial** — Development source for 0.5 adds reviewed Helm rollback; installation, upgrade and
-uninstall remain planned. Published 0.4.0 predates Helm management.
+**partial** — Development source for 0.5 adds reviewed Helm install, upgrade, rollback and uninstall
+with private values, dry-run/live comparison and explicit history choices. Final qualification is
+pending; published 0.4.0 predates Helm management.
 ### Global/per-context themes, transparent colors, light/dark inversion, icon settings
 **partial** — Themes support global/context palettes, terminal-default background, preview, explicit
 save, live reload, and session inversion. Icon preferences are unavailable.

@@ -65,6 +65,8 @@ Startup and large-collection latency goals remain advisory during 0.x; this
 release does not claim complete K9s parity or in-app Helm release management.
 
 Development work for 0.5 adds a separate
-[Helm workspace](workloads.md#browse-helm-releases-in-development-source) and a
+[Helm workspace](workloads.md#browse-helm-releases-in-development-source), including
+chart catalogs, values editing and separate install/upgrade/uninstall reviews, and a
 [local manifest workflow](workloads.md#local-manifests-and-kustomize-in-development-source).
-These are not included in the published 0.4.0 packages.
+Final qualification of those development changes is still in progress. They are
+not included in the published 0.4.0 packages.

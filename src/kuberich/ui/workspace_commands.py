@@ -175,6 +175,7 @@ class WorkspaceCommands:
             Command.BENCHMARKS,
             Command.MANIFESTS,
             Command.HISTORY,
+            Command.HELM_CATALOG,
         }:
             # Capture exports/history before changing the originating selection.
             # Local artifact browsing also retains the originating view for Back.
@@ -227,7 +228,9 @@ class WorkspaceCommands:
         self, origin: CommandWorkspace, command: ResolvedCommand, value: str
     ) -> None:
         from kuberich.ui.containers import ContainerScreen
+        from kuberich.ui.helm_catalog import HelmCatalogScreen, HelmRepositoryScreen
         from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
+        from kuberich.ui.helm_lifecycle import HelmLifecycleScreen
         from kuberich.ui.inspection import InspectionScreen
         from kuberich.ui.logs import LogScreen
 
@@ -277,7 +280,16 @@ class WorkspaceCommands:
                     raise AppError("This command requires a captured resource view.")
                 source.require_current()
             if command is Command.BACK:
-                if isinstance(origin, (HelmInspectionScreen, HelmRollbackReviewScreen)):
+                if isinstance(
+                    origin,
+                    (
+                        HelmInspectionScreen,
+                        HelmRollbackReviewScreen,
+                        HelmLifecycleScreen,
+                        HelmCatalogScreen,
+                        HelmRepositoryScreen,
+                    ),
+                ):
                     await origin.stop_owned()
                 await origin.dismiss()
                 self.interactions.history.record(value)
@@ -296,6 +308,9 @@ class WorkspaceCommands:
                         InspectionScreen,
                         HelmInspectionScreen,
                         HelmRollbackReviewScreen,
+                        HelmLifecycleScreen,
+                        HelmCatalogScreen,
+                        HelmRepositoryScreen,
                     ),
                 ):
                     await screen.stop_owned()

@@ -387,7 +387,15 @@ def test_workflow_and_current_qualifier_require_helm_without_changing_phase_poli
         "trap retain_helm_receipts EXIT" in step["run"]
         and "prepared-provenance.json" in step["run"]
     )
-    assert {"scripts/helm_tools.py", "scripts/verify_helm_kind.py"} <= set(type_command(ROOT))
+    assert {
+        "scripts/helm_tools.py",
+        "scripts/verify_helm_kind.py",
+        "scripts/helm_lifecycle_cases.py",
+        "scripts/helm_lifecycle_catalog_cases.py",
+        "scripts/helm_lifecycle_fault_cases.py",
+        "scripts/helm_registry.py",
+        "scripts/verify_helm_registry.py",
+    } <= set(type_command(ROOT))
     assert phase("0.4.0") == ("0.4.0", 75) and phase("0.5.0") == ("0.5.0", 82)
     first = cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 1
@@ -413,6 +421,26 @@ def test_workflow_and_current_qualifier_require_helm_without_changing_phase_poli
         assert verification.command[verification.command.index(flag) + 1] == str(value)
     repeated = next(stage for stage in second if stage.name == "kind-2-helm")
     assert repeated.command[-1] == str(tmp_path / "kind-2-helm/evidence.json")
+
+
+def test_lifecycle_proof_hashes_every_owned_helper_and_fixture_input():
+    from scripts.verify_helm_kind import input_hashes
+
+    inventory = input_hashes(ROOT)
+    assert {
+        "scripts/helm_lifecycle_cases.py",
+        "scripts/helm_lifecycle_catalog_cases.py",
+        "scripts/helm_lifecycle_fault_cases.py",
+        "scripts/helm_registry.py",
+        "scripts/verify_helm_registry.py",
+        "tests/support/helm_catalog.py",
+        "tests/support/helm_oci.py",
+        "scripts/owned_kind.py",
+        "scripts/diagnostics_tools.py",
+    } <= inventory.keys()
+    assert {
+        str(path.relative_to(ROOT)) for path in (ROOT / "src/kuberich").rglob("*.py")
+    } <= inventory.keys()
 
 
 def test_canonical_helm_evidence_and_sibling_receipts_survive_archiving(tmp_path: Path) -> None:

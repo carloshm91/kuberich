@@ -23,6 +23,7 @@ from kuberich.domain.helm import (
     HelmOutcome,
     HelmProblem,
     HelmRelease,
+    HelmReleaseKey,
     HelmRequest,
     HelmRollbackIntent,
     HelmRollbackOptions,
@@ -31,8 +32,20 @@ from kuberich.domain.helm import (
     HelmStorageIdentity,
     HelmTarget,
 )
+from kuberich.domain.helm_catalog import ChartSnapshot
+from kuberich.domain.helm_lifecycle import (
+    HelmLifecycleIntent,
+    HelmLifecycleKind,
+    HelmLifecycleOptions,
+    HelmOperationObservation,
+    HelmValuesDisclosureIntent,
+    HelmValuesLease,
+)
+from kuberich.domain.processes import ProcessCommand
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.helm_catalog import HelmCatalogService
+from kuberich.services.helm_lifecycle import HelmLifecycle
 from kuberich.services.ownership import finish_owned
 
 MAX_OPERATION_SECONDS = 120.0
@@ -54,6 +67,7 @@ class HelmService:
         current: Callable[[HelmRequest], bool],
         *,
         adapter: HelmAdapterPort | None = None,
+        catalog_directory: Path | None = None,
     ) -> None:
         self.client, self.policy, self.settings, self.current = client, policy, settings, current
         self._client = client
@@ -64,9 +78,97 @@ class HelmService:
         self._approval: HelmApproval | None = None
         self._inspections: dict[HelmTarget, HelmInspection] = {}
         self._operations: set[asyncio.Task[Any]] = set()
+        self._cleanup_failures: list[BaseException] = []
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
         self._last_rollback: HelmRollbackResult | None = None
+        self._admitted: asyncio.Task[Any] | None = None
+        self.catalog = HelmCatalogService(policy, catalog_directory)
+        self._lifecycle = HelmLifecycle(self, dict(environment), directory.absolute())
+
+    def require_helm_idle(self) -> None:
+        if self._admitted is not None and not self._admitted.done():
+            raise AppError(
+                "Another Helm operation is already admitted; observe it before preparing another."
+            )
+
+    def start_helm_owned[T](self, operation: Coroutine[Any, Any, T]) -> asyncio.Task[T]:
+        task = asyncio.create_task(operation)
+        self._operations.add(task)
+        task.add_done_callback(self._operations.discard)
+        return task
+
+    def admit_helm_write[T](self, operation: Coroutine[Any, Any, T]) -> asyncio.Task[T]:
+        self.require_helm_idle()
+        task = self.start_helm_owned(operation)
+        self._admitted = task
+
+        def retired(completed: asyncio.Task[T]) -> None:
+            if self._admitted is completed:
+                self._admitted = None
+
+        task.add_done_callback(retired)
+        return task
+
+    def start_helm_cleanup(self, operation: Coroutine[Any, Any, None]) -> None:
+        task = self.start_helm_owned(operation)
+
+        def retired(completed: asyncio.Task[None]) -> None:
+            if not completed.cancelled() and (failure := completed.exception()) is not None:
+                self._cleanup_failures.append(failure)
+
+        task.add_done_callback(retired)
+
+    @property
+    def last_operation(self) -> HelmOperationObservation | None:
+        return self._lifecycle.last
+
+    async def prepare_lifecycle(
+        self,
+        request: HelmRequest,
+        address: HelmReleaseKey,
+        operation: HelmLifecycleKind,
+        chart: ChartSnapshot | None = None,
+        values: HelmValuesLease | None = None,
+        options: HelmLifecycleOptions | None = None,
+    ) -> HelmLifecycleIntent:
+        return await self._lifecycle.prepare(
+            request, address, operation, chart, values, options or HelmLifecycleOptions()
+        )
+
+    def confirm_lifecycle(self, intent: HelmLifecycleIntent) -> HelmApproval:
+        return self._lifecycle.confirm(intent)
+
+    def execute_lifecycle(self, approval: HelmApproval) -> asyncio.Task[HelmOperationObservation]:
+        return self._lifecycle.execute(approval)
+
+    async def create_values(
+        self,
+        request: HelmRequest,
+        address: HelmReleaseKey,
+        chart: ChartSnapshot,
+        *,
+        source: str = "defaults",
+    ) -> HelmValuesLease:
+        return await self._lifecycle.create_values(request, address, chart, source=source)
+
+    async def prepare_values_editor(self, lease: HelmValuesLease) -> HelmValuesDisclosureIntent:
+        return await self._lifecycle.prepare_editor(lease)
+
+    def confirm_values_editor(self, intent: HelmValuesDisclosureIntent) -> HelmApproval:
+        return self._lifecycle.confirm_editor(intent)
+
+    def open_values_editor(self, approval: HelmApproval) -> asyncio.Task[ProcessCommand]:
+        return self._lifecycle.open_editor(approval)
+
+    def require_values_editor_current(self) -> None:
+        self._lifecycle.require_editor_current()
+
+    async def finish_values_editor(self) -> HelmValuesLease:
+        return await self._lifecycle.finish_editor()
+
+    async def close_values_editor(self) -> None:
+        await self._own(self._lifecycle.close_editor())
 
     @property
     def operation_count(self) -> int:
@@ -237,8 +339,12 @@ class HelmService:
 
     def _new_intent(self) -> int:
         self._intent_generation += 1
-        self._intent, self._approval = None, None
+        self._retire_intent()
         return self._intent_generation
+
+    def _retire_intent(self) -> None:
+        self._intent, self._approval = None, None
+        self._lifecycle.retire()
 
     def cancel_review(self) -> None:
         """Expire a nested review without retiring its parent inspection."""
@@ -264,6 +370,7 @@ class HelmService:
         self, target: HelmTarget, revision: int, options: HelmRollbackOptions
     ) -> HelmRollbackIntent:
         self.policy.require(Action.MUTATE)
+        self.require_helm_idle()
         self._target(target, revision)
         generation = self._new_intent()
         guard = self._guard(target.request, intent_generation=generation, mutate=True)
@@ -304,10 +411,12 @@ class HelmService:
         self, approval: HelmApproval, kind: type[HelmDisclosureIntent] | type[HelmRollbackIntent]
     ) -> HelmIntent:
         intent = self._intent
-        if approval is not self._approval or intent is None:
+        expected = self._approval
+        # A rejected cross-operation token cannot preserve another pending review.
+        self._retire_intent()
+        if approval is not expected or intent is None:
             raise HelmProblem("stale", INTENT_MESSAGE)
         # No await precedes consuming the exact token, including rejected attempts.
-        self._intent, self._approval = None, None
         if not isinstance(intent, kind) or approval.intent != intent.identity:
             raise HelmProblem("stale", INTENT_MESSAGE)
         self._check(intent.target.request, mutate=isinstance(intent, HelmRollbackIntent))
@@ -335,8 +444,9 @@ class HelmService:
 
         return await self._own(self._bounded(run))
 
-    async def rollback(self, approval: HelmApproval) -> HelmRollbackResult:
+    def rollback(self, approval: HelmApproval) -> Coroutine[Any, Any, HelmRollbackResult]:
         intent = self._consume(approval, HelmRollbackIntent)
+        self.require_helm_idle()
         assert isinstance(intent, HelmRollbackIntent)
         self._last_rollback = None
         generation = self._intent_generation
@@ -468,9 +578,19 @@ class HelmService:
                 True,
             )
 
-        result = await self._own(run())
-        self._last_rollback = result
-        return result
+        admitted = self.admit_helm_write(run())
+
+        async def receive() -> HelmRollbackResult:
+            try:
+                result = await asyncio.shield(admitted)
+            except asyncio.CancelledError:
+                admitted.cancel()
+                await finish_owned(asyncio.gather(admitted, return_exceptions=True))
+                raise
+            self._last_rollback = result
+            return result
+
+        return receive()
 
     def invalidate(self) -> None:
         self._generation += 1
@@ -481,8 +601,24 @@ class HelmService:
                 task.cancel()
 
     async def _shutdown(self) -> None:
-        await asyncio.gather(*tuple(self._operations), return_exceptions=True)
-        await self._adapter.close()
+        # Completed operation callbacks may enqueue their final input cleanup.
+        while self._operations:
+            await asyncio.gather(*tuple(self._operations), return_exceptions=True)
+            await asyncio.sleep(0)
+        failures: list[BaseException] = []
+        for close in (self._lifecycle.close, self.catalog.close, self._adapter.close):
+            try:
+                await close()
+            except BaseException as error:
+                failures.append(error)
+        failures.extend(self._cleanup_failures)
+        self._cleanup_failures.clear()
+        if len(failures) == 1:
+            raise failures[0]
+        if failures:
+            raise BaseExceptionGroup(
+                "Helm owner shutdown could not be completely verified.", failures
+            )
 
     async def close(self) -> None:
         if self._closing is None:
