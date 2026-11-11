@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 381
-    assert validate_documentation_plan(ROOT, list(mapped)) == 381
+    assert len(mapped) == 382
+    assert validate_documentation_plan(ROOT, list(mapped)) == 382
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -240,7 +240,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(helm["documents"]) == 370
     assert current["documents"][:370] == helm["documents"]
-    assert len(current["documents"]) == 381
+    assert len(current["documents"]) == 382
     assert current["documents"][366:370] == [
         {
             "source": "docs/adr/0041-helm-release-identity.md",
@@ -400,7 +400,14 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(benchmark["documents"]) == 380
     assert current["documents"][:380] == benchmark["documents"]
-    assert current["documents"][380:] == [
+    policy = json.loads(
+        git_bytes(
+            ROOT, "show", "d6ee8c7dfc6f7bf057e925f7eb86e792bdf349c5:docs/documentation-plan.json"
+        )
+    )
+    assert len(policy["documents"]) == 381
+    assert current["documents"][:381] == policy["documents"]
+    assert current["documents"][380:381] == [
         {
             "source": "docs/internal/acceptance/policy-exploration.md",
             "audience": "contributor acceptance evidence",
@@ -410,7 +417,16 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "baseline_sha256": None,
         },
     ]
-    assert all(item["baseline_sha256"] is None for item in current["documents"][348:])
+    assert current["documents"][381:] == [
+        {
+            "source": "docs/internal/acceptance/helm-lifecycle.md",
+            "audience": "development",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/helm-lifecycle.md"],
+            "reason": "Keep M09 Helm catalog/lifecycle evidence and pending final qualification outside user navigation; preserve earlier M06 proof identities separately.",
+        }
+    ]
+    assert all(item["baseline_sha256"] is None for item in current["documents"][348:381])
     assert authorization["canonical_user_pages"] == 23
     assert diagnostics["canonical_user_pages"] == 24
     assert exports["canonical_user_pages"] == 25
