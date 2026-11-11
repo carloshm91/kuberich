@@ -467,7 +467,12 @@ async def test_denied_pdb_rereview_clears_old_facts_without_claiming_empty_inven
 
 
 @pytest.mark.asyncio
-async def test_confirmation_rechecks_policy_before_start_even_without_ui_observation(tmp_path):
+async def test_confirmation_rechecks_policy_before_start_even_without_ui_observation(
+    tmp_path, monkeypatch
+):
+    # Isolate the effect guard from asynchronous workspace observations. An
+    # observer may otherwise stop the owner before the queued button message.
+    monkeypatch.setattr(NodeMaintenanceScreen, "validate_target", lambda self: None)
     async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
         await wait_for(
             lambda: app.standard_table.row_count == 1 and app.state.status is ViewStatus.LIVE
@@ -478,6 +483,26 @@ async def test_confirmation_rechecks_policy_before_start_even_without_ui_observa
         await pilot.pause()
         assert not screen.started and screen.confirm_button.disabled
         assert "policy changed" in str(screen.feedback.content)
+        assert not any(method in {"POST", "PATCH"} for method, *_ in api.requests)
+        assert app.mutations.active_count == 0
+
+
+@pytest.mark.asyncio
+async def test_observed_policy_change_drains_before_queued_confirmation(tmp_path):
+    async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
+        await wait_for(
+            lambda: app.standard_table.row_count == 1 and app.state.status is ViewStatus.LIVE
+        )
+        screen = await review(app, ":cordon")
+        app.commands.policy.tighten()
+        app.operations.observe_node_operations()
+        assert screen.confirm_button.disabled and not screen.started
+        screen.confirm_button.press()
+        await wait_for(lambda: screen.finished)
+        await pilot.pause()
+        assert not screen.started and screen.confirm_button.disabled
+        assert app.mutations.active_count == 0
+        assert app.retained_node_maintenance_view_count == 0
         assert not any(method in {"POST", "PATCH"} for method, *_ in api.requests)
 
 

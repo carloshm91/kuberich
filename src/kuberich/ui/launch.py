@@ -44,6 +44,7 @@ def run_terminal(
     connection: ConnectionRequest = DEFAULT_CONNECTION,
     preferences: PreferenceSource | None = None,
     export_directory: Path | None = None,
+    benchmark_directory: Path | None = None,
 ) -> None:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise AppError(
@@ -60,6 +61,7 @@ def run_terminal(
             connection=connection,
             preferences=preferences,
             export_directory=export_directory,
+            benchmark_directory=benchmark_directory,
         )
         app.run(mouse=app.navigation.mouse)
     except Exception as error:

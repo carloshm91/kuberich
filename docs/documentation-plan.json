@@ -3825,6 +3825,36 @@
       ],
       "reason": "Retain ephemeral-container API and terminal observations, original failures and measured verification outside public user navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/benchmarks.md",
+      "audience": "user",
+      "action": "merge",
+      "destinations": [
+        "docs/port-forwards.md"
+      ],
+      "reason": "Include focused HTTP benchmark task guidance in the forward-port page while preserving the 25-page user budget.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0045-owned-http-benchmarks.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0045-owned-http-benchmarks.md"
+      ],
+      "reason": "Record reviewed single-backend HTTP load, owned cancellation, private external tools and normalized nonreplayable local results.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/http-benchmarks.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/http-benchmarks.md"
+      ],
+      "reason": "Retain HTTP benchmark tool, service, filesystem and terminal observations, original failures and qualification limits outside public navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

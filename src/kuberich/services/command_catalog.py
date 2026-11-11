@@ -135,6 +135,18 @@ COMMAND_SPECS = (
         "Browse local YAML, explicitly render Kustomize, edit local files and review guarded apply/delete.",
     ),
     _spec(
+        Command.BENCHMARK,
+        ("benchmark",),
+        "Review bounded HTTP load for the selected Service; READY owned forwards offer Benchmark.",
+        policy=Action.BENCHMARK,
+        generic=False,
+    ),
+    _spec(
+        Command.BENCHMARKS,
+        ("benchmarks",),
+        "Browse saved local HTTP benchmark results without connecting or running tools.",
+    ),
+    _spec(
         Command.RBAC,
         ("rbac",),
         "Browse declared subjects, bindings and roles; accepts an explicit scope.",

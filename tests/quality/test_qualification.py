@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 28
+    assert len(first) == len(second) == 30
     acquisition = first[0]
     assert acquisition.name == "kind-1-diagnostic-tools"
     assert acquisition.command[4:] == (
@@ -217,11 +217,48 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     )
     assert debug.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
     assert "scripts/verify_ephemeral_debug_kind.py" in catalog.type_command(ROOT)
+    benchmark_tools = next(stage for stage in first if stage.name == "kind-1-benchmark-tools")
+    repeated_tools = next(stage for stage in second if stage.name == "kind-2-benchmark-tools")
+    assert benchmark_tools.command[4:] == (
+        "scripts.benchmark_tools",
+        "--directory",
+        str(tmp_path / "kind-1-benchmark-tools"),
+    )
+    assert repeated_tools.command[4:] == (
+        "scripts.benchmark_tools",
+        "--directory",
+        str(tmp_path / "kind-2-benchmark-tools"),
+    )
+    benchmark = next(stage for stage in first if stage.name == "kind-1-benchmarks")
+    repeated_benchmark = next(stage for stage in second if stage.name == "kind-2-benchmarks")
+    assert benchmark.command[4] == "scripts.verify_benchmarks_kind"
+    assert benchmark.command[benchmark.command.index("--vegeta") + 1] == str(
+        tmp_path / "kind-1-benchmark-tools/vegeta"
+    )
+    assert repeated_benchmark.command[repeated_benchmark.command.index("--vegeta") + 1] == str(
+        tmp_path / "kind-2-benchmark-tools/vegeta"
+    )
+    assert benchmark.command[benchmark.command.index("--docker") + 1] == "/usr/bin/docker"
+    assert Path(benchmark.command[benchmark.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-1-benchmarks/evidence.json"
+    )
+    assert Path(repeated_benchmark.command[repeated_benchmark.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-2-benchmarks/evidence.json"
+    )
+    assert first.index(benchmark_tools) < first.index(benchmark)
+    assert benchmark.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
+    assert "scripts/benchmark_tools.py" in catalog.type_command(ROOT)
+    assert "scripts/benchmark_native.py" in catalog.type_command(ROOT)
+    assert "scripts/verify_benchmarks_kind.py" in catalog.type_command(ROOT)
     for stage in first:
         module = stage.command[4]
         assert module in body
         if "--kind" not in stage.command:
-            assert module in {"scripts.diagnostics_tools", "scripts.helm_tools"}
+            assert module in {
+                "scripts.diagnostics_tools",
+                "scripts.helm_tools",
+                "scripts.benchmark_tools",
+            }
             continue
         assert stage.command[stage.command.index("--kind") + 1] == "/owned/kind"
         if "--kubectl" in stage.command:

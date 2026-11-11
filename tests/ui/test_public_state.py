@@ -272,7 +272,7 @@ async def test_run_command_enforces_read_only_policy_and_invalid_command_feedbac
 
             await app.run_command("delete")
             assert (
-                "Read-only mode blocks mutations, shell, attach, port-forward and external plugins."
+                "Read-only mode blocks mutations, shell, attach, port-forward, benchmarks and external plugins."
                 in str(app.status.content)
             )
             assert writes == []

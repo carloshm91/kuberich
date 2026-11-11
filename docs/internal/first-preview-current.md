@@ -1,5 +1,79 @@
 # Development checkpoint
 
+## HTTP benchmarks usable implementation checkpoint — 2026-11-10 UTC
+
+A04 #79 is the active implementation issue. Clean signed source
+`a69eb6a02c954f958f683197f2286c8cf1e7e413` passes an actual owned-kind service
+checkpoint: two observed/reported requests, Service/Pod UID checks, a dedicated
+single-backend forward, saved-result reopening and stopped load after the actual
+forward is killed. All five owned children are reaped, private files are gone
+and the disposable cluster is deleted. The tested invocation, with its verified
+local tool paths parameterized, is:
+
+```sh
+uv run python -m scripts.verify_benchmarks_kind \
+  --kind "$KIND" --kubectl "$KUBECTL" --vegeta "$VEGETA" \
+  --evidence artifacts/issue79/early-kind-03.json
+```
+
+The optional program is Vegeta v12.13.0; Linux/macOS amd64/arm64 acquisition pins
+official archives and measured binary hashes without executing during provision.
+Only Linux amd64 executes in this local checkpoint. Native Service/forward forms
+and the offline `:benchmarks` browser are implemented; 51 focused UI/CLI cases and
+actual pinned-tool terminal diagnostics cover completion, cancellation, repeated
+interrupts, missing-tool refusal, terminal restoration and result reopening.
+Use `--benchmark-directory /absolute/path` to keep saved results separate.
+Frozen source `a3a8f7a281ef03e3c3f40464239e8c7cb201d961` subsequently passes
+419 focused cases, all four new critical modules at 100% lines/branches, six
+source PTY cases, four installed wheel/sdist cases and all ten actual owned-kind
+groups. The rebuilt Linux native archive also passes its normal full verifier,
+including benchmark completion, cancellation, missing-tool refusal and offline
+reopening. That native cohort uses an authenticated tool and an owned compiled
+TCP bridge; the separate kind trial proves actual kubectl forwarding. Neither
+certifies a provider or complete release readiness.
+
+Three ordinary hosted attempts expose stale collection, scan and UI assertions;
+their original failures remain retained. The complete local Fast selection then
+finishes 11,326 cases within the original ten-minute bound: 11,323 pass, two stale
+CLI/navigation expectations fail and one owned-macOS clipboard case skips on
+Linux. Corrected expectations pass all 292 related cases, with native help
+captured from actual Python 3.12/3.13/3.14 interpreters. These test-only corrections
+leave all 331 kind and 458 native proof inputs unchanged; original receipts keep
+their actual source commit. The fresh ordinary protected matrix remains required
+before merge. Source has conservative
+request/load limits, explicit one-use review, context-owned cleanup, private
+normalized records and a local-only browser. The initial service proof does not
+qualify later UI/installed changes, the full coverage gates, platform matrix,
+providers or protected delivery. HTTP/1.1/single-backend and final name/listener
+races remain explicit in [benchmark acceptance](acceptance/http-benchmarks.md).
+Published packages remain 0.4.0; no artifact or hosting publication occurs.
+
+The fourth ordinary attempt subsequently passes all 11,325 applicable Fast
+cases and both Linux native targets. Its macOS native checks stop before load
+because strict POSIX mode hides two Darwin constants in the owned C fixture.
+An Apple-only namespace declaration preserves the actual no-follow/loopback
+guards; 44 compiled-bridge/adapter cases pass locally, while actual macOS
+verification remains pending. Source checks also catch benchmark deep-link
+mapping and document-enrollment expectations; the corrected guide/site cohort
+passes 202 cases. The fixture changes a captured kind/native-runtime input, so
+earlier receipts remain historical and fresh complete hosted evidence is required.
+The completed macOS source parts also expose a Linux-only path in a PID test
+fixture and a Darwin runtime field added inside the Python fault helper. The
+portable fixture passes 16 controlled cases. Exact three-process launch
+environment assertions retain the credential/proxy boundary while recognizing
+only that later Darwin observation; 60 related cases and the full private-access
+audit pass. Actual macOS success and complete protected delivery remain pending.
+
+The fifth ordinary attempt passes all four native targets on the corrected
+source. A Linux installed-test setup then exits without retained installer
+stderr, leaving its original cause unknown. The shared runner now preserves
+bounded redacted failure notes in existing pytest/JUnit output; six real-child
+checks and an actual rendering control verify that boundary without retrying or
+explaining the old failure. A separate debug UI test now waits for complete
+service/process/view retirement within its original five-second budget; its
+controlled regression and all 43 UI cases pass. Both original failures remain
+retained, and fresh complete hosted checks are required before merge.
+
 ## Ephemeral debugging verified candidate — 2026-11-10 UTC
 
 A03 #78 adds `:debug` for a captured Pod: explicit image/target/nonprivileged

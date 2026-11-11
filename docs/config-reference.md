@@ -42,6 +42,21 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `appearance.themes.NAME.success` | No explicit fallback; see task guide |
 | `appearance.themes.NAME.surface` | No explicit fallback; see task guide |
 | `appearance.themes.NAME.warning` | No explicit fallback; see task guide |
+| `benchmarks.contexts` | {} |
+| `benchmarks.contexts.NAME.executable` | base.executable |
+| `benchmarks.contexts.NAME.load` | {} |
+| `benchmarks.contexts.NAME.load.concurrency` | No explicit fallback; see task guide |
+| `benchmarks.contexts.NAME.load.duration_seconds` | No explicit fallback; see task guide |
+| `benchmarks.contexts.NAME.load.rate` | No explicit fallback; see task guide |
+| `benchmarks.contexts.NAME.load.timeout_seconds` | No explicit fallback; see task guide |
+| `benchmarks.defaults` | {} |
+| `benchmarks.defaults.executable` | base.executable |
+| `benchmarks.defaults.load` | {} |
+| `benchmarks.defaults.load.concurrency` | No explicit fallback; see task guide |
+| `benchmarks.defaults.load.duration_seconds` | No explicit fallback; see task guide |
+| `benchmarks.defaults.load.rate` | No explicit fallback; see task guide |
+| `benchmarks.defaults.load.timeout_seconds` | No explicit fallback; see task guide |
+| `benchmarks.schema_version` | 1 |
 | `context_settings.contexts` | {} |
 | `context_settings.contexts.NAME.read_only` | No explicit fallback; see task guide |
 | `context_settings.contexts.NAME.refresh_seconds` | null (before validation) |
@@ -162,6 +177,6 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `plugins.locations` | No explicit fallback; see task guide |
 | `plugins.schema_version` | null (before validation) |
 
-The root accepts these versioned extensions: `appearance`, `context_settings`, `forwarding`, `jumps`, `navigation`, `node_shell`, `observability`, `plugins`.
+The root accepts these versioned extensions: `appearance`, `benchmarks`, `context_settings`, `forwarding`, `jumps`, `navigation`, `node_shell`, `observability`, `plugins`.
 Key profiles/actions come from the [key reference](cli-reference.md#additional-navigation-defaults).
 Theme colors and plugin definitions are validated as described in their task guides.

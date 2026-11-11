@@ -194,6 +194,7 @@ class ForwardScreen(ModalScreen[None]):
     AUTO_FOCUS = "#forward-sessions"
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("s", "stop_selected", "Stop", show=False),
+        Binding("B", "benchmark_selected", "Benchmark", show=False),
         Binding("slash", "filter", "Filter", show=False),
     ]
     DEFAULT_CSS = """
@@ -214,15 +215,18 @@ class ForwardScreen(ModalScreen[None]):
         trail: tuple[str, ...],
         *,
         selected: UUID | None = None,
+        benchmark: Callable[[ForwardInfo], None] | None = None,
     ) -> None:
         super().__init__()
         self.manager, self.chrome, self.trail = manager, chrome, trail
         self.initial_selection = selected
+        self.benchmark = benchmark
         self.table = ForwardTable(id="forward-sessions", cursor_type="row", zebra_stripes=True)
         self._shown: dict[str, ForwardInfo] = {}
 
     def compose(self) -> ComposeResult:
-        yield WorkspaceHeader(self.chrome, SHORTCUTS, binding_profile="forwards")
+        shortcuts = (("B", "Benchmark selected"), *SHORTCUTS) if self.benchmark else SHORTCUTS
+        yield WorkspaceHeader(self.chrome, shortcuts, binding_profile="forwards")
         with WorkspaceBars():
             yield Static(
                 "Port forwards · changing context stops active sessions",
@@ -232,6 +236,8 @@ class ForwardScreen(ModalScreen[None]):
             yield Input(placeholder="/ Filter sessions", id="forward-list-filter")
             with Horizontal(id="forward-list-buttons"):
                 yield Button("Stop selected", id="forward-list-stop", compact=True)
+                if self.benchmark is not None:
+                    yield Button("Benchmark", id="forward-list-benchmark", compact=True)
                 yield Button("Back", id="forward-list-back", compact=True)
         with WorkspaceFrame(id="forward-list-frame"):
             yield self.table
@@ -345,9 +351,32 @@ class ForwardScreen(ModalScreen[None]):
             ForwardState.STOPPED,
             ForwardState.FAILED,
         }
+        if self.benchmark is not None:
+            self.query_one("#forward-list-benchmark", Button).disabled = (
+                info is None or info.state is not ForwardState.READY
+            )
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        return not isinstance(self.focused, Input) if action == "stop_selected" else True
+        return (
+            not isinstance(self.focused, Input)
+            if action in {"stop_selected", "benchmark_selected"}
+            else True
+        )
+
+    @on(Button.Pressed, "#forward-list-benchmark")
+    def action_benchmark_selected(self) -> None:
+        if self.benchmark is None or not self.table.row_count:
+            return
+        identity = self.table.coordinate_to_cell_key(self.table.cursor_coordinate).row_key.value
+        info = self._shown.get(identity or "")
+        # A refreshed manager record is authority; a stale painted row is not.
+        current = (
+            next((item for item in self.manager.infos if item.identity == info.identity), None)
+            if info
+            else None
+        )
+        if current is not None and current == info and current.state is ForwardState.READY:
+            self.benchmark(current)
 
     def action_filter(self) -> None:
         self.set_focus(self.query_one("#forward-list-filter", Input))

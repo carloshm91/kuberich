@@ -285,6 +285,8 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_node_shell_kind",
         "scripts.verify_node_maintenance_kind",
         "scripts.verify_ephemeral_debug_kind",
+        "scripts.benchmark_tools --directory",
+        "scripts.verify_benchmarks_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
@@ -311,7 +313,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 26
+    assert len(cluster_steps) == 27
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(
@@ -348,6 +350,23 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in ephemeral_debug["run"]
     assert "--docker /usr/bin/docker" in ephemeral_debug["run"]
     assert "--evidence artifacts/ephemeral-debug/evidence.json" in ephemeral_debug["run"]
+    assert "artifacts/benchmarks/**" in upload["with"]["path"].splitlines()
+    assert (
+        "uv run mypy --strict scripts/benchmark_tools.py scripts/benchmark_native.py scripts/verify_benchmarks_kind.py"
+        in commands
+    )
+    benchmarks = next(
+        step for step in cluster_steps if "python -m scripts.verify_benchmarks_kind" in step["run"]
+    )
+    assert '--kind "$RUNNER_TEMP/kuberich-kind"' in benchmarks["run"]
+    assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in benchmarks["run"]
+    assert '--vegeta "$RUNNER_TEMP/kuberich-benchmark-tools/vegeta"' in benchmarks["run"]
+    assert "--docker /usr/bin/docker" in benchmarks["run"]
+    assert "--evidence artifacts/benchmarks/evidence.json" in benchmarks["run"]
+    assert benchmarks["run"].index("scripts.benchmark_tools") < benchmarks["run"].index(
+        "scripts.verify_benchmarks_kind"
+    )
+    assert "trap retain_benchmark_receipt EXIT" in benchmarks["run"]
     assert "uv run mypy --strict scripts/ci_apt.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
@@ -384,6 +403,88 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in maintenance["run"]
     assert "--docker /usr/bin/docker" in maintenance["run"]
     assert "--evidence artifacts/node-maintenance/evidence.json" in maintenance["run"]
+
+
+@pytest.mark.parametrize("job_name", ["fast", "tests", "standalone"])
+@pytest.mark.parametrize("failed", [False, True])
+def test_benchmark_tool_preparation_is_explicit_fatal_and_preserves_original_receipt(
+    tmp_path, job_name, failed
+):
+    workflow = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
+    job = workflow["jobs"][job_name]
+    steps = job["steps"]
+    prepared = next(
+        step
+        for step in steps
+        if step.get("name") == "Prepare the pinned optional HTTP benchmark test tool"
+    )
+    assert "if" not in prepared and "continue-on-error" not in prepared
+    executed = next(
+        step
+        for step in steps
+        if ("uv run pytest" if job_name != "standalone" else "scripts.verify_standalone")
+        in step.get("run", "")
+    )
+    assert steps.index(prepared) < steps.index(executed)
+    runner = tmp_path / "runner"
+    runner.mkdir()
+    environment_file = tmp_path / "github-environment"
+    binaries = tmp_path / "bin"
+    binaries.mkdir()
+    helper = binaries / "uv"
+    helper.write_text(
+        f"#!{sys.executable}\n"
+        "import os,sys\nfrom pathlib import Path\n"
+        "assert sys.argv[1:6] == ['run','python','-m','scripts.benchmark_tools','--directory']\n"
+        "assert len(sys.argv) == 7\n"
+        "directory=Path(sys.argv[6])\n"
+        "assert directory.is_absolute()\n"
+        "directory.mkdir()\n"
+        "(directory/'prepared-provenance.json').write_bytes(b'{\"owned_fixture\":true}\\n')\n"
+        "sys.exit(3 if os.environ['KUBERICH_ENROLLMENT_FAIL'] == '1' else 0)\n"
+    )
+    helper.chmod(0o700)
+    native = Path("artifacts/standalone/owned-platform")
+    environment = dict(
+        os.environ,
+        PATH=str(binaries) + os.pathsep + os.environ.get("PATH", ""),
+        RUNNER_TEMP=str(runner),
+        GITHUB_ENV=str(environment_file),
+        KUBERICH_NATIVE_DIR=str(native),
+        KUBERICH_ENROLLMENT_FAIL="1" if failed else "0",
+    )
+    result = subprocess.run(
+        ["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", prepared["run"]],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        timeout=10,
+    )
+    assert result.returncode == (3 if failed else 0), result.stderr
+    saved = (
+        tmp_path / native / "benchmark-tool-provenance/prepared-provenance.json"
+        if job_name == "standalone"
+        else tmp_path / "artifacts/benchmarks/tool-provenance/prepared-provenance.json"
+    )
+    assert (
+        saved.read_bytes()
+        == (runner / "kuberich-benchmark-tools/prepared-provenance.json").read_bytes()
+    )
+    if failed:
+        assert not environment_file.exists()
+    else:
+        assert environment_file.read_text().splitlines() == [
+            "KUBERICH_TEST_VEGETA=" + str(runner / "kuberich-benchmark-tools/vegeta")
+        ]
+    # The native verifier owns a fresh output directory; provisioning must not claim it.
+    assert not (tmp_path / native / "runtime").exists()
+    upload = next(
+        step for step in steps if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    if job_name == "standalone":
+        assert "artifacts/standalone/${{ matrix.target }}/benchmark-tool-provenance/*" in (
+            upload["with"]["path"].splitlines()
+        )
 
 
 def test_linux_package_setup_keeps_every_tool_and_a_finite_step_deadline():

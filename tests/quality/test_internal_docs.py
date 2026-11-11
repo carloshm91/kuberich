@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 377
-    assert validate_documentation_plan(ROOT, list(mapped)) == 377
+    assert len(mapped) == 380
+    assert validate_documentation_plan(ROOT, list(mapped)) == 380
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -240,7 +240,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(helm["documents"]) == 370
     assert current["documents"][:370] == helm["documents"]
-    assert len(current["documents"]) == 377
+    assert len(current["documents"]) == 380
     assert current["documents"][366:370] == [
         {
             "source": "docs/adr/0041-helm-release-identity.md",
@@ -342,7 +342,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(maintenance["documents"]) == 375
     assert current["documents"][:375] == maintenance["documents"]
-    assert current["documents"][375:] == [
+    assert current["documents"][375:377] == [
         {
             "source": "docs/adr/0044-reviewed-ephemeral-debugging.md",
             "audience": "development",
@@ -357,6 +357,39 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "action": "keep",
             "destinations": ["docs/internal/acceptance/ephemeral-debug.md"],
             "reason": "Retain ephemeral-container API and terminal observations, original failures and measured verification outside public user navigation.",
+            "baseline_sha256": None,
+        },
+    ]
+    ephemeral = json.loads(
+        git_bytes(
+            ROOT, "show", "60a5f46711119a49cfade51ea0b30fecf441ffe1:docs/documentation-plan.json"
+        )
+    )
+    assert len(ephemeral["documents"]) == 377
+    assert current["documents"][:377] == ephemeral["documents"]
+    assert current["documents"][377:] == [
+        {
+            "source": "docs/benchmarks.md",
+            "audience": "user",
+            "action": "merge",
+            "destinations": ["docs/port-forwards.md"],
+            "reason": "Include focused HTTP benchmark task guidance in the forward-port page while preserving the 25-page user budget.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "docs/adr/0045-owned-http-benchmarks.md",
+            "audience": "development",
+            "action": "keep",
+            "destinations": ["docs/adr/0045-owned-http-benchmarks.md"],
+            "reason": "Record reviewed single-backend HTTP load, owned cancellation, private external tools and normalized nonreplayable local results.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "docs/internal/acceptance/http-benchmarks.md",
+            "audience": "contributor acceptance evidence",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/http-benchmarks.md"],
+            "reason": "Retain HTTP benchmark tool, service, filesystem and terminal observations, original failures and qualification limits outside public navigation.",
             "baseline_sha256": None,
         },
     ]

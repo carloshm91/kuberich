@@ -37,6 +37,10 @@ def validate_preferences(
         from kuberich.config.node_shell import node_shell_from
 
         node_shell_from(document)
+    if "benchmarks" in document.extensions:
+        from kuberich.config.benchmarks import benchmarks_from
+
+        benchmarks_from(document)
     if "plugins" in document.extensions:
         from kuberich.adapters.plugin_files import load_plugins
         from kuberich.config.plugins import plugins_from

@@ -173,7 +173,12 @@ class WorkspaceNavigation:
     def initialize(
         self, initial: ResolvedCommand, apply: Callable[[ResolvedCommand], None]
     ) -> None:
-        if initial in {Command.EXPORTS, Command.MANIFESTS, Command.NODE_SHELL_RECOVER}:
+        if initial in {
+            Command.EXPORTS,
+            Command.BENCHMARKS,
+            Command.MANIFESTS,
+            Command.NODE_SHELL_RECOVER,
+        }:
             apply(initial)
             return
         context = self.sessions.request.context or self.sessions.catalog.current
@@ -779,7 +784,11 @@ class WorkspaceNavigation:
             if generic is not None
             else POD_SHORTCUTS
             if resource == "pods"
-            else SERVICE_SHORTCUTS
+            else (
+                ((":benchmarks", "Saved HTTP results"), *SERVICE_SHORTCUTS[1:])
+                if self.policy.read_only
+                else SERVICE_SHORTCUTS
+            )
             if resource == "services"
             else workload_shortcuts(resource, self.policy.read_only)
         )

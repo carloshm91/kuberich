@@ -34,6 +34,11 @@ Changing context, retrying authentication, replacing the connection, or quitting
 stops them. There are at most eight active sessions and 32 recent records. The
 list does not discover forwards started by other terminals.
 
+Select a ready row and choose **Benchmark** or press Shift+B to
+[run a short HTTP benchmark](benchmarks.md). The test checks the selected
+Service/Pod again and starts a separate loopback forward. It stops that dedicated
+forward when the test ends; your existing forward remains a separate session.
+
 ## Reconnect deliberately
 
 Reconnections are off by default. Review can allow up to three attempts after a

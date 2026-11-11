@@ -159,6 +159,7 @@ def workload_shortcuts(resource: str, read_only: bool) -> tuple[tuple[str, str],
 
 
 SERVICE_SHORTCUTS = (
+    (":benchmark", "Review HTTP load"),
     ("Enter / d", "Details"),
     ("y/e", "YAML / Events"),
     ("F", "Forward ports"),

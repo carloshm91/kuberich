@@ -396,7 +396,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1573,8 +1573,8 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m–24h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
-      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
+      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m\u201324h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
+      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m\u201324h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/cluster-overview.md",
@@ -1779,9 +1779,24 @@
       ],
       "source": "internal/view/benchmark.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "HTTP benchmarking, results browsing and benchmark cancellation are planned.",
-      "public_status": "planned"
+      "difference": "A04 #79 implements explicitly reviewed Vegeta v12.13.0 HTTP/1.1 load against one selected Service/forward backend, hard request/load limits, per-context defaults, private normalized results and owned cancellation. Actual tool/server, owned-kind service and terminal diagnostics cover requests, persisted/reopened results and stopped load after observed loss or UI exit. Final exact-source coverage/platform and protected checks remain mandatory before merge. Single-backend, pacing and final name/listener races stay explicit.",
+      "public_summary": "Development source adds short explicitly confirmed HTTP tests through one selected backend, with an optional Vegeta program, conservative limits, cancellation and a private local results browser. HTTP/1.1 only; whole-Service balancing and exact per-second traffic ceilings are not claimed.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/benchmarks.md",
+        "docs/internal/acceptance/http-benchmarks.md",
+        "docs/adr/0045-owned-http-benchmarks.md",
+        "src/kuberich/domain/benchmarks.py",
+        "src/kuberich/domain/benchmark_results.py",
+        "src/kuberich/services/benchmarks.py",
+        "src/kuberich/services/benchmark_store.py",
+        "scripts/verify_benchmarks_kind.py",
+        "tests/unit/test_benchmarks.py",
+        "tests/unit/test_benchmark_results.py",
+        "tests/contract/test_benchmark_store.py",
+        "tests/contract/test_benchmark_service.py",
+        "tests/terminal/test_benchmarks.py"
+      ]
     },
     {
       "id": "ADV05",

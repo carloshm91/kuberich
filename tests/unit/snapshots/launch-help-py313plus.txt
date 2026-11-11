@@ -2,9 +2,10 @@ usage: kuberich [-h] [--version] [--config CONFIG] [--kubeconfig KUBECONFIG] [--
                 [--namespace NAMESPACE] [--all-namespaces] [--request-timeout REQUEST_TIMEOUT]
                 [--log-file LOG_FILE] [--log-level LOG_LEVEL] [--refresh REFRESH_SECONDS]
                 [--readonly] [--write] [--command INITIAL_COMMAND]
-                [--screen-dump-dir SCREEN_DUMP_DIR] [--headless] [--logoless] [--crumbsless]
-                [--invert] [--splashless] [--cluster CLUSTER] [--user USER] [--as AS_USER]
-                [--as-group AS_GROUP] [--insecure-skip-tls-verify [INSECURE]]
+                [--screen-dump-dir SCREEN_DUMP_DIR] [--benchmark-directory BENCHMARK_DIRECTORY]
+                [--headless] [--logoless] [--crumbsless] [--invert] [--splashless]
+                [--cluster CLUSTER] [--user USER] [--as AS_USER] [--as-group AS_GROUP]
+                [--insecure-skip-tls-verify [INSECURE]]
                 [--certificate-authority CERTIFICATE_AUTHORITY] [--client-key CLIENT_KEY]
                 [--client-certificate CLIENT_CERTIFICATE] [--token TOKEN]
                 {help,version,info,bug-report,config,kubeconfig} ...
@@ -42,10 +43,12 @@ options:
   --write               override the configured read-only preference for this session
   --command, -c INITIAL_COMMAND
                         initial terminal command: po, ctx, ns, helm, manifests, node-shell-recover,
-                        pulse, overview, exports, themes, views, about, status, retry, back,
-                        forward, help or quit
+                        pulse, overview, exports, benchmarks, themes, views, about, status, retry,
+                        back, forward, help or quit
   --screen-dump-dir SCREEN_DUMP_DIR
                         initial local export directory; created privately only on Save
+  --benchmark-directory BENCHMARK_DIRECTORY
+                        local benchmark result directory; created privately only by an explicit run
   --headless            hide the application header
   --logoless            hide the brand in the header
   --crumbsless          hide the context/namespace scope bar

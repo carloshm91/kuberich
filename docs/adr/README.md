@@ -63,6 +63,7 @@ implemented decisions are kept separately without rewriting that history:
 | [0042: Local manifest batches](0042-local-manifest-batches.md) | Anchored local sources, frozen builtin rendering, real named creation, guarded declarative updates and explicit partial outcomes |
 | [0043: Owned node-shell sessions](0043-owned-node-shell-sessions.md) | Explicit privileged diagnostics, single-attempt creation, returned-UID cleanup and private recovery |
 | [0044: Reviewed ephemeral debugging](0044-reviewed-ephemeral-debugging.md) | Exact irreversible addition reviews, independent remote state and retained local attach leases |
+| [0045: Owned HTTP benchmarks](0045-owned-http-benchmarks.md) | One-use bounded load, a dedicated single-backend forward, private tool execution and nonreplayable local results |
 | [Application composition](app-composition.md) | Integrated typed views, command metadata, navigation and operation owners; remaining stable-release work stays explicit |
 
 The composition record retains its existing filename; it is not renumbered into

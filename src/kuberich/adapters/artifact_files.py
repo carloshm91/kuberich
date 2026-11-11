@@ -171,7 +171,11 @@ class ArtifactFiles:
         except (OSError, RuntimeError):
             raise _error() from None
 
-    def scan(self, root: DirectoryRef, *, cancel: threading.Event) -> FileScan:
+    def scan(
+        self, root: DirectoryRef, *, cancel: threading.Event, max_entries: int = MAX_ENTRIES
+    ) -> FileScan:
+        if type(max_entries) is not int or not 1 <= max_entries <= MAX_ENTRIES:
+            raise _error()
         descriptor = -1
         try:
             descriptor = self._anchor(root, cancel)
@@ -181,7 +185,7 @@ class ArtifactFiles:
             with os.scandir(descriptor) as entries:
                 for index, entry in enumerate(entries):
                     _check(cancel)
-                    if index >= MAX_ENTRIES:
+                    if index >= max_entries:
                         limited = True
                         break
                     try:
