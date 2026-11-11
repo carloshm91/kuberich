@@ -303,6 +303,24 @@ fixture controls pass 37 cases with one macOS platform skip. The original Linux
 logs and provider ZIP remain retained; those native failures are unqualified and
 the next genuine complete current-source/native matrix is still required.
 
+Run `43045181696` passes Fast and all four native jobs at `084e19f`, but fails
+macOS source part three while waiting for public creation validation. Its original
+JSON/ANSI pair shows the initial review state; it records neither controller input
+timing nor HTTP counts, so no original click offset or zero-request claim follows.
+Replaying those retained output bytes exposes a concrete selector defect: a partial
+paint combines the new `Validate` status with old source controls, satisfying the
+old two-label predicate at the wrong coordinate. The actual review footer paints
+later on a different row. This observation supports a helper correction without
+establishing the exact original input timing.
+
+The CLI driver now requires the phase's complete parallel control row before one
+physical click. A deterministic split-frame guard sends no input on that mixed
+row and exactly one click at the complete footer's coordinates. The three actual
+source CLI variants and four selector guards pass together; all HTTP/effect,
+cancellation, terminal-cleanup assertions and original deadlines remain intact.
+Application bytes are unchanged. The failed run remains unqualified; the next
+genuine complete matrix and independent current artifact audits remain required.
+
 ## Remaining qualification
 
 Whole production/branch/changed-line gates, native workflows and the

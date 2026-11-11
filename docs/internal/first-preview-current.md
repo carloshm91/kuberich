@@ -79,6 +79,15 @@ The scoped wrapper now preserves the actual owned cwd alongside UID/GID, with
 global Host controls and application checks unchanged. The complete corrected
 hosted source/native matrix remains required.
 
+That run passes all four native jobs, then macOS source part three stalls before
+public validation feedback. Original output exposes a mixed modal repaint that
+the driver could mistake for a ready footer. Input timing and original HTTP
+counts are unavailable. The helper now waits for the complete phase-specific
+control row and sends one click; deterministic split-frame controls and all three
+real source CLI variants pass with unchanged effects, cleanup and deadlines.
+Application source is unchanged. The original run remains failed and the next
+complete current matrix and independent artifact audits remain required.
+
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 
 M09 #233 is the active implementation issue. Its source adds public `:helmcharts`,

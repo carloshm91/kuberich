@@ -122,29 +122,17 @@ class CreationServer(Server):
             raise ValueError("Owned creation API request handlers were not drained")
 
 
-def click_visible(terminal: TerminalSession, label: str, *, button: bool = True) -> None:
+def click_visible(terminal: TerminalSession, label: str, *, controls: tuple[str, ...] = ()) -> None:
     """Click the actual rendered public control, without application introspection."""
-    labels = (
-        "Import file",
-        "Edit draft",
-        "Review Create",
-        "Connect & Review",
-        "Validate",
-        "Confirm Create",
-        "Stop",
-        "Previous page",
-        "Next page",
-        "Back",
-    )
     deadline = time.monotonic() + 15
     while True:
         rows = tuple(enumerate(terminal.screen.display))
-        # A title/status can mention Validate before the new modal footer paints.
-        # Wait for the actual footer's parallel controls, not that earlier text.
-        candidates = rows[-6:] if button else rows
+        # Repainting can mix a new status with the previous modal's footer.
+        # Require this phase's complete control row before sending one click.
+        candidates = rows[-6:] if controls else rows
         for row, line in reversed(candidates):
             column = line.find(label)
-            if column >= 0 and (not button or sum(value in line for value in labels) >= 2):
+            if column >= 0 and all(value in line for value in controls):
                 x, y = column + len(label) // 2 + 1, row + 1
                 terminal.send(f"\x1b[<0;{x};{y}M\x1b[<0;{x};{y}m".encode())
                 return
@@ -246,32 +234,35 @@ def terminal_resource_creation_cli(
         outside = dict(controller_environment or {})
         if wrap is None:
             outside.update(variables)
+        review_label = "Connect & Review" if initial_offline else "Review Create"
+        source_controls = ("Import file", "Edit draft", review_label, "Stop")
+        review_controls = ("Validate", "Confirm Create", "Stop")
         with TerminalSession(launched, directory, environment=outside, size=(120, 36)) as terminal:
             if not initial_offline:
                 terminal.wait_for_screen("80 pods")
                 terminal.send(b":create\r")
             terminal.wait_for_screen("Create resources · offline source")
-            click_visible(terminal, "Explicit local manifest file path", button=False)
+            click_visible(terminal, "Explicit local manifest file path")
             terminal.send(b"owned-create.yaml")
             terminal.wait_for_screen("owned-create.yaml")
-            click_visible(terminal, "Import file")
+            click_visible(terminal, "Import file", controls=source_controls)
             terminal.wait_for_screen("File captured offline")
             assert not server.bodies and PRIVATE not in "\n".join(terminal.screen.display)
             if initial_offline:
                 assert server.get_requests == 0
-            click_visible(terminal, "Connect & Review" if initial_offline else "Review Create")
+            click_visible(terminal, review_label, controls=source_controls)
             terminal.wait_for_screen("Manifest cluster review")
-            click_visible(terminal, "Validate")
+            click_visible(terminal, "Validate", controls=review_controls)
             terminal.wait_for_screen("All resources validated")
             assert not server.values and len(server.bodies) == len(names)
             assert all(dry for dry, _, _ in server.bodies)
-            click_visible(terminal, "Confirm Create")
+            click_visible(terminal, "Confirm Create", controls=review_controls)
             if mode == "cancel":
                 deadline = time.monotonic() + 5
                 while not server.committed.is_set():
                     terminal.read(0.01)
                     assert time.monotonic() < deadline, "Owned POST never committed"
-                click_visible(terminal, "Stop")
+                click_visible(terminal, "Stop", controls=review_controls)
                 terminal.wait_for_screen("Write outcome uncertain")
                 assert "Verified persistent creation receipt" not in "\n".join(
                     terminal.screen.display
