@@ -11,6 +11,8 @@ from kuberich.domain.registry import STANDARD_RESOURCES
 from kuberich.domain.resources import api_resource, resource_record
 from tests.support.connections import namespaces
 from tests.support.curated_access import access_manifest, access_resource
+from tests.support.curated_admission import KINDS as ADMISSION_KINDS
+from tests.support.curated_admission import admission_manifest, admission_resource
 from tests.support.curated_policy import policy_manifest, policy_resource
 from tests.support.curated_scaling import SAMPLES as SCALING_SAMPLES
 from tests.support.curated_scaling import api as scaling_api
@@ -122,6 +124,8 @@ def _curated_sample(definition):
         return resource, scaling_record(resource).manifest
     if family.resource in {item.resource for item in POLICY_FAMILIES}:
         return policy_resource(family.resource), policy_manifest(family.resource)
+    if family.resource in ADMISSION_KINDS:
+        return admission_resource(family.resource), admission_manifest(family.resource)
     return access_resource(family.kind), access_manifest(family.kind)
 
 

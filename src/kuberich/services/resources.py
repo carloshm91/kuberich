@@ -340,7 +340,7 @@ class ResourceReader:
                 items = tuple(resource for gv in versions for resource in resources.get(gv, ()))
                 if len(items) > MAX_RESOURCES:
                     raise AppError("Discovery exceeds its combined resource limit.")
-                return Discovery(items, tuple(issues))
+                return Discovery(items, tuple(issues), tuple(versions))
         except TimeoutError:
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT, "API discovery timed out; check --request-timeout."

@@ -22,7 +22,12 @@ names take precedence over aliases. `Discovery.resolve(name, group=None,
 version=None)` resolves across API groups, collapses served versions of one
 group/resource family and selects the server's preferred version. An ambiguous
 short name requires a group and canonical name; no group/version is guessed.
-An explicit version must be advertised. `preferred_resources` exposes one
+An explicit version must be advertised. The catalogue retains the server's
+advertised version order even when a version's discovery fails. Automatic choice
+can use a lower-preference version after observed absence; denied, malformed or
+unavailable higher-preference discovery remains an explicit error. An explicitly
+requested discovered version remains usable, and unrelated group failures do not
+block it. `preferred_resources` exposes one
 preferred descriptor per group/resource; the existing `find` retains its core
 group default for standard views.
 Subresources such as `pods/log` are excluded from collection discovery. Verbs

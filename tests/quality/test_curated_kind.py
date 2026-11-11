@@ -39,6 +39,8 @@ from scripts.curated_kind import (
     RAW_REPRESENTATION_BYTES,
     READ_SECONDS,
     VERIFY_SECONDS,
+    admission_family_manifests,
+    admission_spine_manifests,
     check_native_projection,
     create_document,
     endpoint_manifests,
@@ -68,6 +70,90 @@ from tests.ui.test_curated_resources import app_for, loaded, started
 NAMESPACE = "kuberich-curated-contract"
 OTHER = "kuberich-curated-empty"
 AT = datetime(2026, 11, 6, 12, tzinfo=UTC)
+
+
+def test_admission_spine_is_native_v1_bounded_to_owned_namespace_and_unserved_resources():
+    namespace, policy, binding = admission_spine_manifests(NAMESPACE)
+    assert namespace["kind"] == "Namespace" and namespace["metadata"]["name"] == NAMESPACE
+    assert {policy["apiVersion"], binding["apiVersion"]} == {"admissionregistration.k8s.io/v1"}
+    assert (policy["kind"], binding["kind"]) == (
+        "ValidatingAdmissionPolicy",
+        "ValidatingAdmissionPolicyBinding",
+    )
+    assert "namespace" not in policy["metadata"] and "namespace" not in binding["metadata"]
+    labels = namespace["metadata"]["labels"]
+    assert policy["spec"]["matchConstraints"]["namespaceSelector"] == {"matchLabels": labels}
+    assert binding["spec"]["matchResources"]["namespaceSelector"] == {"matchLabels": labels}
+    assert policy["spec"]["matchConstraints"]["resourceRules"] == [
+        {
+            "operations": ["CREATE"],
+            "apiGroups": ["unserved.curated.kind"],
+            "apiVersions": ["v1"],
+            "resources": ["widgets"],
+            "scope": "Namespaced",
+        }
+    ]
+    assert binding["spec"]["policyName"] == policy["metadata"]["name"]
+    assert binding["spec"]["validationActions"] == ["Audit"]
+    assert "failurePolicy" not in policy["spec"]
+    assert "matchPolicy" not in policy["spec"]["matchConstraints"]
+    assert "paramRef" not in binding["spec"] and "paramKind" not in policy["spec"]
+    assert all("uid" not in item["metadata"] and "status" not in item for item in (policy, binding))
+
+
+@pytest.mark.parametrize("namespace", ["bad/name", "", "../default"])
+def test_admission_spine_rejects_invalid_scope_before_producing_manifests(namespace):
+    with pytest.raises(AppError):
+        admission_spine_manifests(namespace)
+
+
+def test_all_four_native_admission_families_are_inert_and_keep_declared_policy_identity():
+    manifests = admission_family_manifests(NAMESPACE)
+    kinds = {
+        "ValidatingAdmissionPolicy",
+        "ValidatingAdmissionPolicyBinding",
+        "MutatingAdmissionPolicy",
+        "MutatingAdmissionPolicyBinding",
+    }
+    assert len(manifests) == 8 and {item["kind"] for item in manifests} == kinds
+    for kind in kinds:
+        selected = [item for item in manifests if item["kind"] == kind]
+        assert [item["metadata"]["name"] for item in selected] == [
+            NAMESPACE + "-a",
+            NAMESPACE + "-b",
+        ]
+        assert all(item["apiVersion"] == "admissionregistration.k8s.io/v1" for item in selected)
+        for ordinal, item in enumerate(selected):
+            assert "namespace" not in item["metadata"] and "status" not in item
+            spec = item["spec"]
+            matching = spec["matchResources" if kind.endswith("Binding") else "matchConstraints"]
+            assert matching["namespaceSelector"] == {
+                "matchLabels": {"curated.kind/owned": NAMESPACE}
+            }
+            assert len(matching["resourceRules"]) == ordinal + 1
+            assert all(
+                rule["operations"] == ["CREATE"]
+                and rule["apiGroups"] == ["unserved.curated.kind"]
+                and rule["resources"] == ["widgets"]
+                and rule["scope"] == "Namespaced"
+                for rule in matching["resourceRules"]
+            )
+            assert "paramRef" not in spec and "paramKind" not in spec
+            if kind.endswith("Binding"):
+                assert spec["policyName"] == item["metadata"]["name"]
+                assert ("validationActions" in spec) == kind.startswith("Validating")
+            elif kind.startswith("Mutating"):
+                assert spec["reinvocationPolicy"] in {"Never", "IfNeeded"}
+                assert len(spec["mutations"]) == ordinal + 1
+                assert all(mutation["patchType"] == "JSONPatch" for mutation in spec["mutations"])
+            else:
+                assert len(spec["validations"]) == ordinal + 1
+    manifests[0]["metadata"]["labels"]["curated.kind/owned"] = "changed"
+    assert manifests[1]["metadata"]["labels"]["curated.kind/owned"] == NAMESPACE
+    assert (
+        admission_family_manifests(NAMESPACE)[0]["metadata"]["labels"]["curated.kind/owned"]
+        == NAMESPACE
+    )
 
 
 def descriptor(family):
@@ -116,7 +202,9 @@ def test_hpa_and_pod_manifests_respect_real_validation_without_executing_workloa
     ] == [70, 90]
     pods = [item for item in values if item["kind"] == "Pod"]
     assert all(
-        item["spec"]["nodeSelector"] == {"curated.kind/absent-node": "true"} for item in pods
+        item["spec"]["nodeSelector"]
+        == {"curated.kind/absent-node": "true", "api-token": fixtures.CANARY}
+        for item in pods
     )
     assert all(item["spec"]["automountServiceAccountToken"] is False for item in pods)
     assert {item["spec"]["containers"][0]["image"] for item in pods} == {SHELL_IMAGE}
@@ -783,7 +871,7 @@ def test_prepare_mode_retains_source_pins_without_any_docker_or_kube_call(tmp_pa
     data = json.loads(evidence.read_text())
     assert data["status"] == "prepared" and data["executed_family_count"] == 0
     assert data["inputs_unchanged"]
-    assert data["prepared"]["family_count"] == 19
+    assert data["prepared"]["family_count"] == 23
     assert data["prepared"]["fixture_images"] == [SHELL_IMAGE]
     assert all(url.startswith("https://") for url in data["prepared"]["source_pins"].values())
 
@@ -919,7 +1007,7 @@ def nested_kind_result():
     }
     return {
         "ordinary_families": ordinary,
-        "ordinary_count": 18,
+        "ordinary_count": 22,
         "events": {
             "resource": asdict(events),
             "created_event_uids": [
@@ -1067,9 +1155,9 @@ def test_entry_receipts_preserve_real_run_outcome_and_owned_cleanup_controls(
     assert data["status"] == ("passed" if mode == "success" else "failed")
     assert data["owned_cluster_deleted"] is (mode != "cleanup-failure")
     if mode == "incomplete":
-        assert data["executed_family_count"] == 18
+        assert data["executed_family_count"] == 22
     if mode in {"success", "incomplete", "changed-inputs", "cleanup-failure"}:
-        assert len(data["ordinary_families"]) == len(data["native_projections"]) == 18
+        assert len(data["ordinary_families"]) == len(data["native_projections"]) == 22
         assert data["ordinary_families"][0]["resource"]["verbs"] == ["get", "list", "watch"]
         assert data["events"]["resource"]["verbs"] == ["get", "list", "watch"]
         assert data["events"]["known_reported_occurrences"] == 5

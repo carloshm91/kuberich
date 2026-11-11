@@ -1,5 +1,31 @@
 # Development checkpoint
 
+## Policy exploration implementation checkpoint — 2026-11-11 UTC
+
+A05 #80 is the active implementation issue. The validating-v1 thin spine passed
+actual owned HTTP/Pilot and kind discovery, Standard tables, details, policy and
+binding links, Back, stale-source/context refusal, forbidden reads and absence
+without version downgrade. The exact tested local command is:
+
+```sh
+uv run pytest tests/ui/test_admission_exploration.py -q --basetemp /tmp/kuberich-80-http-spine-2
+```
+
+Its nine cases passed in 11.59 seconds; the actual kind pair passed in 30.969
+seconds with unchanged inputs, sessions closed, generated kubeconfig unchanged
+and cluster/private-directory cleanup verified. Development source now includes
+all four policy/binding families at v1/v1beta1, bounded matching and parameter
+identities, exact-version current-name links, shared default payload concealment
+and narrow webhook/HPA/scheduling explanations. No parameter values are fetched
+and no enforcement simulator is claimed. After two public composition/version
+boundary corrections, all 23 families passed actual kind in 64.5607 seconds with
+326 unchanged inputs and complete cleanup. Four matching source-terminal cases
+passed in 41.71 seconds, the navigation cohort passed 304 cases, and 190 docs/site
+cases passed. Fresh installed terminals, complete coverage and normal hosted
+platform checks remain separate in [policy acceptance](acceptance/policy-exploration.md).
+Published packages remain 0.4.0; no publication occurs. Earlier checkpoint text
+below is retained history, including #79 implementation and verification attempts.
+
 ## HTTP benchmarks usable implementation checkpoint — 2026-11-10 UTC
 
 A04 #79 is the active implementation issue. Clean signed source

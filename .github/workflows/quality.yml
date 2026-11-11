@@ -271,7 +271,7 @@ jobs:
       - name: Verify historical metrics on Prometheus VictoriaMetrics and Thanos
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_history_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --docker /usr/bin/docker --evidence artifacts/metric-history/evidence.json
-      - name: Verify all nineteen curated families on an owned disposable cluster
+      - name: Verify all twenty-three curated families on an owned disposable cluster
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_curated_resources_kind --kind "$RUNNER_TEMP/kuberich-kind" --docker /usr/bin/docker --evidence artifacts/curated-resources/evidence.json
       - name: Verify pinned Helm reads disclosure rollback hooks and storage identities

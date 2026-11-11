@@ -1,4 +1,4 @@
-"""Controlled declarations and actual API/App contracts for the nineteen #232 families.
+"""Controlled declarations for nineteen #232 families and four A05 admission families.
 
 The VPA schema is an owned test CRD with no controller. Endpoint conditions and
 Events are authored fixtures accepted/read by the real apiserver, not observations
@@ -20,6 +20,8 @@ from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
 
+import yaml
+
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import KubeCatalog
 from kuberich.config.schema import Settings
@@ -34,8 +36,11 @@ from kuberich.domain.events import EventGroupMembers, EventOptions, event_fact, 
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition
 from kuberich.domain.resources import ApiResource, Discovery, ResourceRecord
 from kuberich.domain.tables import TABLE_ACCEPT
+from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.views import ViewStatus
 from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.curated_navigation import CuratedNavigator, CuratedOrigin
 from kuberich.services.ownership import finish_owned
 from kuberich.services.resources import ResourceReader
 from kuberich.ui.app import KubeRichApp
@@ -49,6 +54,7 @@ LINK_PATH = "/synthetic-curated-kind-private-path"
 VERIFY_SECONDS = 300
 READ_SECONDS = 15
 RAW_REPRESENTATION_BYTES = 1024 * 1024
+ADMISSION_GROUP = "admissionregistration.k8s.io"
 
 # Exact apiserver sources, rather than moving documentation, define this fixture.
 SOURCE_PINS = {
@@ -61,6 +67,8 @@ SOURCE_PINS = {
     "label_values": "https://github.com/kubernetes/kubernetes/blob/v1.36.4/staging/src/k8s.io/apimachinery/pkg/util/validation/validation.go#L134-L143",
     "events_validation": "https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/apis/core/validation/events.go",
     "endpoint_slice_lists": "https://github.com/kubernetes/kubernetes/blob/v1.36.4/staging/src/k8s.io/api/discovery/v1/types.go#L49-L63",
+    "admission_v1": "https://github.com/kubernetes/api/blob/9a6751a483334b2c0209afd37e790f2b37c5e524/admissionregistration/v1/types.go",
+    "admission_defaults": "https://github.com/kubernetes/kubernetes/blob/bb826b1d48562f110659e64e8ec444327433db95/pkg/apis/admissionregistration/v1/defaults.go",
 }
 
 
@@ -92,6 +100,10 @@ CASES = (
     FamilyCase("clusterroles", "rules", "1", "2"),
     FamilyCase("rolebindings", "users", "0", "2"),
     FamilyCase("clusterrolebindings", "users", "0", "2"),
+    FamilyCase("validatingadmissionpolicies", "validations", "1", "2"),
+    FamilyCase("validatingadmissionpolicybindings", "match-rules", "1", "2"),
+    FamilyCase("mutatingadmissionpolicies", "mutations", "1", "2"),
+    FamilyCase("mutatingadmissionpolicybindings", "match-rules", "1", "2"),
 )
 
 
@@ -211,7 +223,42 @@ def fixture_manifests(namespace: str, other_namespace: str) -> tuple[dict[str, A
                 "automountServiceAccountToken": False,
                 "runtimeClassName": global_name,
                 "priorityClassName": global_name,
-                "nodeSelector": {"curated.kind/absent-node": "true"},
+                "nodeSelector": {"curated.kind/absent-node": "true", "api-token": CANARY},
+                "affinity": {
+                    "nodeAffinity": {
+                        "requiredDuringSchedulingIgnoredDuringExecution": {
+                            "nodeSelectorTerms": [
+                                {
+                                    "matchExpressions": [
+                                        {
+                                            "key": "curated.kind/absent-node",
+                                            "operator": "In",
+                                            "values": ["true"],
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "preferredDuringSchedulingIgnoredDuringExecution": [
+                            {
+                                "weight": 1,
+                                "preference": {
+                                    "matchExpressions": [
+                                        {"key": "curated.kind/preferred", "operator": "Exists"}
+                                    ]
+                                },
+                            }
+                        ],
+                    }
+                },
+                "tolerations": [
+                    {
+                        "key": "curated.kind/isolated",
+                        "operator": "Equal",
+                        "value": "owned",
+                        "effect": "NoSchedule",
+                    }
+                ],
                 "terminationGracePeriodSeconds": 0,
                 "containers": [{"name": "app", "image": SHELL_IMAGE, "command": ["sleep", "3600"]}],
             },
@@ -391,6 +438,7 @@ def fixture_manifests(namespace: str, other_namespace: str) -> tuple[dict[str, A
                 scoped=False,
                 webhooks=webhooks,
             )
+    result.extend(admission_family_manifests(namespace))
     add("v1", "ConfigMap", "owned-parameters", data={"private": CANARY})
     add(
         "v1",
@@ -952,6 +1000,55 @@ async def verify_links(
     role = await reader.get(resources["roles"], "owned-a", namespace)
     details = curated_details(resources["roles"], role)
     assert any(isinstance(link.destination, AuthorizationDestination) for link in details.links)
+    admission_links = []
+    for plural in ("validatingadmissionpolicies", "mutatingadmissionpolicies"):
+        policy_resource = resources[plural]
+        binding_plural = plural.removesuffix("policies") + "policybindings"
+        binding_resource = resources[binding_plural]
+        policy, binding = records[plural][0], records[binding_plural][0]
+        await open_standard(app, policy_resource, namespace, records[plural])
+        app.standard_table.move_cursor(row=app.standard_table.get_row_index(required_uid(policy)))
+        screen = await open_details(app)
+        await choose_link(screen, pilot, "bindings")
+
+        def binding_ready(
+            resource: ApiResource = binding_resource, record: ResourceRecord = binding
+        ) -> bool:
+            return (
+                len(app.screen_stack) == 1
+                and app.state.scope is not None
+                and app.state.scope.resource == resource
+                and rows(app.standard_table) == (required_uid(record),)
+            )
+
+        await until(binding_ready)
+        bookmark = app.navigator.capture()
+        assert bookmark is not None and bookmark.curated is not None
+        screen = await open_details(app)
+        await choose_link(screen, pilot, "policy")
+
+        def policy_ready(
+            resource: ApiResource = policy_resource, record: ResourceRecord = policy
+        ) -> bool:
+            return (
+                len(app.screen_stack) == 1
+                and app.state.scope is not None
+                and app.state.scope.resource == resource
+                and rows(app.standard_table) == (required_uid(record),)
+            )
+
+        await until(policy_ready)
+        app.navigator.history_back()
+        await until(binding_ready)
+        restored = app.navigator.capture()
+        assert restored is not None and restored.curated == bookmark.curated
+        admission_links.append(
+            {
+                "api_version": policy_resource.api_version,
+                "policy_uid": policy.uid,
+                "binding_uid": binding.uid,
+            }
+        )
     return {
         "selected_pod_uid": pod.uid,
         "omitted_selector_admitted_as_all_namespace_pods": True,
@@ -961,6 +1058,7 @@ async def verify_links(
         "ingressclass_selected_namespace_ingress_uid": records["ingresses"][0].uid,
         "group_kind_only_parameters_actual_uid": records["configmaps"][0].uid,
         "role_authorization_intent_present": True,
+        "native_admission_policy_binding_links_and_back": admission_links,
     }
 
 
@@ -1130,6 +1228,497 @@ def required_uid(record: ResourceRecord) -> str:
 
 def rows(table: Any) -> tuple[str, ...]:
     return tuple(row.key.value for row in table.ordered_rows)
+
+
+def admission_family_manifests(namespace: str) -> tuple[dict[str, Any], ...]:
+    """Two native v1 objects per family, with inert and scoped matching constraints."""
+    namespace_name(namespace)
+    result: list[dict[str, Any]] = []
+    for ordinal, suffix in enumerate(("a", "b")):
+        labels = {"curated.kind/owned": namespace}
+        rules = [
+            {
+                "operations": ["CREATE"],
+                "apiGroups": ["unserved.curated.kind"],
+                "apiVersions": ["v" + str(index + 1)],
+                "resources": ["widgets"],
+                "scope": "Namespaced",
+            }
+            for index in range(ordinal + 1)
+        ]
+        for policy_kind in ("ValidatingAdmissionPolicy", "MutatingAdmissionPolicy"):
+            validating = policy_kind == "ValidatingAdmissionPolicy"
+            name = namespace + "-" + suffix
+            policy: dict[str, Any] = {
+                "apiVersion": ADMISSION_GROUP + "/v1",
+                "kind": policy_kind,
+                "metadata": {
+                    "name": name,
+                    "labels": labels,
+                    "annotations": {"curated.kind/private": CANARY},
+                },
+                "spec": {
+                    "matchConstraints": {
+                        "resourceRules": copy.deepcopy(rules),
+                        "namespaceSelector": {"matchLabels": labels},
+                    },
+                    "matchConditions": [{"name": "owned", "expression": "true"}],
+                },
+            }
+            if validating:
+                policy["spec"]["validations"] = [
+                    {"expression": repr(CANARY) + " != ''", "message": CANARY}
+                    for _ in range(ordinal + 1)
+                ]
+            else:
+                policy["spec"].update(
+                    reinvocationPolicy="Never" if ordinal == 0 else "IfNeeded",
+                    mutations=[
+                        {
+                            "patchType": "JSONPatch",
+                            "jsonPatch": {
+                                "expression": "[JSONPatch{op: 'add', path: '/metadata/labels/curated.kind~1private', value: "
+                                + repr(CANARY)
+                                + "}]"
+                            },
+                        }
+                        for _ in range(ordinal + 1)
+                    ],
+                )
+            binding = {
+                "apiVersion": policy["apiVersion"],
+                "kind": policy_kind + "Binding",
+                "metadata": copy.deepcopy(policy["metadata"]),
+                "spec": {
+                    "policyName": name,
+                    "matchResources": {
+                        "resourceRules": copy.deepcopy(rules),
+                        "namespaceSelector": {"matchLabels": labels},
+                    },
+                    **({"validationActions": ["Audit"]} if validating else {}),
+                },
+            }
+            result.extend((copy.deepcopy(policy), copy.deepcopy(binding)))
+    return tuple(result)
+
+
+def admission_spine_manifests(namespace: str) -> tuple[dict[str, Any], ...]:
+    """Inert native v1 declarations; the synthetic resource is never served or written."""
+    namespace_name(namespace)
+    labels = {"curated.kind/owned": namespace}
+    rule = {
+        "operations": ["CREATE"],
+        "apiGroups": ["unserved.curated.kind"],
+        "apiVersions": ["v1"],
+        "resources": ["widgets"],
+        "scope": "Namespaced",
+    }
+    metadata = {
+        "labels": labels,
+        "annotations": {"curated.kind/private": CANARY},
+    }
+    return (
+        {
+            "apiVersion": "v1",
+            "kind": "Namespace",
+            "metadata": {"name": namespace, "labels": labels},
+        },
+        {
+            "apiVersion": ADMISSION_GROUP + "/v1",
+            "kind": "ValidatingAdmissionPolicy",
+            "metadata": {"name": namespace + "-policy", **copy.deepcopy(metadata)},
+            "spec": {
+                "matchConstraints": {
+                    "resourceRules": [rule],
+                    "namespaceSelector": {"matchLabels": labels},
+                },
+                "validations": [{"expression": repr(CANARY) + " != ''", "message": CANARY}],
+            },
+        },
+        {
+            "apiVersion": ADMISSION_GROUP + "/v1",
+            "kind": "ValidatingAdmissionPolicyBinding",
+            "metadata": {"name": namespace + "-binding", **copy.deepcopy(metadata)},
+            "spec": {
+                "policyName": namespace + "-policy",
+                "validationActions": ["Audit"],
+                "matchResources": {"namespaceSelector": {"matchLabels": labels}},
+            },
+        },
+    )
+
+
+async def verify_admission_spine(
+    reader: ResourceReader,
+    catalog: KubeCatalog,
+    cluster: OwnedCluster,
+    *,
+    evidence_dir: Path,
+) -> dict[str, object]:
+    """Exercise the initial A05 native pair through existing public App/service ports."""
+    require_owned(cluster, reader, catalog)
+    namespace = "kuberich-admission-" + uuid4().hex[:10]
+    discovery = await reader.discover()
+    policy_resource, binding_resource = (
+        discovery.resolve(plural, group=ADMISSION_GROUP, version="v1")
+        for plural in ("validatingadmissionpolicies", "validatingadmissionpolicybindings")
+    )
+    assert not policy_resource.namespaced and not binding_resource.namespaced
+    assert not any(item.kind == "PodSecurityPolicy" for item in discovery.resources)
+    planned = admission_spine_manifests(namespace)
+    persist(evidence_dir, "admission-spine-manifests.json", planned)
+    for document in planned:
+        await create_document(reader, discovery, document)
+    policy = await reader.get(policy_resource, namespace + "-policy", None)
+    binding = await reader.get(binding_resource, namespace + "-binding", None)
+    assert policy.manifest["spec"]["failurePolicy"] == "Fail"
+    assert policy.manifest["spec"]["matchConstraints"]["matchPolicy"] == "Equivalent"
+    assert binding.manifest["spec"]["matchResources"]["matchPolicy"] == "Equivalent"
+    persist(
+        evidence_dir,
+        "admission-spine-native-observations.json",
+        {
+            "policy": policy.manifest,
+            "binding": binding.manifest,
+            "policy_descriptor": asdict(policy_resource),
+            "binding_descriptor": asdict(binding_resource),
+        },
+    )
+    app = KubeRichApp(
+        Settings(read_only=False),
+        logging.Logger("owned-admission-spine-kind", level=100),
+        catalog=catalog,
+        connection=ConnectionRequest(
+            kubeconfig=str(cluster.path),
+            context=cluster.context,
+            namespace=namespace,
+            timeout=READ_SECONDS,
+        ),
+    )
+    async with app.run_test(size=(100, 30)) as pilot:
+        await until(lambda: app.state.status is ViewStatus.LIVE)
+        await app.run_command("resource validatingadmissionpolicies." + ADMISSION_GROUP + "/v1")
+        await until(
+            lambda: (
+                app.state.scope is not None
+                and app.state.scope.resource == policy_resource
+                and app.state.status is ViewStatus.LIVE
+                and app.standard_table.display
+                and required_uid(policy) in rows(app.standard_table)
+            )
+        )
+        app.filter_input.value = namespace
+        await until(lambda: rows(app.standard_table) == (required_uid(policy),))
+        assert app.standard_table.get_cell(required_uid(policy), "validations").text == "1"
+        assert app.standard_table.get_cell(required_uid(policy), "failure-policy").text == "Fail"
+        assert app.check_action("edit", ()) is False
+        assert app.check_action("review_delete", ()) is False
+        marker = uuid4().hex
+        await write(
+            reader.session,
+            object_path(policy_resource, policy),
+            "PATCH",
+            {"metadata": {"annotations": {"curated.kind/watched": marker}}},
+        )
+        await until(
+            lambda: (
+                app.workspace.store.observation.snapshot is not None
+                and any(
+                    item.uid == policy.uid
+                    and item.manifest["metadata"].get("annotations", {}).get("curated.kind/watched")
+                    == marker
+                    for item in app.workspace.store.observation.snapshot.items
+                )
+            )
+        )
+        assert app.standard_table.selected_uid == policy.uid
+        screen = await open_details(app)
+        assert CANARY not in screen.viewer.text
+        await choose_link(screen, pilot, "bindings")
+        await until(
+            lambda: (
+                len(app.screen_stack) == 1
+                and app.state.scope is not None
+                and app.state.scope.resource == binding_resource
+                and app.state.status is ViewStatus.LIVE
+                and rows(app.standard_table) == (required_uid(binding),)
+            )
+        )
+        bookmark = app.navigator.capture()
+        assert bookmark is not None and bookmark.curated is not None
+        assert bookmark.curated.resource == binding_resource
+        screen = await open_details(app)
+        await choose_link(screen, pilot, "policy")
+        await until(
+            lambda: (
+                len(app.screen_stack) == 1
+                and app.state.scope is not None
+                and app.state.scope.resource == policy_resource
+                and app.state.status is ViewStatus.LIVE
+                and rows(app.standard_table) == (required_uid(policy),)
+            )
+        )
+        app.navigator.history_back()
+        await until(
+            lambda: (
+                app.state.scope is not None
+                and app.state.scope.resource == binding_resource
+                and rows(app.standard_table) == (required_uid(binding),)
+            )
+        )
+        restored = app.navigator.capture()
+        assert restored is not None and restored.curated == bookmark.curated
+        app.navigator.history_back()
+        await until(
+            lambda: (
+                app.state.scope is not None
+                and app.state.scope.resource == policy_resource
+                and rows(app.standard_table) == (required_uid(policy),)
+            )
+        )
+        assert app.standard_table.selected_uid == policy.uid
+        assert app.filter_input.value == namespace
+        app.save_screenshot(filename="admission-spine-owned-kind.svg", path=str(evidence_dir))
+    assert app.sessions.client is None and app.views.renderer.active_count == 0
+    assert app.workspace.ownership.close_complete and not app.workspace.ownership.subscription_count
+
+    def capture(record: ResourceRecord) -> CuratedOrigin:
+        return CuratedOrigin(
+            SessionIdentity(cluster.context, 0),
+            0,
+            binding_resource,
+            record.name,
+            required_uid(record),
+            None,
+            record.resource_version,
+        )
+
+    link = next(
+        link for link in curated_details(binding_resource, binding).links if link.key == "policy"
+    )
+    owner = CuratedNavigator(
+        reader.session,
+        discovery,
+        AccessPolicy(True),
+        lambda value: True,
+        selected_namespace=lambda: namespace,
+    )
+    try:
+        await write(
+            reader.session,
+            object_path(binding_resource, binding),
+            "PATCH",
+            {"metadata": {"annotations": {"curated.kind/changed": uuid4().hex}}},
+        )
+        try:
+            await owner.resolve(capture(binding), link)
+        except AppError as error:
+            assert "source changed" in str(error)
+        else:
+            raise AssertionError(
+                "Changed native binding resourceVersion admitted stale navigation."
+            )
+        current = await reader.get(binding_resource, binding.name, None)
+        assert current.resource_version != binding.resource_version and current.uid == binding.uid
+        await write(
+            reader.session,
+            object_path(binding_resource, current),
+            "DELETE",
+            {"apiVersion": "v1", "kind": "DeleteOptions", "preconditions": {"uid": current.uid}},
+        )
+
+        async def absent() -> bool | None:
+            try:
+                await reader.get(binding_resource, binding.name, None)
+            except HttpProblem as problem:
+                if problem.status == 404:
+                    return True
+                raise
+            return None
+
+        await observed(absent)
+        await create_document(reader, discovery, planned[-1])
+        replacement = await reader.get(binding_resource, binding.name, None)
+        assert replacement.uid != current.uid
+        try:
+            await owner.resolve(capture(current), link)
+        except AppError as error:
+            assert "source changed" in str(error)
+        else:
+            raise AssertionError("Recreated native binding admitted a previous UID's navigation.")
+    finally:
+        await owner.stop()
+        assert reader.session.api is not None
+
+    delegated = KubernetesSession(
+        catalog.select(
+            cluster.context,
+            ConnectionOverrides(
+                as_user="curated-kind-denied-user", as_groups=("system:authenticated",)
+            ),
+        ),
+        READ_SECONDS,
+    )
+    await delegated.open()
+    origin = capture(replacement)
+    owner = CuratedNavigator(
+        delegated,
+        discovery,
+        AccessPolicy(True),
+        lambda value: True,
+        selected_namespace=lambda: namespace,
+    )
+    try:
+        try:
+            await owner.resolve(origin, link)
+        except AppError as error:
+            assert "forbidden" in str(error)
+        else:
+            raise AssertionError("Actual RBAC-denied admission navigation unexpectedly succeeded.")
+    finally:
+        await owner.stop()
+        assert delegated.api is not None
+        await finish_owned(asyncio.create_task(delegated.close()))
+    return {
+        "api_version": policy_resource.api_version,
+        "policy_uid": policy.uid,
+        "binding_uid": binding.uid,
+        "server_default_failure_policy": "Fail",
+        "server_default_match_policy": "Equivalent",
+        "actual_list_watch_get": True,
+        "policy_binding_policy_links_and_back": True,
+        "policy_selection_and_filter_restored": True,
+        "source_payload_hidden": True,
+        "read_only_with_settings_false": True,
+        "actual_navigation_rbac_denial": 403,
+        "actual_source_resource_version_change_rejected": True,
+        "actual_source_uid_replacement_rejected": True,
+        "replacement_binding_uid": replacement.uid,
+        "removed_psp_absent_in_actual_discovery": True,
+        "owned_app_closed": True,
+        "owned_restricted_session_closed": delegated.api is None,
+    }
+
+
+async def verify_scheduling_inspection(
+    app: KubeRichApp,
+    pilot: Any,
+    reader: ResourceReader,
+    cluster: OwnedCluster,
+    pods: ApiResource,
+    pod: ResourceRecord,
+    namespace: str,
+    directory: Path,
+) -> dict[str, object]:
+    """Read actual Pod/Node declarations through normal inspection, including redaction."""
+    app.filter_input.value = ""
+    await app.run_command("pods " + namespace)
+    await until(
+        lambda: (
+            app.state.scope is not None
+            and app.state.scope.resource == pods
+            and app.state.status is ViewStatus.LIVE
+            and app.resources.display
+            and required_uid(pod) in rows(app.resources)
+        )
+    )
+    app.resources.move_cursor(row=app.resources.get_row_index(required_uid(pod)))
+    app.action_inspect_details()
+    await until(lambda: isinstance(app.screen, InspectionScreen) and app.screen.result is not None)
+    pod_screen = app.screen
+    assert isinstance(pod_screen, InspectionScreen) and pod_screen.result is not None
+    pod_documents = pod_screen.result.documents
+    pod_details = yaml.safe_load(pod_documents.details)
+    pod_sections = pod_details["schedulingDeclarations"]
+    assert {section["title"] for section in pod_sections} == {
+        "Scheduling identity (declared)",
+        "Node selectors (declared)",
+        "Affinity declarations",
+        "Tolerations (declared)",
+    }
+    current = await reader.get(pods, pod.name, namespace)
+    node_name = current.manifest["spec"].get("nodeName")
+    assert pod_details["scheduling"].get("nodeName") == node_name
+    assert node_name in (None, "")  # Deliberately unscheduled fixtures never fabricate placement.
+    assert any(
+        "nodeAffinity.required" in row[0] for section in pod_sections for row in section["rows"]
+    )
+    assert any(
+        "nodeAffinity.preferred" in row[0] for section in pod_sections for row in section["rows"]
+    )
+    assert any(
+        "curated.kind/isolated" in row for section in pod_sections for row in section["rows"]
+    )
+    assert current.manifest["spec"]["nodeSelector"]["api-token"] == CANARY
+    assert all(
+        CANARY not in text
+        for text in (
+            pod_documents.yaml,
+            pod_documents.managed_yaml,
+            pod_documents.details,
+            pod_screen.viewer.text,
+        )
+    )
+    await pilot.press("escape")
+    await wait_for_inspection_closed(app, pod_screen, directory, "scheduling-pod")
+
+    nodes = (await reader.discover()).resolve("nodes", group="", version="v1")
+    node_snapshot = await reader.list(nodes, None)
+    assert len(node_snapshot.items) == 1
+    node = node_snapshot.items[0]
+    assert node.name == cluster.name + "-control-plane"
+    await write(
+        reader.session,
+        object_path(nodes, node),
+        "PATCH",
+        {"metadata": {"uid": required_uid(node), "annotations": {"curated.kind/private": CANARY}}},
+    )
+    node = await reader.get(nodes, node.name, None)
+    assert node.manifest["metadata"]["annotations"]["curated.kind/private"] == CANARY
+    await app.run_command("nodes")
+    await until(
+        lambda: (
+            app.state.scope is not None
+            and app.state.scope.resource == nodes
+            and app.state.status is ViewStatus.LIVE
+            and app.standard_table.display
+            and rows(app.standard_table) == (required_uid(node),)
+        )
+    )
+    app.action_inspect_details()
+    await until(lambda: isinstance(app.screen, InspectionScreen) and app.screen.result is not None)
+    node_screen = app.screen
+    assert isinstance(node_screen, InspectionScreen) and node_screen.result is not None
+    node_documents = node_screen.result.documents
+    node_details = yaml.safe_load(node_documents.details)
+    node_sections = node_details["schedulingDeclarations"]
+    assert {section["title"] for section in node_sections} == {
+        "Node scheduling (declared)",
+        "Node taints (declared)",
+    }
+    assert all(
+        CANARY not in text
+        for text in (
+            node_documents.yaml,
+            node_documents.managed_yaml,
+            node_documents.details,
+            node_screen.viewer.text,
+        )
+    )
+    assert node_details["spec"].get("taints") == node.manifest["spec"].get("taints")
+    await pilot.press("escape")
+    await wait_for_inspection_closed(app, node_screen, directory, "scheduling-node")
+    return {
+        "pod_uid": pod.uid,
+        "node_uid": node.uid,
+        "reported_pod_node_name": node_name,
+        "pod_sections": [section["title"] for section in pod_sections],
+        "node_sections": [section["title"] for section in node_sections],
+        "required_preferred_affinity_and_toleration_observed": True,
+        "sensitive_selector_and_annotations_concealed": True,
+        "placement_separate_from_constraints": True,
+        "public_app_inspection_only": True,
+    }
 
 
 async def verify_app(
@@ -1345,6 +1934,10 @@ async def verify_app(
         )
         links = await verify_links(app, pilot, reader, resources, records, namespace)
         persist(directory, "curated-link-observations.json", links)
+        scheduling = await verify_scheduling_inspection(
+            app, pilot, reader, cluster, resources["pods"], records["pods"][0], namespace, directory
+        )
+        persist(directory, "scheduling-inspection-observations.json", scheduling)
         events = await verify_events(
             app,
             pilot,
@@ -1374,6 +1967,7 @@ async def verify_app(
         "compact_real_metadata_fallback": True,
         "actual_other_namespace_empty": True,
         "links": links,
+        "scheduling_inspection": scheduling,
         "owned_app_closed": True,
     }
 
@@ -1400,6 +1994,10 @@ async def verify_curated_resources(
         persist(evidence_dir, "api-progress.json", progress)
 
     async with asyncio.timeout(VERIFY_SECONDS):
+        admission_spine = await verify_admission_spine(
+            reader, catalog, cluster, evidence_dir=evidence_dir
+        )
+        checkpoint("native-validating-admission-spine-complete")
         discovery = await reader.discover()
         assert not any(
             item.group == VPA_GROUP and item.name == VPA_PLURAL for item in discovery.resources
@@ -1516,7 +2114,7 @@ async def verify_curated_resources(
             "horizontalpodautoscalers"
         ][0].uid
         checkpoint(
-            "all-eighteen-native-table-projections", count=len(native), hpa_v1_v2_same_uid=True
+            "all-twenty-two-native-table-projections", count=len(native), hpa_v1_v2_same_uid=True
         )
 
         delegated = KubernetesSession(
@@ -1572,9 +2170,29 @@ async def verify_curated_resources(
             evidence_dir,
             original_pod,
         )
-        checkpoint("all-nineteen-real-app-contracts-complete", count=19)
+        checkpoint("all-twenty-three-real-app-contracts-complete", count=23)
         return {
             **result,
+            "admission_spine": admission_spine,
+            "admission_discovered_versions": {
+                plural: [
+                    item.version
+                    for item in discovery.resources
+                    if item.group == ADMISSION_GROUP and item.name == plural
+                ]
+                for plural in (
+                    "validatingadmissionpolicies",
+                    "validatingadmissionpolicybindings",
+                    "mutatingadmissionpolicies",
+                    "mutatingadmissionpolicybindings",
+                )
+            },
+            "optional_scheduling_discovered": [
+                asdict(item)
+                for item in discovery.resources
+                if item.group == "scheduling.k8s.io" and item.kind in {"Workload", "PodGroup"}
+            ],
+            "optional_scheduling_semantics": "Generic discovery only; no curated alpha or scheduling verdict is qualified.",
             "native_projections": native,
             "actual_policy_rbac_denial": 403,
             "minimal_owned_vpa_crd_only": True,

@@ -286,7 +286,7 @@ def _mode(spec: dict[str, Any]) -> Value:
     return _text(_map(spec.get("updatePolicy")).get("updateMode", "Auto"))
 
 
-def _pdb_status(data: dict[str, Any], status: dict[str, Any]) -> Value:
+def _generation_status(data: dict[str, Any], status: dict[str, Any]) -> Value:
     generation = _number(_map(data.get("metadata")).get("generation"), maximum=2**63 - 1)
     observed = _number(status.get("observedGeneration"), maximum=2**63 - 1)
     if generation.sort is None or observed.sort is None:
@@ -344,7 +344,7 @@ def cells(resource: ApiResource, record: ResourceRecord) -> CuratedCells:
                 "current-healthy": _number(status.get("currentHealthy")),
                 "desired-healthy": _number(status.get("desiredHealthy")),
                 "expected-pods": _number(status.get("expectedPods")),
-                "status": _pdb_status(data, status),
+                "status": _generation_status(data, status),
             }
         case "PriorityClass":
             default = data.get("globalDefault", False)
@@ -591,6 +591,75 @@ def _policy_rows(policies: list[Any]) -> Iterable[tuple[str, ...]]:
             yield container, "Controlled resources omitted", "—", str(len(resources) - _LIMIT)
 
 
+def _hpa_behavior(raw: object) -> Iterable[tuple[str, ...]]:
+    if raw is None:
+        yield "Both", "behavior", "omitted", "Controller defaults are not observed"
+        return
+    if not isinstance(raw, dict):
+        yield "Both", "behavior", "—", "Malformed declaration"
+        return
+    for direction in ("scaleUp", "scaleDown"):
+        if direction not in raw:
+            yield direction, "rules", "omitted", "Controller defaults are not observed"
+            continue
+        rules = raw[direction]
+        if not isinstance(rules, dict):
+            yield direction, "rules", "—", "Malformed declaration"
+            continue
+        selection = rules.get("selectPolicy", "Max")
+        yield (
+            direction,
+            "selectPolicy",
+            selection if selection in ("Max", "Min", "Disabled") else "—",
+            "Declared" if "selectPolicy" in rules else "API default: Max",
+        )
+        yield (
+            direction,
+            "stabilizationWindowSeconds",
+            _number(rules["stabilizationWindowSeconds"], maximum=3600).text
+            if "stabilizationWindowSeconds" in rules
+            else "omitted",
+            "Declared"
+            if "stabilizationWindowSeconds" in rules
+            else "Controller default not observed",
+        )
+        if "tolerance" in rules:
+            tolerance = parse_quantity(rules["tolerance"])
+            yield (
+                direction,
+                "tolerance (ratio)",
+                _text(rules["tolerance"]).text if tolerance is not None else "—",
+                "Declared; serving and controller feature gates remain independent",
+            )
+        policies = rules.get("policies")
+        if policies is None:
+            yield direction, "policies", "omitted", "API defaults; no controller outcome inferred"
+        elif not isinstance(policies, list):
+            yield direction, "policies", "—", "Malformed declaration"
+        else:
+            yield direction, "policy count", str(len(policies)), "Declared list"
+            for index, policy in enumerate(policies[:_LIMIT]):
+                item = _map(policy)
+                policy_type = item.get("type")
+                value = _number(item.get("value"))
+                period = _number(item.get("periodSeconds"), maximum=1800)
+                valid = (
+                    policy_type in ("Pods", "Percent")
+                    and value.sort is not None
+                    and item["value"] > 0
+                    and period.sort is not None
+                    and item["periodSeconds"] > 0
+                )
+                yield (
+                    direction,
+                    f"policy {index}",
+                    f"{policy_type}: {value.text} per {period.text}s" if valid else "—",
+                    "Declared velocity constraint" if valid else "Malformed declaration",
+                )
+            if len(policies) > _LIMIT:
+                yield direction, "policies omitted", str(len(policies) - _LIMIT), "Input bound"
+
+
 def details(resource: ApiResource, record: ResourceRecord) -> CuratedDetails:
     """Publish declared facts and literal links, never controller/leader health claims."""
     family, data = require_curated_record(resource, record, FAMILIES)
@@ -612,9 +681,16 @@ def details(resource: ApiResource, record: ResourceRecord) -> CuratedDetails:
                 ("Field", "Value"),
                 (
                     (
+                        "Spec generation",
+                        _number(
+                            _map(data.get("metadata")).get("generation"), maximum=2**63 - 1
+                        ).text,
+                    ),
+                    (
                         "Observed generation",
                         _number(status.get("observedGeneration"), maximum=2**63 - 1).text,
                     ),
+                    ("Generation provenance", _generation_status(data, status).text),
                     (
                         "Minimum replicas provenance",
                         "Declared" if "minReplicas" in spec else "API default: 1",
@@ -645,6 +721,14 @@ def details(resource: ApiResource, record: ResourceRecord) -> CuratedDetails:
                     ("Complete identity", "Target", "Current", "Evidence"),
                     _hpa_metrics(spec, status),
                 )
+                result.section(
+                    "Scaling behavior (v2 declarations)",
+                    ("Direction", "Field", "Value", "Provenance"),
+                    _hpa_behavior(spec.get("behavior")),
+                )
+            notices.append(
+                "Replica recommendations, conditions and metrics are controller observations with generation provenance. Configured scaling rules are declarations, not timing guarantees or proof that scaling succeeded."
+            )
         case "VerticalPodAutoscaler":
             links.append(
                 _reference_link("target", "Target", spec.get("targetRef"), record.namespace)
@@ -747,6 +831,9 @@ def details(resource: ApiResource, record: ResourceRecord) -> CuratedDetails:
                         else "API default: IfHealthyBudget",
                     ),
                 ),
+            )
+            notices.append(
+                "Disruption counts are reported observations; stale or unknown generations do not establish current eviction allowance or that draining is safe."
             )
         case "PriorityClass":
             result.section(

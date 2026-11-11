@@ -33,7 +33,12 @@ from kuberich.domain.relationships import (
     RelationshipSnapshot,
 )
 from kuberich.domain.resource_queries import ResourceQuery
-from kuberich.domain.resources import ApiResource, Discovery, ResourceRecord
+from kuberich.domain.resources import (
+    ApiResource,
+    Discovery,
+    DiscoveryPreferenceUnavailable,
+    ResourceRecord,
+)
 from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.views import (
     USABLE_CONNECTIONS,
@@ -1325,6 +1330,10 @@ class WorkspaceService:
             self._watch = asyncio.create_task(
                 self._run_watch(selection.revision, client, scope, reader),
                 name="kuberich-resource-watch",
+            )
+        except DiscoveryPreferenceUnavailable as problem:
+            self._fail(
+                selection.revision, ConnectionProblem(ConnectionState.API_ERROR, str(problem))
             )
         except AppError:
             self._fail(

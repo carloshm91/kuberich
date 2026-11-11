@@ -61,6 +61,10 @@ READ_ONLY_FAMILIES = frozenset(
         ("", "limitranges"),
         ("admissionregistration.k8s.io", "mutatingwebhookconfigurations"),
         ("admissionregistration.k8s.io", "validatingwebhookconfigurations"),
+        ("admissionregistration.k8s.io", "validatingadmissionpolicies"),
+        ("admissionregistration.k8s.io", "validatingadmissionpolicybindings"),
+        ("admissionregistration.k8s.io", "mutatingadmissionpolicies"),
+        ("admissionregistration.k8s.io", "mutatingadmissionpolicybindings"),
         ("", "serviceaccounts"),
         ("rbac.authorization.k8s.io", "roles"),
         ("rbac.authorization.k8s.io", "clusterroles"),
@@ -127,12 +131,13 @@ def _sources() -> tuple[
     ...,
 ]:
     # Family modules depend on these records, not on the standard table registry.
-    from kuberich.domain import curated_access, curated_policy, curated_scaling
+    from kuberich.domain import curated_access, curated_admission, curated_policy, curated_scaling
 
     return (
         (curated_scaling.FAMILIES, curated_scaling.cells, curated_scaling.details),
         (curated_policy.FAMILIES, curated_policy.cells, curated_policy.details),
         (curated_access.FAMILIES, curated_access.cells, curated_access.details),
+        (curated_admission.FAMILIES, curated_admission.cells, curated_admission.details),
     )
 
 

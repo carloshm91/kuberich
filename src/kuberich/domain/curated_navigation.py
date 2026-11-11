@@ -87,8 +87,52 @@ class IngressClassName:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class PolicyBindingMatch:
+    """Current name declaration on one exact served binding schema, never a UID claim."""
+
+    api_version: str
+    resource: str
+    kind: str
+    name: str
+
+    def __post_init__(self) -> None:
+        api_segment(self.name)
+        if self.api_version not in {
+            "admissionregistration.k8s.io/v1",
+            "admissionregistration.k8s.io/v1beta1",
+        } or (self.resource, self.kind) not in {
+            ("validatingadmissionpolicybindings", "ValidatingAdmissionPolicyBinding"),
+            ("mutatingadmissionpolicybindings", "MutatingAdmissionPolicyBinding"),
+        }:
+            raise AppError("Policy binding selection requires a reviewed exact descriptor.")
+
+    def matches(self, resource: ApiResource, record: ResourceRecord) -> bool:
+        if (
+            (resource.api_version, resource.name, resource.kind)
+            != (self.api_version, self.resource, self.kind)
+            or resource.namespaced
+            or record.namespace is not None
+            or record.metadata_only
+        ):
+            return False
+        manifest = record.manifest
+        if (
+            manifest.get("apiVersion", resource.api_version) != resource.api_version
+            or manifest.get("kind", resource.kind) != resource.kind
+        ):
+            return False
+        spec = manifest.get("spec")
+        return isinstance(spec, dict) and spec.get("policyName") == self.name
+
+
 type CuratedPredicate = (
-    AllResources | LabelsMatch | PodRuntimeClass | IngressClassName | EventGroupMembers
+    AllResources
+    | LabelsMatch
+    | PodRuntimeClass
+    | IngressClassName
+    | PolicyBindingMatch
+    | EventGroupMembers
 )
 
 

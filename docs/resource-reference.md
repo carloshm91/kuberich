@@ -42,6 +42,10 @@ and permissions. Pods and namespaces also have dedicated workspace views.
 | `clusterroles`, `clusterrole` | rbac.authorization.k8s.io | Cluster | name, rules, resource-rules, nonresource-rules, aggregation-selectors, info, age |
 | `rolebindings`, `rb` | rbac.authorization.k8s.io | Namespace | namespace, name, role-kind, role, service-accounts, users, groups, info, age |
 | `clusterrolebindings`, `crb` | rbac.authorization.k8s.io | Cluster | name, role-kind, role, service-accounts, users, groups, info, age |
+| `validatingadmissionpolicies`, `validatingadmissionpolicy`, `vap` | admissionregistration.k8s.io | Cluster | name, match-rules, match-conditions, failure-policy, param-kind, validations, observation, info, age |
+| `validatingadmissionpolicybindings`, `validatingadmissionpolicybinding`, `vapb` | admissionregistration.k8s.io | Cluster | name, policy, actions, parameters, match-rules, info, age |
+| `mutatingadmissionpolicies`, `mutatingadmissionpolicy`, `map` | admissionregistration.k8s.io | Cluster | name, match-rules, match-conditions, failure-policy, param-kind, mutations, reinvocation, info, age |
+| `mutatingadmissionpolicybindings`, `mutatingadmissionpolicybinding`, `mapb` | admissionregistration.k8s.io | Cluster | name, policy, parameters, match-rules, info, age |
 
 ## Events
 

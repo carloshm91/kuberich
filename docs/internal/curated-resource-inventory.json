@@ -2416,5 +2416,123 @@
     "quality_run": 42274318207,
     "acceptance": "docs/internal/acceptance/curated-resources.md",
     "parity_claim": false
-  }
+  },
+  "extensions": [
+    {
+      "issue": 80,
+      "source_base": "871d95890ddc08afa79631a693317e3858a1631e",
+      "status": "implemented; final protected verification pending",
+      "parity_claim": false,
+      "remote_sources": [
+        {
+          "id": "kubernetes-api:admissionregistration/v1beta1/types.go",
+          "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/admissionregistration/v1beta1/types.go",
+          "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/admissionregistration/v1beta1/types.go",
+          "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+          "sha256": "3df8e2e9ff26979db33cd2709b37355d75a84834030096d720fb6c0ff3d95e26",
+          "bytes": 81163,
+          "retrieved_at": "2026-11-11T01:49:05.987981+00:00",
+          "status": "retrieved_for_issue_80",
+          "issue": 80
+        },
+        {
+          "id": "kubernetes-api:admissionregistration/v1alpha1/types.go",
+          "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/admissionregistration/v1alpha1/types.go",
+          "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/admissionregistration/v1alpha1/types.go",
+          "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+          "sha256": "b5a551a3de456332f0ccb3c5d7d6ab26ed9b636ceab76d2d20baeb0044fe2170",
+          "bytes": 54292,
+          "retrieved_at": "2026-11-11T01:49:06.234540+00:00",
+          "status": "retrieved_for_issue_80",
+          "issue": 80
+        },
+        {
+          "id": "kubernetes:admissionregistration/rest/storage_apiserver.go",
+          "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/bb826b1d48562f110659e64e8ec444327433db95/pkg/registry/admissionregistration/rest/storage_apiserver.go",
+          "resolved_url": "https://raw.githubusercontent.com/kubernetes/kubernetes/bb826b1d48562f110659e64e8ec444327433db95/pkg/registry/admissionregistration/rest/storage_apiserver.go",
+          "commit": "bb826b1d48562f110659e64e8ec444327433db95",
+          "sha256": "2d1c183f119727ed96c5e61aed78ce24db07791084b9e36b84d50ce8ad36aee3",
+          "bytes": 10353,
+          "retrieved_at": "2026-11-11T01:49:06.482692+00:00",
+          "status": "retrieved_for_issue_80",
+          "issue": 80
+        },
+        {
+          "id": "kubernetes:admissionregistration/v1/defaults.go",
+          "url": "https://raw.githubusercontent.com/kubernetes/kubernetes/bb826b1d48562f110659e64e8ec444327433db95/pkg/apis/admissionregistration/v1/defaults.go",
+          "resolved_url": "https://raw.githubusercontent.com/kubernetes/kubernetes/bb826b1d48562f110659e64e8ec444327433db95/pkg/apis/admissionregistration/v1/defaults.go",
+          "commit": "bb826b1d48562f110659e64e8ec444327433db95",
+          "sha256": "b575680d051219b413d1e1cf99914f602800d150ccec07fa97494f77b07d846c",
+          "bytes": 3836,
+          "retrieved_at": "2026-11-11T01:49:06.773954+00:00",
+          "status": "retrieved_for_issue_80",
+          "issue": 80
+        }
+      ],
+      "inherited_sources": [
+        "kubernetes-api:admissionregistration/v1/types.go",
+        "kubernetes-api:core/v1/types.go",
+        "kubernetes-api:autoscaling/v2/types.go"
+      ],
+      "new_families": [
+        {
+          "kind": "ValidatingAdmissionPolicy",
+          "resource": "validatingadmissionpolicies",
+          "group": "admissionregistration.k8s.io",
+          "versions": [
+            "v1",
+            "v1beta1"
+          ],
+          "namespaced": false,
+          "unsupported_versions": "metadata fallback; v1alpha1 not curated",
+          "links": "same selected version; exact policyName/current named policy, not historical UID continuity"
+        },
+        {
+          "kind": "ValidatingAdmissionPolicyBinding",
+          "resource": "validatingadmissionpolicybindings",
+          "group": "admissionregistration.k8s.io",
+          "versions": [
+            "v1",
+            "v1beta1"
+          ],
+          "namespaced": false,
+          "unsupported_versions": "metadata fallback; v1alpha1 not curated",
+          "links": "same selected version; exact policyName/current named policy, not historical UID continuity"
+        },
+        {
+          "kind": "MutatingAdmissionPolicy",
+          "resource": "mutatingadmissionpolicies",
+          "group": "admissionregistration.k8s.io",
+          "versions": [
+            "v1",
+            "v1beta1"
+          ],
+          "namespaced": false,
+          "unsupported_versions": "metadata fallback; v1alpha1 not curated",
+          "links": "same selected version; exact policyName/current named policy, not historical UID continuity"
+        },
+        {
+          "kind": "MutatingAdmissionPolicyBinding",
+          "resource": "mutatingadmissionpolicybindings",
+          "group": "admissionregistration.k8s.io",
+          "versions": [
+            "v1",
+            "v1beta1"
+          ],
+          "namespaced": false,
+          "unsupported_versions": "metadata fallback; v1alpha1 not curated",
+          "links": "same selected version; exact policyName/current named policy, not historical UID continuity"
+        }
+      ],
+      "scope": "Configured declarations and qualified observations; no policy/CEL/webhook/CNI/scheduler simulator, parameter-value fetcher or removed PSP probing. Optional Workload/PodGroup APIs retain discovery-driven generic behavior.",
+      "evidence": [
+        "docs/internal/acceptance/policy-exploration.md",
+        "tests/unit/test_curated_admission.py",
+        "tests/unit/test_admission_privacy.py",
+        "tests/unit/test_scheduling_declarations.py",
+        "tests/ui/test_admission_exploration.py",
+        "scripts/curated_kind.py"
+      ]
+    }
+  ]
 }

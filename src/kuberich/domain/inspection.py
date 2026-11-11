@@ -8,8 +8,10 @@ from typing import Any
 import yaml
 
 from kuberich.diagnostics.redaction import sanitize_text
+from kuberich.domain.admission_privacy import admission_document, concealed_admission_field
 from kuberich.domain.curated import CuratedDetails
 from kuberich.domain.resources import ResourceRecord
+from kuberich.domain.scheduling_declarations import scheduling_declarations
 from kuberich.domain.targets import ResourceTarget
 from kuberich.errors import AppError
 
@@ -23,10 +25,20 @@ _SENSITIVE = re.compile(
 )
 
 
-def redacted(value: Any, *, key: str = "", secret: bool = False, depth: int = 0) -> Any:
+def redacted(
+    value: Any,
+    *,
+    key: str = "",
+    secret: bool = False,
+    depth: int = 0,
+    admission: bool = False,
+) -> Any:
     """Conservative default: hide opaque payloads, annotations and inline execution data."""
     if depth > 64:
         raise AppError("Resource nesting exceeds the inspection limit.")
+    admission = admission or admission_document(value)
+    if admission and concealed_admission_field(key):
+        return REDACTED
     if key in {"annotations", "fieldsV1", "command", "args", "caBundle"} or _SENSITIVE.search(key):
         return REDACTED
     if secret and key in {"data", "stringData", "binaryData"}:
@@ -37,11 +49,13 @@ def redacted(value: Any, *, key: str = "", secret: bool = False, depth: int = 0)
         return {
             sanitize_text(str(name)): REDACTED
             if inline_env and name == "value"
-            else redacted(item, key=str(name), secret=secret, depth=depth + 1)
+            else redacted(item, key=str(name), secret=secret, depth=depth + 1, admission=admission)
             for name, item in value.items()
         }
     if isinstance(value, list):
-        return [redacted(item, secret=secret, depth=depth + 1) for item in value]
+        return [
+            redacted(item, secret=secret, depth=depth + 1, admission=admission) for item in value
+        ]
     if isinstance(value, str):
         if len(value) > 65536:
             raise AppError("Resource field exceeds the inspection text limit.")
@@ -130,6 +144,18 @@ def inspection_documents(
         details["spec"] = safe.get("spec", {})
     if curated is None and not metadata_fallback:
         details["status"] = safe.get("status", {})
+        scheduling = scheduling_declarations(safe)
+        if scheduling is not None:
+            details["schedulingDeclarations"] = [
+                {
+                    "title": section.title,
+                    "columns": list(section.columns),
+                    "rows": [list(row) for row in section.rows],
+                    "omittedRows": section.omitted_rows,
+                }
+                for section in scheduling.sections
+            ]
+            details["schedulingNotices"] = list(scheduling.notices)
     related = []
     for event in events:
         raw = event.manifest

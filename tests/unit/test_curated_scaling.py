@@ -22,6 +22,148 @@ def section(result, title):
     return next(item for item in result.sections if item.title == title)
 
 
+@pytest.mark.parametrize("version", ["v1", "v2"])
+@pytest.mark.parametrize(
+    "generation,observed,expected",
+    [
+        (4, 4, "Current generation"),
+        (4, 3, "Stale generation"),
+        (4, None, "Unknown generation"),
+        (None, 4, "Unknown generation"),
+        (True, 4, "Unknown generation"),
+    ],
+)
+def test_hpa_generation_provenance_does_not_replace_observed_replica_values(
+    version, generation, observed, expected
+):
+    resource = api("HorizontalPodAutoscaler", version)
+    item = record(
+        resource,
+        {"status": {"observedGeneration": observed, "currentReplicas": 2, "desiredReplicas": 3}},
+        metadata={"generation": generation},
+    )
+    result = details(resource, item)
+    assert dict(section(result, "Observation").rows)["Generation provenance"] == expected
+    assert values(resource, item)["current"].sort == 2
+    assert values(resource, item)["desired"].sort == 3
+    assert any("not timing guarantees" in notice for notice in result.notices)
+    assert any(part.title == "Scaling behavior (v2 declarations)" for part in result.sections) is (
+        version == "v2"
+    )
+
+
+def test_hpa_v2_behavior_preserves_declared_zero_disabled_policy_velocity_and_tolerance():
+    resource = api("HorizontalPodAutoscaler")
+    item = record(
+        resource,
+        {
+            "spec": {
+                "behavior": {
+                    "scaleUp": {
+                        "selectPolicy": "Disabled",
+                        "stabilizationWindowSeconds": 0,
+                        "tolerance": "0",
+                        "policies": [{"type": "Pods", "value": 4, "periodSeconds": 15}],
+                    },
+                    "scaleDown": {
+                        "selectPolicy": "Min",
+                        "stabilizationWindowSeconds": 3600,
+                        "tolerance": "0.05",
+                        "policies": [{"type": "Percent", "value": 100, "periodSeconds": 1800}],
+                    },
+                }
+            }
+        },
+    )
+    rows = section(details(resource, item), "Scaling behavior (v2 declarations)").rows
+    assert ("scaleUp", "selectPolicy", "Disabled", "Declared") in rows
+    assert ("scaleUp", "stabilizationWindowSeconds", "0", "Declared") in rows
+    assert ("scaleDown", "stabilizationWindowSeconds", "3600", "Declared") in rows
+    assert ("scaleUp", "policy 0", "Pods: 4 per 15s", "Declared velocity constraint") in rows
+    assert (
+        "scaleDown",
+        "policy 0",
+        "Percent: 100 per 1800s",
+        "Declared velocity constraint",
+    ) in rows
+    assert any(row[1:3] == ("tolerance (ratio)", "0") for row in rows)
+    assert any(row[1:3] == ("tolerance (ratio)", "0.05") for row in rows)
+
+
+@pytest.mark.parametrize(
+    "behavior",
+    [
+        None,
+        [],
+        {"scaleUp": None},
+        {"scaleDown": {}},
+        {"scaleUp": {"policies": None}},
+        {"scaleUp": {"policies": []}},
+        {"scaleUp": {"policies": "invalid"}},
+    ],
+)
+def test_hpa_missing_behavior_remains_distinct_from_zero_or_a_controller_timing_observation(
+    behavior,
+):
+    resource = api("HorizontalPodAutoscaler")
+    item = record(resource, {"spec": {"behavior": behavior}})
+    rows = section(details(resource, item), "Scaling behavior (v2 declarations)").rows
+    assert rows
+    assert any(
+        "omitted" in row[2] or "Malformed" in row[3] or row[1] == "policy count" for row in rows
+    )
+    assert all(row[2] != "0" for row in rows if row[1] == "stabilizationWindowSeconds")
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        None,
+        {},
+        {"type": "Future", "value": 1, "periodSeconds": 1},
+        {"type": "Pods", "value": 0, "periodSeconds": 1},
+        {"type": "Pods", "value": 1, "periodSeconds": 0},
+        {"type": "Pods", "value": True, "periodSeconds": 1},
+        {"type": "Pods", "value": 1, "periodSeconds": 1801},
+    ],
+)
+def test_hpa_malformed_velocity_and_other_behavior_fields_never_become_valid_constraints(policy):
+    resource = api("HorizontalPodAutoscaler")
+    item = record(
+        resource,
+        {
+            "spec": {
+                "behavior": {
+                    "scaleUp": {
+                        "selectPolicy": "Future",
+                        "stabilizationWindowSeconds": 3601,
+                        "tolerance": "-0.1",
+                        "policies": [policy],
+                    }
+                }
+            }
+        },
+    )
+    rows = section(details(resource, item), "Scaling behavior (v2 declarations)").rows
+    assert ("scaleUp", "selectPolicy", "—", "Declared") in rows
+    assert ("scaleUp", "stabilizationWindowSeconds", "—", "Declared") in rows
+    assert any(row[1:3] == ("tolerance (ratio)", "—") for row in rows)
+    assert ("scaleUp", "policy 0", "—", "Malformed declaration") in rows
+
+
+def test_hpa_excess_behavior_entries_share_the_existing_complete_detail_budget():
+    resource = api("HorizontalPodAutoscaler")
+    rules = {"policies": [{"type": "Pods", "value": 1, "periodSeconds": 1}] * 300}
+    item = record(resource, {"spec": {"behavior": {"scaleUp": rules, "scaleDown": rules}}})
+    result = details(resource, item)
+    assert (
+        sum(len(part.rows) for part in result.sections) + len(result.links)
+        <= MAX_CURATED_DETAIL_ROWS
+    )
+    assert len(json.dumps(asdict(result)).encode()) < MAX_CURATED_DETAIL_BYTES
+    assert any(part.omitted_rows for part in result.sections)
+
+
 @pytest.mark.parametrize("family", FAMILIES, ids=lambda item: item.kind)
 def test_real_families_publish_exact_columns_meaningful_details_and_no_unlisted_payload(family):
     resource = api(family.kind)

@@ -11,6 +11,8 @@ from kuberich.domain.registry import STANDARD_RESOURCES
 from kuberich.domain.resources import api_resource
 from tests.support.curated_access import KINDS as ACCESS_KINDS
 from tests.support.curated_access import access_manifest
+from tests.support.curated_admission import KINDS as ADMISSION_KINDS
+from tests.support.curated_admission import admission_manifest
 from tests.support.curated_policy import FAMILIES as POLICY_FAMILIES
 from tests.support.curated_policy import policy_manifest
 from tests.support.resources import descriptor, legacy_roots
@@ -52,6 +54,10 @@ def _variant(definition, ordinal):
         body = policy_manifest(definition.name, ordinal)
     elif resource.kind in ACCESS_KINDS:
         body = access_manifest(resource.kind, variant=ordinal)
+    elif definition.name in ADMISSION_KINDS:
+        body = admission_manifest(definition.name, variant=ordinal)
+        if definition.name.endswith("bindings"):
+            body["spec"]["policyName"] = "owned-a" if ordinal == 0 else "owned-b"
     else:
         body = standard_manifest(definition)
     if ordinal and definition.name == "horizontalpodautoscalers":
@@ -84,6 +90,7 @@ class CuratedResourcesApi:
         self,
         *,
         hpa_versions=("v2", "v1"),
+        admission_versions=("v1",),
         absent=frozenset(),
         denied_paths=None,
         empty=frozenset(),
@@ -92,6 +99,7 @@ class CuratedResourcesApi:
         descriptor_overrides=None,
     ):
         self.hpa_versions = hpa_versions
+        self.admission_versions = admission_versions
         self.absent, self.empty = set(absent), set(empty)
         self.denied_paths = dict(denied_paths or {})
         self.metadata_only, self.normalized = set(metadata_only), set(normalized)
@@ -105,6 +113,8 @@ class CuratedResourcesApi:
             versions = (
                 hpa_versions
                 if definition.name == "horizontalpodautoscalers"
+                else admission_versions
+                if definition.name in ADMISSION_KINDS
                 else (original.version,)
             )
             for version in versions:
@@ -180,6 +190,10 @@ class CuratedResourcesApi:
         if len(choices) > 1 and plural == "horizontalpodautoscalers" and version is None:
             return next(
                 resource for resource in choices if resource.version == self.hpa_versions[0]
+            )
+        if len(choices) > 1 and plural in ADMISSION_KINDS and version is None:
+            return next(
+                resource for resource in choices if resource.version == self.admission_versions[0]
             )
         assert len(choices) == 1
         return choices[0]

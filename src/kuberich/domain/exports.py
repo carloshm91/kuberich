@@ -18,6 +18,7 @@ from yaml.events import AliasEvent, CollectionStartEvent, ScalarEvent
 from yaml.nodes import MappingNode
 
 from kuberich.diagnostics.redaction import sanitize_text
+from kuberich.domain.admission_privacy import admission_document, concealed_admission_field
 from kuberich.domain.aggregate_logs import AggregateLine, LogSource
 from kuberich.domain.cluster_diagnostics import DiagnosticSnapshot
 from kuberich.domain.log_json import TIMESTAMP
@@ -368,7 +369,10 @@ def _safe_text(text: str) -> str:
     return sanitize_text(text, allow_newlines=True)
 
 
-def _redact(value: Any, *, key: str = "", secret: bool = False) -> Any:
+def _redact(value: Any, *, key: str = "", secret: bool = False, admission: bool = False) -> Any:
+    admission = admission or admission_document(value)
+    if admission and concealed_admission_field(key):
+        return REDACTED
     if key in {"annotations", "fieldsV1", "command", "args", "caBundle"} or _SENSITIVE.search(key):
         return REDACTED
     if secret and key in {"data", "stringData", "binaryData"}:
@@ -381,11 +385,11 @@ def _redact(value: Any, *, key: str = "", secret: bool = False) -> Any:
         return {
             _safe_text(name): REDACTED
             if inline and name == "value"
-            else _redact(item, key=name, secret=secret)
+            else _redact(item, key=name, secret=secret, admission=admission)
             for name, item in value.items()
         }
     if isinstance(value, list):
-        return [_redact(item, secret=secret) for item in value]
+        return [_redact(item, secret=secret, admission=admission) for item in value]
     return _safe_text(value) if isinstance(value, str) else value
 
 

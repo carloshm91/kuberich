@@ -1,5 +1,6 @@
 """Declared collection predicates keep literal identity and exact API schemas."""
 
+import json
 from dataclasses import FrozenInstanceError, replace
 
 import pytest
@@ -21,7 +22,7 @@ from kuberich.domain.relationships import (
     structured_selector,
 )
 from kuberich.domain.resource_queries import ResourceQuery
-from kuberich.domain.resources import ApiResource, resource_record
+from kuberich.domain.resources import ApiResource, ResourceRecord, resource_record
 from kuberich.errors import AppError
 
 PODS = ApiResource("", "v1", "pods", "Pod", True, frozenset({"get", "list"}))
@@ -126,3 +127,69 @@ def test_declared_references_and_collection_bookmarks_preserve_exact_scope_and_q
     bookmark = ResolvedCollectionBookmark(PODS, "team", destination.predicate, query)
     assert bookmark.resource is PODS and bookmark.namespace == "team" and bookmark.query is query
     assert bookmark.predicate.matches(PODS, record(labels={"app": "owned"}))
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {},
+        {"group": "other.example"},
+        {"version": "v1beta1"},
+        {"name": "other"},
+        {"kind": "Other"},
+        {"namespaced": True},
+    ],
+)
+def test_policy_binding_membership_requires_full_exact_cluster_descriptor(change):
+    from kuberich.domain.curated_navigation import PolicyBindingMatch
+
+    resource = ApiResource(
+        "admissionregistration.k8s.io",
+        "v1",
+        "validatingadmissionpolicybindings",
+        "ValidatingAdmissionPolicyBinding",
+        False,
+        PODS.verbs,
+    )
+    raw = {
+        "apiVersion": resource.api_version,
+        "kind": resource.kind,
+        "metadata": {"name": "binding", "uid": "binding-uid"},
+        "spec": {"policyName": "owned.policy"},
+    }
+    supplied = resource_record(resource, raw)
+    predicate = PolicyBindingMatch(
+        resource.api_version, resource.name, resource.kind, "owned.policy"
+    )
+    assert predicate.matches(replace(resource, **change), supplied) is (not change)
+    assert not predicate.matches(resource, replace(supplied, metadata_only=True))
+    assert not predicate.matches(resource, replace(supplied, namespace="team"))
+    for invalid in (None, [], {}, {"policyName": "owned.policy-other"}):
+        raw["spec"] = invalid
+        assert not predicate.matches(resource, resource_record(resource, raw))
+    for field in ("apiVersion", "kind"):
+        mutated = {**raw, field: "Other"}
+        mismatched = ResourceRecord(
+            supplied.name, supplied.uid, None, None, None, json.dumps(mutated).encode()
+        )
+        assert not predicate.matches(resource, mismatched)
+
+
+@pytest.mark.parametrize("invalid", ["", "../owned", "Upper", "a" * 254])
+def test_policy_binding_predicate_rejects_clipped_or_invalid_policy_identity(invalid):
+    from kuberich.domain.curated_navigation import PolicyBindingMatch
+
+    with pytest.raises(AppError):
+        PolicyBindingMatch(
+            "admissionregistration.k8s.io/v1",
+            "validatingadmissionpolicybindings",
+            "ValidatingAdmissionPolicyBinding",
+            invalid,
+        )
+
+
+def test_policy_binding_predicate_rejects_unreviewed_interpretation():
+    from kuberich.domain.curated_navigation import PolicyBindingMatch
+
+    with pytest.raises(AppError, match="reviewed exact descriptor"):
+        PolicyBindingMatch("other.example/v1", "bindings", "Binding", "owned")

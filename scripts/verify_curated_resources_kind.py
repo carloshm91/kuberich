@@ -1,4 +1,4 @@
-"""Qualify nineteen curated families on one newly created, verified disposable kind."""
+"""Qualify twenty-three curated families on one verified disposable kind."""
 
 from __future__ import annotations
 
@@ -148,7 +148,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         result["private_directory_deleted"] = not cluster.directory.exists()
         if failure is not None:
             raise failure
-        if result["executed_family_count"] != 19 or not result["private_directory_deleted"]:
+        if result["executed_family_count"] != 23 or not result["private_directory_deleted"]:
             raise AssertionError("Required family coverage or owned private cleanup failed.")
         if input_hashes(root) != before:
             raise AssertionError("Qualification source inputs changed during the actual trial.")

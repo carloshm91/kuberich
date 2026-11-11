@@ -31,6 +31,10 @@ from tests.support.workspace import wait_for
 
 CURATED = tuple(definition for definition in STANDARD_RESOURCES if definition.curated)
 CASES = {
+    "validatingadmissionpolicies": ("validations", "1", "2", (0, 1)),
+    "validatingadmissionpolicybindings": ("match-rules", "1", "2", (0, 1)),
+    "mutatingadmissionpolicies": ("mutations", "1", "2", (0, 1)),
+    "mutatingadmissionpolicybindings": ("match-rules", "1", "2", (0, 1)),
     "horizontalpodautoscalers": ("desired", "2", "10", (0, 1)),
     "verticalpodautoscalers": ("recommended-containers", "1", "10", (0, 1)),
     "poddisruptionbudgets": ("current-healthy", "2", "10", (0, 1)),

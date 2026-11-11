@@ -227,3 +227,49 @@ def test_invalid_manifest_values_have_owned_errors(value: object) -> None:
     with pytest.raises(AppError) as error:
         resource_record(pod_resource(), data)
     assert "opaque-sensitive" not in str(error.value)
+
+
+@pytest.mark.parametrize(
+    "advertised,issues,blocked",
+    [
+        (("v1", "v1beta1"), (("policy.example/v1", "forbidden", 403),), True),
+        (("v1", "v1beta1"), (("policy.example/v1", "unavailable", 500),), True),
+        (("v1", "v1beta1"), (("policy.example/v1", "invalid", None),), True),
+        (("v1", "v1beta1"), (("policy.example/v1", "unavailable", 404),), False),
+        (("v1", "v1beta1"), (), False),
+        (("v1beta1", "v1"), (("policy.example/v1", "forbidden", 403),), False),
+        (("v1", "v1beta1"), (("other.example/v1", "forbidden", 403),), False),
+    ],
+)
+def test_single_discovery_catalogue_retains_advertised_preference_and_refuses_denied_automatic_downgrade(
+    advertised, issues, blocked
+):
+    from kuberich.domain.resources import ApiResource, Discovery, DiscoveryIssue
+
+    beta = ApiResource(
+        "policy.example",
+        "v1beta1",
+        "policies",
+        "Policy",
+        False,
+        frozenset({"get", "list"}),
+        ("policy",),
+    )
+    discovery = Discovery(
+        (beta,),
+        tuple(DiscoveryIssue(*issue) for issue in issues),
+        tuple("policy.example/" + version for version in advertised),
+    )
+    assert discovery.preferred_available(beta) is (not blocked)
+    assert discovery.preferred_resources == (() if blocked else (beta,))
+    for name in ("policies", "policy"):
+        if blocked:
+            with pytest.raises(AppError, match="Higher-preference"):
+                discovery.find(name, group=beta.group)
+            with pytest.raises(AppError, match="Higher-preference"):
+                discovery.resolve(name)
+        else:
+            assert discovery.find(name, group=beta.group) is beta
+            assert discovery.resolve(name) is beta
+        assert discovery.find(name, group=beta.group, version="v1beta1") is beta
+        assert discovery.resolve(name, version="v1beta1") is beta

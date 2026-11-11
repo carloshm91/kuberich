@@ -142,3 +142,135 @@ def test_malformed_pod_and_event_reference_and_large_events_keep_resource_detail
 
 def test_match_cap_bounds_memory_for_large_ordinary_documents():
     assert len(text_matches("x" * 20000, "x")) == 10000
+
+
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "ValidatingAdmissionPolicy",
+        "MutatingAdmissionPolicy",
+        "ValidatingAdmissionPolicyBinding",
+        "MutatingAdmissionPolicyBinding",
+        "ValidatingWebhookConfiguration",
+        "MutatingWebhookConfiguration",
+    ],
+)
+@pytest.mark.parametrize("version", ["v1", "v1beta1", "v1alpha1", "future"])
+def test_admission_payload_concealment_precedes_default_yaml_managed_copy_and_details(
+    kind, version
+):
+    canary = "SYNTHETIC_ADMISSION_FREEFORM_PAYLOAD"
+    raw = {
+        "apiVersion": "admissionregistration.k8s.io/" + version,
+        "kind": kind,
+        "metadata": {"name": "owned", "uid": "owned-uid"},
+        "spec": {
+            "policyName": "owned-policy",
+            "validations": [{"expression": canary, "message": canary, "messageExpression": canary}],
+            "variables": [{"name": "declared", "expression": canary}],
+            "matchConditions": [{"name": "declared", "expression": canary}],
+            "auditAnnotations": [{"key": "declared", "valueExpression": canary}],
+            "mutations": [
+                {"patchType": "ApplyConfiguration", "applyConfiguration": {"expression": canary}},
+                {"patchType": "JSONPatch", "jsonPatch": {"expression": canary, "patch": canary}},
+            ],
+        },
+        "status": {
+            "conditions": [{"type": "Ready", "status": "True", "message": canary}],
+            "typeChecking": {
+                "expressionWarnings": [{"fieldRef": "spec.validations[0]", "warning": canary}]
+            },
+        },
+        "webhooks": [
+            {
+                "name": "declared.webhook",
+                "clientConfig": {
+                    "url": canary,
+                    "caBundle": canary,
+                    "service": {"name": "owned-service", "path": canary},
+                },
+                "matchConditions": [{"name": "declared", "expression": canary}],
+            }
+        ],
+    }
+    original = copy.deepcopy(raw)
+    documents = inspection_documents(raw, (), target())
+    assert raw == original
+    for text in (documents.yaml, documents.managed_yaml, documents.details):
+        assert canary not in text
+        assert REDACTED in text
+    safe = yaml.safe_load(documents.yaml)
+    assert safe["spec"]["policyName"] == "owned-policy"
+    assert safe["spec"]["mutations"][0]["patchType"] == "ApplyConfiguration"
+    assert safe["webhooks"][0]["clientConfig"]["service"]["name"] == "owned-service"
+
+
+@pytest.mark.parametrize(
+    "identity",
+    [
+        {},
+        {"apiVersion": "other.example/v1", "kind": "ValidatingAdmissionPolicy"},
+        {"apiVersion": "admissionregistration.k8s.io/v1", "kind": "Other"},
+        {"apiVersion": None, "kind": "ValidatingAdmissionPolicy"},
+    ],
+)
+def test_admission_concealment_preserves_other_resources_intentional_plain_fields(identity):
+    plain = {
+        "expression": "plain-expression",
+        "message": "plain-message",
+        "url": "https://owned.example/plain",
+        "path": "/plain",
+    }
+    safe = redacted({**identity, "spec": plain})
+    assert safe["spec"] == plain
+
+
+def test_malformed_admission_kind_is_not_treated_as_a_reviewed_schema():
+    raw = {
+        "apiVersion": "admissionregistration.k8s.io/v1",
+        "kind": [],
+        "spec": {"expression": "plain"},
+    }
+    assert redacted(raw)["spec"] == {"expression": "plain"}
+
+
+@pytest.mark.parametrize("kind", ["Pod", "Node"])
+def test_existing_inspection_composes_bounded_scheduling_declarations_without_losing_original_fields(
+    kind,
+):
+    raw = {
+        "apiVersion": "v1",
+        "kind": kind,
+        "metadata": {},
+        "spec": {
+            "nodeName": "observed-node",
+            "serviceAccountName": "default",
+            "priorityClassName": "owned-priority",
+            "nodeSelector": {"zone": "owned"},
+            "tolerations": [{"key": "dedicated", "operator": "Exists", "effect": "NoSchedule"}],
+            "taints": [{"key": "dedicated", "value": "owned", "effect": "NoSchedule"}],
+        },
+    }
+    result = yaml.safe_load(inspection_documents(raw, (), target()).details)
+    assert "schedulingDeclarations" in result and result["schedulingNotices"]
+    serialized = str(result["schedulingDeclarations"])
+    assert "declared" in serialized and "dedicated" in serialized
+    if kind == "Pod":
+        assert result["scheduling"]["nodeName"] == "observed-node"
+        assert result["scheduling"]["serviceAccountName"] == "default"
+    else:
+        assert result["spec"]["taints"][0]["key"] == "dedicated"
+
+
+def test_scheduling_projection_cannot_reintroduce_a_concealed_selector_value():
+    marker = "SYNTHETIC_LABEL_VALUE_80"
+    raw = {
+        "apiVersion": "v1",
+        "kind": "Pod",
+        "metadata": {},
+        "spec": {"nodeSelector": {"token": marker}, "containers": []},
+    }
+    result = inspection_documents(raw, (), target())
+    for text in (result.yaml, result.managed_yaml, result.details):
+        assert marker not in text
+    assert "schedulingDeclarations" in result.details

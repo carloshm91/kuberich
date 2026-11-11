@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Explore discovered admission policies and bindings with typed columns, bounded declared constraints and captured policy/binding links; qualify webhook, scaling and scheduling observations without simulating enforcement ([#80](https://github.com/carloshm91/kuberich/issues/80)).
+
 - Run explicitly confirmed HTTP benchmarks against one Service/forward backend with an optional Vegeta executable, conservative load limits, cancellation and private browsable local results ([#79](https://github.com/carloshm91/kuberich/issues/79)).
 
 - Review and permanently add an ephemeral debug container to a selected Pod, inspect its remote state and explicitly attach through the embedded terminal ([#78](https://github.com/carloshm91/kuberich/issues/78)).
