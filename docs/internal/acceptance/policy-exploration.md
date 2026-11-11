@@ -213,6 +213,32 @@ restart and cleanup assertions remain intact. The affected UI cohort passed
 17 cases in 14.82 seconds; Ruff and strict types passed. No sleeps, larger
 deadlines or unchanged retry were substituted for this correction.
 
+## Complete Fast/native evidence and changelog correction
+
+Application run
+[42946717824](https://github.com/carloshm91/kuberich/actions/runs/42946717824)
+on `2219299c4edb1fc40c4e9a6e17723af2068b9faf` passed the complete Fast selection:
+11,787 passed and one skipped in 530.77 seconds, within the unchanged limit.
+All four native jobs passed. Independent audits verified their exact 462 build
+inputs, provider/archive digests and 24 retained PTY/ANSI restoration receipts,
+with actual complete/cancel/missing-tool outcomes and owned cleanup. These are
+ordinary-PR native checks; their runtime qualification flag remains false.
+
+The 16 source parts completed with 12 passing and four reporting the same single
+changelog style error: the new entry had 26 visible words against the existing
+25-word limit. Each failed part otherwise passed 3,486 tests with one skip.
+The entry is now shorter, and all five changelog-style cases pass in 0.74
+seconds. The rule, source code and test expectations remain unchanged.
+
+Root assembled Linux Python 3.12 coverage diagnostically from all four original,
+authenticated part archives using the unmodified combination, runtime, coverage
+and changed-line tools. It verified source/nonce/arc-union controls, no exclusions
+and all 320 production modules: 44,619/45,303 lines (98.49%), 13,084/13,760
+branches (95.09%), all 133 critical modules at 100%, and 575/575 changed executable
+lines (100%). Original failed JUnit/statuses remain intact and the diagnostic
+receipt explicitly sets source qualification false. No passing source receipt
+was fabricated; this failed run still requires a genuine corrected-head matrix.
+
 ## Remaining qualification at this source freeze
 
 The ordinary 27-job PR matrix, complete independent production/changed-line

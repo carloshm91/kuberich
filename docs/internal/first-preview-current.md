@@ -32,7 +32,11 @@ contract, and 246 corrected boundary cases pass with 100% helper coverage;
 original failures remain retained. A later Fast attempt exposed a benchmark
 browser test that advanced before a canceled confirmation's owned callback
 retired. The public busy guard and a held-callback control preserve the original
-deadline; all 17 affected UI cases pass. A complete corrected hosted matrix is
+deadline; all 17 affected UI cases pass. The next hosted run passed the complete
+Fast selection (11,787 passed, one skipped) and all four native jobs/audits. Its
+source parts reported only a 26-word changelog entry against the existing
+25-word limit; the shortened entry passes all five style checks. Diagnostic
+coverage found no additional blocker, but a complete corrected hosted matrix is
 still required.
 Published packages remain 0.4.0; no publication occurs. Earlier checkpoint text
 below is retained history, including #79 implementation and verification attempts.
