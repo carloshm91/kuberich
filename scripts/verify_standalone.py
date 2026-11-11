@@ -321,6 +321,13 @@ def helm_catalog(host: Host, directory: Path, evidence: Path) -> dict[str, Any]:
     def command(argv: list[str], child_environment: dict[str, str]) -> list[str]:
         wrapped = host.command(argv, child_environment, tty=True)
         if host.linux:
+            try:
+                position = wrapped.index("run") + 1
+            except ValueError:
+                raise ValueError(
+                    "The native Helm host did not provide an owned Docker run."
+                ) from None
+            wrapped[position:position] = ["--user", f"{os.getuid()}:{os.getgid()}"]
             return wrapped
         # Darwin's sandbox argv inherits its environment. Assign only the child's
         # owned paths before entering that sandbox; keep the controller separate.

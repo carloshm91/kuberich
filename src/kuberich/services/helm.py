@@ -45,7 +45,6 @@ from kuberich.domain.processes import ProcessCommand
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.helm_catalog import HelmCatalogService
-from kuberich.services.helm_lifecycle import HelmLifecycle
 from kuberich.services.ownership import finish_owned
 
 MAX_OPERATION_SECONDS = 120.0
@@ -69,6 +68,8 @@ class HelmService:
         adapter: HelmAdapterPort | None = None,
         catalog_directory: Path | None = None,
     ) -> None:
+        from kuberich.services.helm_lifecycle import HelmLifecycle
+
         self.client, self.policy, self.settings, self.current = client, policy, settings, current
         self._client = client
         self._adapter = adapter or HelmAdapter(client, policy, settings, environment, directory)

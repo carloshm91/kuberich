@@ -11,7 +11,6 @@ from dataclasses import dataclass, field
 from pathlib import PurePosixPath
 from typing import Any
 
-from kuberich.domain.editing import parse_manifest, parse_manifest_documents
 from kuberich.domain.helm_catalog import (
     MAX_CHART_BYTES,
     MAX_CHART_DEPTH,
@@ -84,6 +83,8 @@ class _ExpandedReader(io.RawIOBase):
 
 
 def values_mapping(data: bytes) -> dict[str, Any]:
+    from kuberich.domain.editing import parse_manifest
+
     if not isinstance(data, bytes) or not 1 <= len(data) <= MAX_VALUES_BYTES:
         raise AppError("Helm values require a bounded UTF-8 YAML mapping.")
     try:
@@ -141,6 +142,8 @@ def _schema(data: bytes) -> None:
 
 
 def _yaml(data: bytes) -> dict[str, Any]:
+    from kuberich.domain.editing import parse_manifest_documents
+
     try:
         values = parse_manifest_documents(data, max_bytes=MAX_VALUES_BYTES, max_documents=1)
         if len(values) != 1:

@@ -40,6 +40,37 @@ def test_missing_controller_docker_is_an_explicit_failure(monkeypatch, tmp_path)
         verify_standalone.Host(tmp_path, tmp_path, tmp_path)
 
 
+def test_helm_native_editor_uses_controller_uid_without_changing_other_host_cohorts(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(verify_standalone.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(verify_standalone.shutil, "which", lambda name: "/owned/docker")
+    monkeypatch.setattr(
+        verify_standalone,
+        "capture_docker",
+        lambda executable: {"DOCKER_HOST": "unix:///owned.sock"},
+    )
+    monkeypatch.setattr(verify_standalone.os, "getuid", lambda: 1234)
+    monkeypatch.setattr(verify_standalone.os, "getgid", lambda: 5678)
+    host = verify_standalone.Host(tmp_path / "bundle", tmp_path, tmp_path)
+    captured = []
+
+    class ReachedTerminalBoundary(Exception):
+        pass
+
+    def terminal(command, directory, evidence, *, wrap, environment, controller_environment):
+        captured.extend(wrap(command, {"HOME": str(tmp_path / "owned-home")}))
+        raise ReachedTerminalBoundary
+
+    monkeypatch.setattr(verify_standalone, "terminal_helm_catalog", terminal)
+    with pytest.raises(ReachedTerminalBoundary):
+        verify_standalone.helm_catalog(host, tmp_path / "helm", tmp_path)
+    position = captured.index("run") + 1
+    assert captured[position : position + 2] == ["--user", "1234:5678"]
+    assert "--pid=host" not in captured
+    assert "--user" not in host.command([host.executable], {}, tty=True)
+
+
 def test_macos_shell_delegates_do_not_allow_outside_interpreters_or_source(monkeypatch, tmp_path):
     monkeypatch.setattr(verify_standalone.platform, "system", lambda: "Darwin")
     host = verify_standalone.Host(tmp_path / "bundle", tmp_path, tmp_path)

@@ -8,7 +8,6 @@ from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
-from kuberich.domain.editing import parse_manifest, parse_manifest_documents
 from kuberich.domain.helm import (
     MAX_HELM_OUTPUT_BYTES,
     MAX_HELM_RENDER_BYTES,
@@ -155,6 +154,8 @@ def digest_text(value: str) -> str:
 
 def values_bytes(data: bytes) -> bytes:
     """A complete bounded JSON-compatible YAML mapping, never parser source excerpts."""
+    from kuberich.domain.editing import parse_manifest
+
     parse_manifest(data)
     return data
 
@@ -258,6 +259,8 @@ def rendered_release(
 
 
 def manifest_objects(data: bytes) -> tuple[dict[str, Any], ...]:
+    from kuberich.domain.editing import parse_manifest_documents
+
     if not data.strip():
         return ()
     return parse_manifest_documents(data, max_bytes=MAX_HELM_OUTPUT_BYTES, max_documents=256)

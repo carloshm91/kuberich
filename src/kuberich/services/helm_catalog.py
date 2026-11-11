@@ -15,7 +15,6 @@ from platformdirs import user_state_path
 
 from kuberich.adapters.helm_catalog_files import CatalogFiles, CatalogReceipt
 from kuberich.adapters.helm_catalog_http import CatalogBody, CatalogHttp
-from kuberich.domain.editing import parse_manifest_documents
 from kuberich.domain.helm_archive import inspect_chart_package
 from kuberich.domain.helm_catalog import (
     MAX_CATALOG_ENTRIES,
@@ -46,6 +45,8 @@ from kuberich.services.resources import parse_owned
 
 
 def _index(repository: HelmRepository, data: bytes) -> tuple[ChartVersion, ...]:
+    from kuberich.domain.editing import parse_manifest_documents
+
     try:
         values = parse_manifest_documents(data, max_bytes=MAX_INDEX_BYTES, max_documents=1)
         if len(values) != 1 or values[0].get("apiVersion") != "v1":
