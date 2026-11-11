@@ -663,7 +663,14 @@ async def test_active_terminal_drains_before_client_release_and_preserves_remote
             else:
                 await pilot.press("ctrl+q")
             if stop != "quit":
-                await wait_for(lambda: app.ephemeral_debug_manager.active_count == 0)
+                # Service retirement precedes the screen's final cleanup callback.
+                await wait_for(
+                    lambda: (
+                        app.ephemeral_debug_manager.active_count == 0
+                        and app.processes.active_count == 0
+                        and app.retained_ephemeral_debug_view_count == 0
+                    )
+                )
                 assert app.processes.active_count == 0
                 assert app.retained_ephemeral_debug_view_count == 0
                 await pilot.press("escape")
