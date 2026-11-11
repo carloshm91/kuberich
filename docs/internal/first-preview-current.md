@@ -28,6 +28,18 @@ three-round campaign and the separate 1,800-second soak remain required. The
 [operations record](acceptance/operations-qualification.md) keeps commands and
 limits; final immutable reports attach to live #82 without changing its candidate.
 
+Focused genuine trials now retain six normal manager passes at `85b6b316` and
+three corrected exact-requirement pipx passes at `bfd5c5cc`. The first invocation's
+three failed oracles remain failed originals: pipx upgrade strips the original
+version requirement, while reinstall retains it. The corrected controls keep
+explicit replacement, migration/configuration preservation and six restored PTYs.
+Five source/installed creation cases pass at `bfd5c5cc`, enrolling actual HTTP
+originals plus five restored PTY pairs. Reproduce that cohort with
+`uv run --no-sync pytest tests/terminal/test_resource_creation_cli.py tests/packaging/test_resource_creation_cli.py -q`.
+No local native replacement is claimed on this incompatible Ubuntu 24.04 builder;
+all four hosted native targets remain mandatory. These are preparation results,
+not final candidate qualification or publication approval.
+
 ## Earlier create-only implementation checkpoint — 2026-11-11 UTC
 
 At this earlier checkpoint M10 #234 was being implemented. That source provided six

@@ -58,6 +58,47 @@ Ruff/format and strict policy types pass. Authored-note/style contracts pass 34
 cases in 8.36 seconds. These scoped preparation checks establish no candidate
 coverage, native installation, repeated-cluster or sustained-resource result.
 
+## Focused preparation observations
+
+At committed `85b6b316`, the genuine nine-manager invocation passed six normal
+uv/pipx transitions and failed three exact-requirement pipx controls in 233.39
+seconds. The new control incorrectly expected upgrade to preserve an install-time
+version requirement. Installed pipx 1.17.11 deliberately strips that requirement
+for upgrade and reuses it for reinstall. Original logs, JUnit, primary source and
+post-drain caller/cleanup observations remain retained as failed evidence.
+
+The corrected three controls pass in 166.19 seconds at committed `bfd5c5cc`.
+They retain exact-requirement reinstall, deliberate complete replacement,
+configuration/log/migration invariance, alias absence and installed navigation
+and shell behavior. Six restored PTYs and three removed owned installations are
+retained separately from the earlier producer. These two invocations are scoped
+preparation evidence, not one relabeled all-nine success at a single revision.
+
+At `bfd5c5cc`, three public source and two installed outside-checkout creation
+cases pass in 28.96 seconds. All five original HTTP receipts are retained with
+source/tree/caller/helper hashes, alongside five restored PTY pairs. Four success
+outcomes retain known creation identity; cancellation remains uncertain with one
+POST, no replay and an unsent later item. The installed wheel's 337 Python modules
+equal that source. This controlled HTTP fixture is not a Kubernetes schema
+authority. Canonical exports retain the actual successful helper bytes.
+
+Reproduce the focused cohorts with a fresh owned pytest temporary directory:
+
+```sh
+uv run --no-sync pytest tests/packaging/test_upgrades.py -q
+uv run --no-sync pytest tests/packaging/test_upgrades.py -q -k 'pipx and True'
+uv run --no-sync pytest tests/terminal/test_resource_creation_cli.py \
+  tests/packaging/test_resource_creation_cli.py -q
+```
+
+Complete documentation/style/site contracts pass 243 cases at `85b6b316`;
+external documentation checks and a local 53-page browser audit pass with zero
+violations. Those originals remain bound to that producer. The Linux native
+replacement rehearsal was not executed locally: this Ubuntu 24.04 host's
+libstdc++ advertises GLIBC 2.38, exceeding the unchanged 2.35 archive floor.
+No compatibility override or alternative builder was introduced. Genuine hosted
+Ubuntu 22 native replacement and both Mac targets remain required in current CI.
+
 ## Required final engineering evidence
 
 1. Merge the preparation PR with `Refs #82`, ordinary 27-job CI and independent
