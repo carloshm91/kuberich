@@ -6,6 +6,7 @@ import shlex
 import signal
 import sys
 import time
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from tests.terminal.pty_support import TerminalSession
@@ -34,10 +35,49 @@ if action=='edit':
  draft.write_text(json.dumps(value))
 """
 
+SHELL_EDITOR = """#!/bin/sh
+set -eu
+test "$2" = --
+test -t 0
+marker=$1
+draft=$3
+printf '%s\\n%s\\n' "$draft" "$$" > "$marker"
+printf 'OWNED CREATION EDITOR START\\n'
+IFS= read -r starting
+test "$starting" = start
+printf 'OWNED CREATION EDITOR READY > '
+IFS= read -r action
+case "$action" in
+ edit) printf '%s\\n' 'apiVersion: v1' 'kind: ConfigMap' 'metadata:' '  name: owned-creation' '  labels: {example.io/creation: reviewed-draft}' 'data: {private: creation-pty-private-edited}' > "$draft" ;;
+ noop) : ;;
+ invalid) printf '%s\\n' 'invalid: [creation-pty-private-source' > "$draft" ;;
+ *) exit 9 ;;
+esac
+"""
+
+type CommandWrap = Callable[[list[str], dict[str, str]], list[str]]
+
 
 def terminal_resource_creation(
-    command, directory, evidence, *, scenario="success", size=(120, 36), cleanup_gate=None
-):
+    command: list[str],
+    directory: Path,
+    evidence: str,
+    *,
+    scenario: str = "success",
+    size: tuple[int, int] = (120, 36),
+    cleanup_gate: tuple[Path, Path] | None = None,
+    shell_editor: bool = False,
+    wrap: CommandWrap | None = None,
+    environment: Mapping[str, str] | None = None,
+    controller_environment: Mapping[str, str] | None = None,
+) -> dict[str, object]:
+    if wrap is not None and scenario == "sigterm":
+        raise ValueError(
+            "Wrapped terminals cannot send host PID signals to namespace-local children."
+        )
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    private = directory / "private"
+    private.mkdir(mode=0o700)
     source = directory / "owned.yaml"
     source.write_text(
         "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: owned-creation}\ndata: {private: creation-pty-private-source}\n"
@@ -46,20 +86,49 @@ def terminal_resource_creation(
     config = directory / "owned-offline-kubeconfig"
     config.write_text("apiVersion: v1\nkind: Config\nclusters: []\ncontexts: []\nusers: []\n")
     config_before = config.read_bytes()
-    helper = directory / "owned-creation-editor.py"
-    helper.write_text(EDITOR)
+    helper = directory / (
+        "owned-creation-editor.sh" if shell_editor else "owned-creation-editor.py"
+    )
+    helper.write_text(SHELL_EDITOR if shell_editor else EDITOR)
+    helper.chmod(0o700)
     marker = directory / "owned-creation-editor-marker"
-    environment = {"KUBERICH_EDITOR": shlex.join([sys.executable, str(helper), str(marker)])}
+    preferences = directory / "preferences.yaml"
+    preferences.write_text("schema_version: 1\n")
+    process_environment = {
+        **dict(environment or {}),
+        "TMPDIR": str(private),
+        "KUBERICH_CONFIG": str(preferences),
+        "KUBERICH_LOG_FILE": str(directory / "kuberich.log"),
+        "KUBERICH_CLIPBOARD": "osc52",
+        "KUBERICH_EDITOR": shlex.join(
+            ["/bin/sh" if shell_editor else sys.executable, str(helper), str(marker)]
+        ),
+    }
+    outside = dict(controller_environment or {})
+    if wrap is None:
+        outside.update(process_environment)
+    argv = [*command, "--kubeconfig", str(config), "--command", "create"]
+    if wrap is not None:
+        argv = wrap(argv, process_environment)
+    drafts: list[Path] = []
+
+    def editor_state() -> tuple[Path, int]:
+        if not shell_editor:
+            state = json.loads(marker.read_text())
+            return Path(state["draft"]), int(state["pid"])
+        filename, pid = marker.read_text().splitlines()
+        return Path(filename), int(pid)
+
     with TerminalSession(
-        [*command, "--kubeconfig", str(config), "--command", "create"],
+        argv,
         directory,
-        environment=environment,
+        environment=outside,
         size=size,
     ) as terminal:
         terminal.wait_for_screen("Create resources · offline source")
         terminal.wait_for_screen("No cluster validation")
-        # Back is initial focus. Tab wraps to the explicit file path.
-        terminal.send(b"\towned.yaml\t\t\r")
+        # Back -> source selector -> explicit file path -> preview -> Import.
+        terminal.send(b"\t\towned.yaml\t\t\r")
         terminal.wait_for_screen("File captured offline")
         assert "creation-pty-private-source" not in "\n".join(terminal.screen.display)
         # Back -> Review -> Edit -> Import -> preview -> fresh disclosure.
@@ -67,11 +136,14 @@ def terminal_resource_creation(
         terminal.wait_for(b"OWNED CREATION EDITOR START")
         ready = terminal.send(b"start\r")
         terminal.wait_for(b"OWNED CREATION EDITOR READY", since=ready)
-        state = json.loads(marker.read_text())
-        draft = Path(state["draft"])
+        draft, editor_pid = editor_state()
+        drafts.append(draft)
+        assert draft.stat().st_mode & 0o777 == 0o600
+        assert draft.parent.stat().st_mode & 0o777 == 0o700
+        assert b"creation-pty-private-source" in draft.read_bytes()
         terminal.resize(80, 24)
         if scenario == "sigterm":
-            os.kill(state["pid"], signal.SIGTERM)
+            os.kill(editor_pid, signal.SIGTERM)
         else:
             terminal.send(
                 {
@@ -118,6 +190,8 @@ def terminal_resource_creation(
                 terminal.wait_for(b"OWNED CREATION EDITOR START", since=again)
                 ready = terminal.send(b"start\r")
                 terminal.wait_for(b"OWNED CREATION EDITOR READY", since=ready)
+                repeated, _ = editor_state()
+                drafts.append(repeated)
                 terminal.send(b"noop\r")
                 terminal.wait_for_screen("No changes")
             terminal.resize(120, 36)
@@ -127,9 +201,19 @@ def terminal_resource_creation(
         )
         assert source.read_bytes() == before
         assert not draft.parent.exists()
+        assert all(not path.parent.exists() for path in drafts)
+        assert not tuple(private.iterdir())
         assert "creation-pty-private-source" not in "\n".join(terminal.screen.display)
         assert "creation-pty-private-edited" not in "\n".join(terminal.screen.display)
         terminal.send(b"\x11")
         terminal.finish()
         terminal.save_evidence(evidence)
     assert config.read_bytes() == config_before
+    return {
+        "editor": "/bin/sh" if shell_editor else "configured Python fixture",
+        "editor_sessions": len(drafts),
+        "private_files_absent": all(not path.parent.exists() for path in drafts),
+        "source_unchanged": source.read_bytes() == before,
+        "kubeconfig_unchanged": config.read_bytes() == config_before,
+        "wrapped": wrap is not None,
+    }

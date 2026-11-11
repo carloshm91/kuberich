@@ -104,6 +104,7 @@ class ManifestMutationService:
         self._versions: tuple[str | None, ...] = ()
         self._results: list[tuple[MutationTarget, MutationResult]] = []
         self._created: list[CreatedResourceReceipt] = []
+        self._created_previews: list[tuple[CreatedResourceReceipt, tuple[str, ...]]] = []
         self._operations: set[asyncio.Task[object]] = set()
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
@@ -126,6 +127,10 @@ class ManifestMutationService:
     @property
     def created_receipts(self) -> tuple[CreatedResourceReceipt, ...]:
         return tuple(self._created)
+
+    @property
+    def created_previews(self) -> tuple[tuple[CreatedResourceReceipt, tuple[str, ...]], ...]:
+        return tuple(self._created_previews)
 
     def require_current(self) -> None:
         self.policy.require(Action.MUTATE)
@@ -198,6 +203,17 @@ class ManifestMutationService:
             ]
             if not keys or len(keys) != len(set(keys)):
                 raise AppError("Manifest source must contain distinct exact resource destinations.")
+            create_requests = (
+                await parse_owned(
+                    lambda: tuple(
+                        create_manifest_intent(resource, address, desired, policy="create-only")
+                        for resource, address, desired in resolved
+                    )
+                )
+                if action == "create"
+                else None
+            )
+            guard()
             items: list[ManifestPlanItem] = []
             versions: list[str | None] = []
             for document, (resource, address, desired) in zip(
@@ -221,13 +237,11 @@ class ManifestMutationService:
                                 "Absent at review; no deletion request planned.",
                             )
                         else:
-                            request = await parse_owned(
-                                partial(
-                                    create_manifest_intent,
-                                    resource,
-                                    address,
-                                    desired,
-                                    policy="create-only" if action == "create" else "apply",
+                            request = (
+                                create_requests[len(items)]
+                                if create_requests is not None
+                                else await parse_owned(
+                                    partial(create_manifest_intent, resource, address, desired)
                                 )
                             )
                             change = "create"
@@ -356,6 +370,7 @@ class ManifestMutationService:
             self._target = items[0].target
             self._results = []
             self._created = []
+            self._created_previews = []
             return self.intent
 
     def confirm(self, intent: ManifestPlan) -> Confirmation:
@@ -492,10 +507,20 @@ class ManifestMutationService:
                             if intent.action == "create" and isinstance(
                                 item.request, ManifestCreateIntent
                             ):
-                                response = await self.adapter.execute_creation(item.request, guard)
+                                response = await self.adapter.execute_creation(
+                                    item.request, guard, private_preview=self._private_preview
+                                )
                                 result = response.result
                                 if response.receipt is not None:
                                     self._created.append(response.receipt)
+                                    self._created_previews.append(
+                                        (response.receipt, response.preview_pages)
+                                    )
+                                elif result.state is MutationState.SUCCEEDED:
+                                    result = MutationResult(
+                                        MutationState.UNCERTAIN,
+                                        "No verified persistent creation receipt was returned. Inspect before a new review; no retry was sent.",
+                                    )
                             else:
                                 result = (
                                     MutationResult(

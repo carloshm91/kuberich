@@ -58,6 +58,7 @@ class ManifestActions:
         self._browsers: list[ManifestBrowserScreen] = []
         self._creators: list[ResourceCreationScreen] = []
         self._reviews: list[ManifestReviewScreen] = []
+        self._failed_owners: set[int] = set()
         self.config_path = config_path or local.directory / "config.yaml"
         self._stopped = False
 
@@ -72,19 +73,26 @@ class ManifestActions:
 
     def _retain(self) -> None:
         self._browsers = [
-            screen for screen in self._browsers if not screen.stopped or screen.operation_count
+            screen
+            for screen in self._browsers
+            if not screen.stopped or screen.operation_count or id(screen) in self._failed_owners
         ]
         self._reviews = [
-            screen for screen in self._reviews if not screen.stopped or screen.operation_count
+            screen
+            for screen in self._reviews
+            if not screen.stopped or screen.operation_count or id(screen) in self._failed_owners
         ]
         self._creators = [
-            screen for screen in self._creators if not screen.stopped or screen.operation_count
+            screen
+            for screen in self._creators
+            if not screen.stopped or screen.operation_count or id(screen) in self._failed_owners
         ]
 
     def open_creation(self) -> None:
         if self._stopped:
             return
         from kuberich.services.resource_creation import ResourceCreationService
+        from kuberich.services.resource_templates import TemplateCatalogService
         from kuberich.ui.resource_creation import ResourceCreationScreen
 
         self._retain()
@@ -95,6 +103,7 @@ class ManifestActions:
             service=local,
             runner=self.runner,
             open_review=lambda source: self.open_creation_review(source, local),
+            catalog=TemplateCatalogService(self.config_path, local.directory),
         )
         self._creators.append(screen)
         self.push_screen(screen)
@@ -171,22 +180,50 @@ class ManifestActions:
         self.push_screen(screen)
 
     async def close_for_client(self, client: KubernetesSession) -> None:
+        failures: list[BaseException] = []
         for screen in tuple(self._reviews):
             if screen.service.client is client:
-                await screen.stop_owned()
+                try:
+                    await screen.stop_owned()
+                except BaseException as error:
+                    self._failed_owners.add(id(screen))
+                    failures.append(error)
+                else:
+                    self._failed_owners.discard(id(screen))
         for creator in tuple(self._creators):
-            await creator.stop_owned()
+            try:
+                await creator.stop_owned()
+            except BaseException as error:
+                self._failed_owners.add(id(creator))
+                failures.append(error)
+            else:
+                self._failed_owners.discard(id(creator))
         self._retain()
+        if len(failures) == 1:
+            raise failures[0]
+        if failures:
+            raise BaseExceptionGroup("Manifest client owners could not completely close.", failures)
 
     async def stop_owned(self) -> None:
         self._stopped = True
-        for review in tuple(self._reviews):
-            await review.stop_owned()
-        for browser in tuple(self._browsers):
-            await browser.stop_owned()
-        for creator in tuple(self._creators):
-            await creator.stop_owned()
-        self._reviews.clear()
-        self._browsers.clear()
-        self._creators.clear()
-        await self.local.close()
+        failures: list[BaseException] = []
+        owners: tuple[
+            ManifestReviewScreen | ManifestBrowserScreen | ResourceCreationScreen, ...
+        ] = (*self._reviews, *self._browsers, *self._creators)
+        for screen in owners:
+            try:
+                await screen.stop_owned()
+            except BaseException as error:
+                self._failed_owners.add(id(screen))
+                failures.append(error)
+            else:
+                self._failed_owners.discard(id(screen))
+        try:
+            await self.local.close()
+        except BaseException as error:
+            failures.append(error)
+        self._retain()
+        if len(failures) == 1:
+            raise failures[0]
+        if failures:
+            raise BaseExceptionGroup("Manifest owners could not completely close.", failures)

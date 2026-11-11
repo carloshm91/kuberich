@@ -63,3 +63,16 @@ def test_escape_waits_for_creation_private_draft_cleanup(tmp_path):
         scenario="noop",
         cleanup_gate=(receipt, release),
     )
+
+
+@pytest.mark.parametrize("scenario", ["success", "ctrl_c", "repeat"])
+def test_creation_shell_editor_needs_no_external_interpreter(tmp_path, scenario):
+    receipt = terminal_resource_creation(
+        [sys.executable, "-m", "kuberich"],
+        tmp_path,
+        "resource-creation-shell-" + scenario,
+        scenario=scenario,
+        shell_editor=True,
+        size=(80, 24),
+    )
+    assert receipt["private_files_absent"] and receipt["source_unchanged"]

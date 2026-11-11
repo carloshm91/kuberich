@@ -61,7 +61,7 @@ type ManifestChange = Literal["create", "update", "delete", "unchanged", "absent
 class ManifestFileSnapshot:
     relative_path: str
     identity: FileIdentity
-    sha256: str
+    sha256: str = field(repr=False)
     data: bytes = field(repr=False)
 
 

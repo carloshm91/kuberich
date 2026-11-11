@@ -396,7 +396,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1264,14 +1264,15 @@
     },
     {
       "id": "OPS07",
-      "capability": "Local manifest directories, YAML edit, apply/delete and Kustomize",
+      "capability": "Local manifests, reviewed apply/delete, Kustomize and create-only resource templates",
       "tasks": [
-        "M07"
+        "M07",
+        "M10"
       ],
       "source": "internal/view/dir.go",
       "status": "planned",
-      "difference": "M07 development source adds an anchored local browser, bounded multi-document inspection/editing, local-only builtin Kustomize, exact server dry-run/diff and reviewed create/update/delete batches. Named creation has no fabricated UID; existing updates use client-side merge previews and conditional JSON patch commits. Remote dependencies/plugins, generated names, force/prune, transactions and automatic replay are unsupported. Complete issue and cumulative phase qualification are recorded separately.",
-      "public_summary": "Development source for 0.5 adds local manifest browsing/editing, local Kustomize rendering and reviewed server validation before apply/delete, with explicit per-resource partial and uncertain outcomes. Published 0.4.0 predates this workflow.",
+      "difference": "M07 development source adds an anchored local browser, bounded multi-document inspection/editing, local-only builtin Kustomize, exact server dry-run/diff and reviewed create/update/delete batches. Named creation has no fabricated UID; existing updates use client-side merge previews and conditional JSON patch commits. Remote dependencies/plugins, generated names, force/prune, transactions and automatic replay are unsupported. Complete issue and cumulative phase qualification are recorded separately. M10 #234 adds original data-only built-in/user templates, file and explicit clipboard/paste creation with strict named POST dry-run, separate one-use confirmation and typed persistent receipts. This extends the local workflow; the pinned K9s source is not evidence of a template catalog or complete parity.",
+      "public_summary": "Development source for 0.5 adds local manifests/Kustomize and separate create-only templates, file or explicit clipboard imports, with strict server review and per-resource outcomes. Published 0.4.0 predates these workflows.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/workloads.md",
@@ -1292,7 +1293,15 @@
         "tests/contract/test_manifest_writes.py",
         "tests/contract/test_manifest_preview.py",
         "tests/contract/test_manifest_service.py",
-        "tests/ui/test_manifests.py"
+        "tests/ui/test_manifests.py",
+        "docs/internal/acceptance/resource-creation.md",
+        "src/kuberich/domain/resource_templates.py",
+        "src/kuberich/services/resource_creation.py",
+        "src/kuberich/services/resource_templates.py",
+        "tests/contract/test_create_only_manifests.py",
+        "tests/contract/test_resource_templates.py",
+        "tests/ui/test_resource_creation_sources.py",
+        "tests/terminal/test_resource_creation.py"
       ]
     },
     {
@@ -1600,8 +1609,8 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m\u201324h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
-      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m\u201324h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
+      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m–24h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
+      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/cluster-overview.md",

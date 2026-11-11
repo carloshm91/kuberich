@@ -73,6 +73,41 @@ generic modal dismissal followed by asynchronous unmount cleanup is insufficient
 
 ## Consequences and verification
 
+### Named create-only drafts
+
+M10 #234 adds an explicit Create action through the same captured service and
+transport. Built-in/user templates, file imports and explicit clipboard/paste
+produce frozen drafts without fabricated filesystem roots. A small read-only
+source protocol shares only identity, documents and source digest; source-local
+callbacks additionally bind original file/template captures and draft generation.
+Local inspection is offline. Validation uses exact discovery and strict named
+POST dry-run as the schema authority, without a generic offline OpenAPI engine.
+
+Create-only preserves literal nulls, strips last-applied input and sends identical
+canonical bytes to dry-run and POST. Any existing name is a conflict, including
+the pre-send recheck and atomic server POST barrier. Apply retains its established
+annotation/null-pruning/merge semantics. Actual 201 receipts retain validated
+persistent UID/version, distinct from transient previews. Receipt decoding remains
+owned through cancellation: known created metadata can coexist with an uncertain
+interrupted result. Missing receipts never authorize adoption or replay.
+
+Template parameters replace existing whole values at finite typed RFC 6901 paths;
+they execute no expressions, hooks or includes. Sensitive input makes all content
+previews opaque, including keys and admission/editor copies. This property stays
+with the draft through editing. Sensitive parameters cannot supply routing names
+or namespaces, which must be visible in exact destination review and history.
+Raw source/request/default/enum bytes and source/rendered digests stay out of repr
+and ordinary diagnostic results. Private editor directories have explicit lifetime
+and captured root/parent identities; replacement cleanup refusal retains ownership
+without a later automatic finalizer deleting a different directory.
+
+Creation binds namespace names. Where namespace identity is not captured, that
+limit remains explicit; a separate GET cannot create a namespace-UID precondition
+for POST or eliminate the cross-request replacement race. Namespace/CRD setup
+requires a separate validated batch. Read-only, source/session expiry, one-use
+confirmation, partial/uncertain/unsent outcomes and awaited cleanup remain shared
+effectful boundaries. See [creation acceptance](../internal/acceptance/resource-creation.md).
+
 All resources must validate before confirmation. Namespace/CRD prerequisites
 require separate batches; generated names, force, prune and remote rendering are
 outside this contract. Read-only mode blocks editor/save and mutation preparation

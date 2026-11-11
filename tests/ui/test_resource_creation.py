@@ -91,6 +91,8 @@ async def test_public_keyboard_sequence_imports_discloses_then_targets_editor(
         await wait_for(lambda: isinstance(app.screen, ResourceCreationScreen))
         screen = app.screen
         assert app.focused.id == "creation-back"
+        await pilot.press("tab")
+        assert app.focused.id == "creation-source-choice"
         await pilot.press("tab", *"owned.yaml")
         await wait_for(lambda: screen.file.value == "owned.yaml")
         assert app.focused.id == "creation-file"

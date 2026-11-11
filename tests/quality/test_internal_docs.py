@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 382
-    assert validate_documentation_plan(ROOT, list(mapped)) == 382
+    assert len(mapped) == 383
+    assert validate_documentation_plan(ROOT, list(mapped)) == 383
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -240,7 +240,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(helm["documents"]) == 370
     assert current["documents"][:370] == helm["documents"]
-    assert len(current["documents"]) == 382
+    assert len(current["documents"]) == 383
     assert current["documents"][366:370] == [
         {
             "source": "docs/adr/0041-helm-release-identity.md",
@@ -417,13 +417,31 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "baseline_sha256": None,
         },
     ]
-    assert current["documents"][381:] == [
+    assert current["documents"][381:382] == [
         {
             "source": "docs/internal/acceptance/helm-lifecycle.md",
             "audience": "development",
             "action": "keep",
             "destinations": ["docs/internal/acceptance/helm-lifecycle.md"],
             "reason": "Keep M09 Helm catalog/lifecycle evidence and pending final qualification outside user navigation; preserve earlier M06 proof identities separately.",
+        }
+    ]
+    helm = json.loads(
+        git_bytes(
+            ROOT, "show", "7b69e226189758c805d1d67c10b01630c8ccbb2c:docs/documentation-plan.json"
+        )
+    )
+    assert len(helm["documents"]) == 382
+    assert len(current["documents"]) == 383
+    assert current["documents"][:382] == helm["documents"]
+    assert current["documents"][382:] == [
+        {
+            "source": "docs/internal/acceptance/resource-creation.md",
+            "audience": "contributor acceptance evidence",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/resource-creation.md"],
+            "reason": "Retain create-only template, source, schema, clipboard and ownership observations, original failures and qualification limits outside public navigation.",
+            "baseline_sha256": None,
         }
     ]
     assert all(item["baseline_sha256"] is None for item in current["documents"][348:381])

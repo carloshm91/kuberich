@@ -7,6 +7,7 @@ from dataclasses import replace
 
 import pytest
 
+from kuberich.domain import resource_templates
 from kuberich.domain.manifests import canonical_manifest, manifest_documents
 from kuberich.domain.resource_templates import (
     TemplateCatalogEntry,
@@ -82,6 +83,27 @@ def test_title_counts_unicode_characters_and_description_counts_utf8_bytes():
     for change in ({"title": "é" * 121}, {"description": "é" * 513}):
         with pytest.raises(AppError, match="bound"):
             parse({**value, **change})
+
+
+def test_parameter_destinations_and_source_digests_do_not_enter_representations():
+    value = envelope()
+    value["objects"][0]["data"] = {"private-destination-key": ""}
+    value["parameters"]["private"] = {
+        "type": "string",
+        "required": False,
+        "default": "private-default-value",
+        "paths": ["/0/data/private-destination-key"],
+    }
+    template = parse(value)
+    entry = TemplateCatalogEntry(
+        origin="user",
+        relative_path="owned.yaml",
+        identity=("user", template.id, template.revision, template.source_sha256),
+        template=template,
+    )
+    shown = repr(template) + repr(template.parameters) + repr(entry)
+    assert "private-destination-key" not in shown and "private-default-value" not in shown
+    assert template.source_sha256 not in shown
 
 
 @pytest.mark.parametrize(
@@ -373,6 +395,171 @@ def test_multiresource_output_is_revalidated_as_ordinary_manifests():
     ):
         with pytest.raises(AppError):
             parse_resource_template(data)
+
+
+def test_repeated_64kib_parameter_refuses_before_first_overbudget_destination_copy(monkeypatch):
+    value = envelope()
+    value["objects"][0]["metadata"]["name"] = "owned"
+    value["objects"][0]["spec"] = {f"field-{index}": "" for index in range(32)}
+    value["parameters"] = {
+        "repeat": {
+            "type": "string",
+            "required": True,
+            "paths": [f"/0/spec/field-{index}" for index in range(32)],
+        }
+    }
+    template = parse(value)
+    supplied = "x" * (64 * 1024)
+    encoded = canonical_manifest(supplied)
+    original = json.loads
+    copies = 0
+
+    def counted(data, *args, **kwargs):
+        nonlocal copies
+        if data == encoded:
+            copies += 1
+        return original(data, *args, **kwargs)
+
+    monkeypatch.setattr(json, "loads", counted)
+    with pytest.raises(AppError, match="1 MiB object budget"):
+        render_resource_template(template, {"repeat": supplied})
+    assert copies == 15
+    assert all(item == "" for item in original(template.objects)[0]["spec"].values())
+
+
+def test_large_supplied_map_is_refused_before_full_traversal_or_encoding(monkeypatch):
+    value = envelope()
+    value["objects"][0]["metadata"]["name"] = "owned"
+    value["parameters"] = {"input": {"type": "string_map", "required": True, "paths": ["/0/data"]}}
+    template = parse(value)
+    visited = []
+
+    class CountedMap(dict):
+        def items(self):
+            for key, item in super().items():
+                visited.append(key)
+                yield key, item
+
+    supplied = CountedMap({f"key-{index}": "x" * 100 for index in range(300)})
+    original = canonical_manifest
+
+    def bounded(item):
+        assert item is not supplied, "Overbudget input must never reach full JSON encoding"
+        return original(item)
+
+    monkeypatch.setattr(resource_templates, "MAX_MANIFEST_BYTES", 256)
+    monkeypatch.setattr(resource_templates, "canonical_manifest", bounded)
+    with pytest.raises(AppError, match="1 MiB value budget"):
+        render_resource_template(template, {"input": supplied})
+    assert len(visited) == 3
+
+
+@pytest.mark.parametrize("supplied", ["x" * 129, "é" * 100, "\x01" * 100, "\ud800"])
+def test_string_value_preflight_counts_utf8_json_escapes_and_rejects_invalid_unicode(
+    monkeypatch, supplied
+):
+    value = envelope()
+    value["objects"][0]["metadata"]["name"] = "owned"
+    value["objects"][0]["spec"] = {"input": ""}
+    value["parameters"] = {
+        "input": {"type": "string", "required": True, "paths": ["/0/spec/input"]}
+    }
+    template = parse(value)
+    original = canonical_manifest
+
+    def bounded(item):
+        assert item is not supplied, "Rejected input must not reach JSON encoding"
+        return original(item)
+
+    monkeypatch.setattr(resource_templates, "MAX_MANIFEST_BYTES", 128)
+    monkeypatch.setattr(resource_templates, "canonical_manifest", bounded)
+    with pytest.raises(AppError, match=r"value budget|valid UTF-8"):
+        render_resource_template(template, {"input": supplied})
+
+
+def test_literal_json_preflight_preserves_escaping_unicode_integer_and_false_values():
+    value = envelope()
+    value["objects"][0]["spec"] = {"text": "", "count": 0, "enabled": True}
+    value["parameters"].update(
+        {
+            "text": {"type": "string", "required": True, "paths": ["/0/spec/text"]},
+            "count": {"type": "integer", "required": True, "paths": ["/0/spec/count"]},
+            "enabled": {"type": "boolean", "required": True, "paths": ["/0/spec/enabled"]},
+            "data": {"type": "string_map", "required": True, "paths": ["/0/data"]},
+        }
+    )
+    supplied = 'ascii " \\ \b \f \n \r \t \x01 é 中 😀'
+    result = json.loads(
+        render_resource_template(
+            parse(value),
+            {
+                "name": "owned",
+                "text": supplied,
+                "count": -123,
+                "enabled": False,
+                "data": {"é": supplied, "second": ""},
+            },
+        )
+    )
+    assert result["spec"] == {"text": supplied, "count": -123, "enabled": False}
+    assert result["data"] == {"é": supplied, "second": ""}
+
+
+@pytest.mark.parametrize("bits", [448, 513])
+def test_integer_conversion_is_bounded_before_unbounded_decimal_encoding(monkeypatch, bits):
+    value = envelope()
+    value["objects"][0]["metadata"]["name"] = "owned"
+    value["objects"][0]["spec"] = {"count": 0}
+    value["parameters"] = {
+        "count": {"type": "integer", "required": True, "paths": ["/0/spec/count"]}
+    }
+    template = parse(value)
+    monkeypatch.setattr(resource_templates, "MAX_MANIFEST_BYTES", 128)
+    with pytest.raises(AppError, match="1 MiB value budget"):
+        render_resource_template(template, {"count": 1 << bits})
+
+
+def test_initial_and_projected_total_budgets_are_checked_before_substitution(monkeypatch):
+    value = envelope()
+    value["objects"][0]["metadata"]["name"] = "owned"
+    value["objects"][0]["spec"] = {"input": ""}
+    value["parameters"] = {
+        "input": {"type": "string", "required": True, "paths": ["/0/spec/input", "/1/spec/input"]}
+    }
+    value["objects"].append(copy.deepcopy(value["objects"][0]))
+    value["objects"][1]["metadata"]["name"] = "second"
+    template = parse(value)
+    original = json.loads
+    copies = 0
+    supplied = "x" * 64
+    encoded = canonical_manifest(supplied)
+
+    def counted(data, *args, **kwargs):
+        nonlocal copies
+        if data == encoded:
+            copies += 1
+        return original(data, *args, **kwargs)
+
+    initial_total = sum(len(canonical_manifest(item)) for item in value["objects"]) + 5
+    monkeypatch.setattr(json, "loads", counted)
+    monkeypatch.setattr(resource_templates, "MAX_SOURCE_BYTES", initial_total + 100)
+    with pytest.raises(AppError, match="8 MiB total budget"):
+        render_resource_template(template, {"input": supplied})
+    assert copies == 1
+    monkeypatch.setattr(resource_templates, "MAX_SOURCE_BYTES", initial_total - 1)
+    with pytest.raises(AppError, match="8 MiB total budget"):
+        render_resource_template(template, {"input": supplied})
+    assert copies == 1
+    monkeypatch.setattr(resource_templates, "MAX_SOURCE_BYTES", 8 * 1024 * 1024)
+    monkeypatch.setattr(resource_templates, "MAX_MANIFEST_BYTES", 64)
+    with pytest.raises(AppError, match="1 MiB object budget"):
+        render_resource_template(template, {"input": supplied})
+    assert copies == 1
+
+
+def test_unknown_parameter_with_same_input_count_is_refused():
+    with pytest.raises(AppError, match="unknown parameter"):
+        render_resource_template(parse(envelope()), {"other": "owned"})
 
 
 def test_six_builtins_have_conservative_named_defaults_and_finite_constraints():

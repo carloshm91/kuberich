@@ -5,7 +5,12 @@ from collections.abc import Callable, Mapping
 from functools import partial
 from pathlib import Path
 
-from kuberich.domain.clipboard import ClipboardBackend
+from kuberich.adapters.editing import file_worker
+from kuberich.domain.clipboard import (
+    ClipboardBackend,
+    clipboard_read_arguments,
+    clipboard_source_bytes,
+)
 from kuberich.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
 from kuberich.errors import AppError
 from kuberich.services.ownership import finish_owned
@@ -32,6 +37,32 @@ class NativeClipboard:
         self.runner, self.environment, self.directory = runner, dict(environment), directory
         self.owner: ProcessSession | None = None
         self.monitor: asyncio.Task[None] | None = None
+
+    async def read(
+        self, backend: ClipboardBackend, *, guard: Callable[[], None] | None = None
+    ) -> bytes:
+        """One explicit bounded read; retain the current write selection owner."""
+        if any(
+            key in self.environment for key in ("SSH_CONNECTION", "SSH_TTY")
+        ) or self.environment.get("TMUX"):
+            raise AppError(
+                "Use explicit Paste capture for SSH or tmux; no clipboard query was sent."
+            )
+        command = capture_command(
+            clipboard_read_arguments(backend),
+            environment=self.environment,
+            directory=self.directory,
+            purpose=ProcessPurpose.CLIPBOARD,
+            mode=ProcessMode.CAPTURE,
+        )
+        result = await self.runner.capture(command, timeout=5, guard=guard)
+        if guard is not None:
+            guard()
+        if result.status is not ProcessStatus.SUCCEEDED:
+            raise AppError(
+                "Native clipboard read failed or exceeded its bound; choose Paste capture."
+            )
+        return await file_worker(lambda: clipboard_source_bytes(result.stdout))
 
     async def close(self) -> None:
         owner, self.owner = self.owner, None

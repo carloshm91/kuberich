@@ -1,5 +1,40 @@
 # Development checkpoint
 
+## Create-only resource checkpoint — 2026-11-11 UTC
+
+M10 #234 is the active implementation issue. The named ConfigMap service spine
+and offline file/private-editor checkpoint pass; template/clipboard breadth and
+complete final qualification are in progress. Source and published packages
+remain 0.4.0. No publication is performed or authorized by this checkpoint.
+
+M09 #233 is delivered by protected signed-off squash
+`7b69e226189758c805d1d67c10b01630c8ccbb2c`, parent
+`d6ee8c7dfc6f7bf057e925f7eb86e792bdf349c5`, tree
+`ae978481c19859223d47c272b84b7ab65ffcceb8`. Its genuine
+[PR Application run](https://github.com/carloshm91/kuberich/actions/runs/42999870240)
+passed all 27 selected jobs plus required app/CodeQL checks. Independent source,
+runtime, four native artifacts and real Helm behavior audits passed; the
+[main Repository run](https://github.com/carloshm91/kuberich/actions/runs/43011121526)
+passed. See the [delivery receipt](https://github.com/carloshm91/kuberich/issues/233#issuecomment-6794562958).
+These are #233's identities and do not qualify #234.
+
+Signed #234 producer `59d6233` passed twelve owned-kind assertions with all 342
+measured inputs unchanged: strict dry-run absence, verified actual 201 UID/version,
+create-only collisions/refusals, read-only and cleanup. Signed `186668e` passed
+all eight real source editor/PTY cases in 20.69 seconds, including 80×24 geometry,
+Ctrl-C/SIGTERM, repeat/resize and Escape held cleanup. Reproduction commands are
+shown with explicit owned-tool placeholders:
+
+```sh
+uv run python -m scripts.verify_manifests_kind --creation-spine --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl --evidence artifacts/issue234/create-spine-02.json
+uv run pytest -q tests/terminal/test_resource_creation.py -x -n 0 --basetemp=/tmp/kuberich-234-source-pty-04
+```
+
+The [creation acceptance record](acceptance/resource-creation.md) retains original
+failures and the separate private-root counterexample/correction. Strict server
+validation is authoritative; no offline schema completeness, namespace-UID atomic
+precondition, write replay, provider or final release qualification is claimed.
+
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 
 M09 #233 is the active implementation issue. Its source adds public `:helmcharts`,

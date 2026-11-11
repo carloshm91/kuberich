@@ -147,10 +147,10 @@ the selected CronJob template. The schedule and concurrency policy do not govern
 ### Configuration data and environment sources
 **partial** — ConfigMap and Secret keys have explicit reveal/copy and editing. Version 0.4 also
 traces container environment sources and image facts; values require fresh disclosure.
-### Local manifest directories, YAML edit, apply/delete and Kustomize
-**partial** — Development source for 0.5 adds local manifest browsing/editing, local Kustomize
-rendering and reviewed server validation before apply/delete, with explicit per-resource partial and
-uncertain outcomes. Published 0.4.0 predates this workflow.
+### Local manifests, reviewed apply/delete, Kustomize and create-only resource templates
+**partial** — Development source for 0.5 adds local manifests/Kustomize and separate create-only
+templates, file or explicit clipboard imports, with strict server review and per-resource outcomes.
+Published 0.4.0 predates these workflows.
 ### Helm list/status/notes/values/all-values/manifest/history
 **partial** — Development source for 0.5 adds Helm release browsing and a private
 classic/registered-OCI chart catalog with exact version selection. Public 0.4.0 predates these

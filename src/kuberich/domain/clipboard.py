@@ -1,10 +1,11 @@
-"""Bounded, write-only clipboard decisions and trusted terminal framing."""
+"""Bounded explicit clipboard decisions and trusted write-only terminal framing."""
 
 import base64
 from collections.abc import Mapping
 from enum import StrEnum
 
 from kuberich.errors import AppError
+from kuberich.security.controls import escape_controls
 
 MAX_NATIVE_BYTES = 1024 * 1024
 MAX_OSC52_BYTES = 64 * 1024
@@ -55,6 +56,38 @@ def clipboard_bytes(text: str, backend: ClipboardBackend) -> bytes:
             f"Clipboard exceeds the {limit // 1024} KiB backend limit; select less text."
         )
     return data
+
+
+def clipboard_read_arguments(backend: ClipboardBackend) -> tuple[str, ...]:
+    if backend is ClipboardBackend.MACOS:
+        return ("/usr/bin/pbpaste",)
+    if backend is ClipboardBackend.WAYLAND:
+        return ("wl-paste", "--no-newline", "--type", "text/plain")
+    if backend is ClipboardBackend.X11:
+        return ("xclip", "-selection", "clipboard", "-out", "-target", "UTF8_STRING")
+    raise AppError("Native clipboard reads are unavailable; choose explicit Paste capture.")
+
+
+def clipboard_source_bytes(data: bytes) -> bytes:
+    """Accept complete UTF-8 text only; do not partially import or normalize it."""
+    if type(data) is not bytes or len(data) > MAX_NATIVE_BYTES:
+        raise AppError("Clipboard source must be complete immutable text of at most 1 MiB.")
+    try:
+        text = data.decode("utf-8", "strict")
+    except UnicodeError:
+        raise AppError("Clipboard source is not valid UTF-8.") from None
+    whitespace = text.replace("\t", "").replace("\r", "")
+    if escape_controls(whitespace, allow_newlines=True) != whitespace:
+        raise AppError("Clipboard source contains unsupported control characters.")
+    return data
+
+
+def pasted_source_bytes(text: str) -> bytes:
+    if not isinstance(text, str):
+        raise AppError("Paste capture requires explicit UTF-8 text.")
+    if len(text) > MAX_NATIVE_BYTES:
+        raise AppError("Paste exceeds the 1024 KiB backend limit; select less text.")
+    return clipboard_source_bytes(clipboard_bytes(text, ClipboardBackend.MEMORY))
 
 
 def osc52(data: bytes, *, tmux: bool) -> str:

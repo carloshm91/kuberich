@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Create named resources from templates, files or explicit clipboard capture, with strict server dry-run, separate confirmation and read-only guards ([#234](https://github.com/carloshm91/kuberich/issues/234)).
+
 - Manage chart catalogs and review Helm install, upgrade and uninstall with private values, native dry-run, live comparison and one-use confirmation ([#233](https://github.com/carloshm91/kuberich/issues/233)).
 
 - Explore admission policies and bindings with typed columns, guarded links and qualified webhook, scaling and scheduling declarations ([#80](https://github.com/carloshm91/kuberich/issues/80)).

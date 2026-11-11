@@ -54,6 +54,7 @@ class ManifestBrowserScreen(ModalScreen[None]):
     #manifests-preview { height: 1fr; min-height: 2; }
     #manifests-buttons { height: 3; layout: grid; grid-size: 4; grid-rows: 1 1 1; }
     #manifests-buttons Button { height: 1; border: none; min-width: 0; width: 1fr; }
+    ManifestBrowserScreen.creation-enabled #manifests-buttons { height: 4; grid-rows: 1 1 1 1; }
     ManifestBrowserScreen.compact #manifests-root { height: 1; border: none; padding: 0 1; }
     ManifestBrowserScreen.compact.inspection #manifests-files { height: 3; }
     ManifestBrowserScreen.compact #manifests-resources { height: 3; }
@@ -70,6 +71,7 @@ class ManifestBrowserScreen(ModalScreen[None]):
         super().__init__()
         self.service, self.open_review, self.runner = service, open_review, runner
         self.open_creation = open_creation
+        self.set_class(open_creation is not None, "creation-enabled")
         self.location = ForwardInput(
             id="manifests-root", placeholder="Allowed local root · Enter opens", max_length=4096
         )

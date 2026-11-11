@@ -25,6 +25,7 @@ from tests.support.plugins_terminal import (
     exercise_view_preferences,
     plugin_definitions,
 )
+from tests.support.resource_creation_cli import terminal_resource_creation_cli
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
 
@@ -378,6 +379,78 @@ def helm_catalog(host: Host, directory: Path, evidence: Path) -> dict[str, Any]:
     }
 
 
+def creation_requests(host: Host, directory: Path, evidence: Path) -> dict[str, Any]:
+    """Observe native public POST effects without giving the application Python."""
+    overrides = environment(
+        directory, helpers=False, bundle="/app" if host.linux else str(host.bundle)
+    )
+
+    def command(argv: list[str], child_environment: dict[str, str]) -> list[str]:
+        wrapped = host.command(argv, child_environment, tty=True)
+        if host.linux:
+            try:
+                position = wrapped.index("run") + 1
+            except ValueError:
+                raise ValueError(
+                    "The native creation host did not provide an owned Docker run."
+                ) from None
+            # Only this private-file cohort shares the controller identity.
+            # Global Host controls retain their original root behavior.
+            wrapped[position:position] = ["--user", f"{os.getuid()}:{os.getgid()}"]
+            return wrapped
+        return [
+            "/usr/bin/env",
+            *(name + "=" + value for name, value in sorted(child_environment.items())),
+            *wrapped,
+        ]
+
+    cases: list[dict[str, Any]] = []
+    for mode in ("success", "cancel"):
+        name = "standalone-" + native_target() + "-creation-" + mode
+        owned = directory / mode
+        result = terminal_resource_creation_cli(
+            [host.executable],
+            owned,
+            name,
+            mode=mode,
+            wrap=command,
+            environment=overrides,
+            controller_environment=host.environment,
+        )
+        original = owned / "creation-cli-receipt.json"
+        retained = evidence / (name + "-controls.json")
+        shutil.copyfile(original, retained)
+        if json.loads(retained.read_text()) != result:
+            raise ValueError("Native creation controls differ from their owned original")
+        pty = ROOT / "artifacts/terminal" / (name + ".json")
+        retained_pty = evidence / pty.name
+        shutil.copyfile(pty, retained_pty)
+        receipt = json.loads(retained_pty.read_text())
+        if (
+            receipt["exit"] != 0
+            or not receipt["terminal_mode_restored"]
+            or not receipt["alternate_screen_closed"]
+            or not receipt["cursor_restored"]
+            or not all(receipt["reporting_modes_disabled"].values())
+        ):
+            raise ValueError("Native creation did not restore its terminal")
+        cases.append(
+            {
+                "mode": mode,
+                "controls": retained.name,
+                "controls_sha256": digest(retained),
+                "pty": retained_pty.name,
+                "pty_sha256": digest(retained_pty),
+                **result,
+            }
+        )
+    return {
+        "driver_sha256": digest(ROOT / "tests/support/resource_creation_cli.py"),
+        "cases": cases,
+        "scope": "Actual native public creation UI and controlled owned HTTP POST effects/cancellation; Python belongs only to the external controller. Real Kubernetes schema/admission behavior is qualified separately by owned kind.",
+    }
+
+
 def verify(
     source: Path, candidate: Path, evidence: Path, *, benchmark_tool: Path | None = None
 ) -> dict[str, Any]:
@@ -526,6 +599,7 @@ def verify(
             missing = browser(host, directory / "missing", evidence, helpers=False)
             external = browser(host, directory / "external", evidence, helpers=True)
             charts = helm_catalog(host, directory / "helm-catalog", evidence)
+            creation = creation_requests(host, directory / "resource-creation", evidence)
             benchmarks = None
             if benchmark_tool is not None:
                 from scripts.benchmark_native import verify_native_benchmarks
@@ -551,6 +625,7 @@ def verify(
             "missing_optional_tool": missing,
             "auth_and_shell": external,
             "helm_catalog_and_values": charts,
+            "resource_creation": creation,
             "http_benchmarks": benchmarks,
             "private_credential_child": True,
             "scope": "Exact extracted archive, native CLI, owned loopback API, C credential and kubectl fixtures with real /bin/sh. Not provider or real Kubernetes exec certification.",

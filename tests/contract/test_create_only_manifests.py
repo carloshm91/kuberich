@@ -47,6 +47,7 @@ async def test_create_only_strict_preview_and_persistent_receipt_keep_exact_subm
         assert response.receipt.target.uid == api.value["metadata"]["uid"] == "actual-server-uid"
         assert response.receipt.resource_version == api.value["metadata"]["resourceVersion"] == "1"
         assert response.receipt.resource is intent.resource
+        assert response.preview_pages and "actual-server-uid" in "".join(response.preview_pages)
         assert api.requests[0][3] == api.requests[1][3] == json.loads(intent.body)
 
 
@@ -231,5 +232,80 @@ async def test_private_template_server_copies_never_enter_submitted_or_default_r
             result = await service.execute(service.confirm(plan))
             assert result.state is MutationState.SUCCEEDED
             assert "private-" not in repr(result)
+            assert service.created_previews[0][0] is service.created_receipts[0]
+            assert "Content withheld" in "".join(service.created_previews[0][1])
+            assert "private-" not in repr(service.created_previews)
         finally:
             await service.close()
+
+
+@pytest.mark.asyncio
+async def test_create_service_refuses_success_without_persistent_receipt_and_stops_later_items(
+    tmp_path,
+):
+    from kuberich.adapters.manifests import ManifestCreationResult
+    from kuberich.domain.mutations import MutationResult
+    from tests.contract.test_manifest_service import service_fixture
+
+    async with service_fixture(tmp_path, count=2) as (service, adapter, _, _):
+        calls = []
+
+        async def missing_receipt(intent, guard, *, private_preview=False):
+            guard()
+            calls.append(intent)
+            return ManifestCreationResult(
+                MutationResult(MutationState.SUCCEEDED, "Missing receipt")
+            )
+
+        adapter.execute_creation = missing_receipt
+        plan = await service.prepare("create")
+        result = await service.execute(service.confirm(plan))
+        assert result.state is MutationState.UNCERTAIN
+        assert [item.state for _, item in result.items] == [
+            MutationState.UNCERTAIN,
+            MutationState.BLOCKED,
+        ]
+        assert len(calls) == 1 and not service.created_receipts
+
+
+@pytest.mark.asyncio
+async def test_known_cancelled_201_metadata_survives_in_safe_session_history(tmp_path, monkeypatch):
+    from kuberich.domain.resources import resource_record
+    from kuberich.services.mutations import MutationManager
+
+    entered, release = threading.Event(), threading.Event()
+
+    def decode(resource, value, namespace):
+        record = resource_record(resource, value, namespace)
+        entered.set()
+        assert release.wait(10)
+        return record
+
+    async with live_service_fixture(tmp_path) as (service, api):
+        manager = MutationManager()
+        plan = await service.prepare("create")
+        owners = []
+        initial_current = service.current
+
+        def current():
+            owners.append(asyncio.current_task())
+            return initial_current()
+
+        service.current = current
+        monkeypatch.setattr("kuberich.adapters.manifests.resource_record", decode)
+        operation = manager.start(service, service.confirm(plan))
+        try:
+            await wait_for(entered.is_set)
+            decoder_owner = owners[-1]
+            stopping = asyncio.create_task(manager.cancel(operation))
+            await wait_for(lambda: decoder_owner.cancelling() > 0)
+            release.set()
+            result = await stopping
+            assert result.state is MutationState.UNCERTAIN
+            assert service.created_receipts[0].target.uid == api.value["metadata"]["uid"]
+            history = repr(manager.records)
+            assert "actual-server-uid" in history and "resourceVersion 1" in history
+            assert "private-value" not in history
+        finally:
+            release.set()
+            await manager.close()

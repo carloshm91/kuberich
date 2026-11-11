@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 
 from kuberich.adapters.editing import ManifestFile, file_worker
 from kuberich.adapters.manifest_files import ManifestFiles
+from kuberich.domain.clipboard import clipboard_source_bytes
 from kuberich.domain.editing import editor_arguments
 from kuberich.domain.manifests import (
     DraftSourceKind,
@@ -125,6 +126,8 @@ class ResourceCreationService:
         self._require()
         self.invalidate()
         generation = self._generation
+        if type(data) is not bytes:
+            raise AppError("Creation capture requires immutable source bytes.")
         await self.close_draft()
         if require_origin is not None:
             await require_origin()
@@ -148,6 +151,8 @@ class ResourceCreationService:
     ) -> FrozenDraftSource:
         if kind not in {"template", "clipboard", "paste", "file"}:
             raise AppError("Choose an explicit template, file, clipboard or paste source.")
+        if kind in {"clipboard", "paste"}:
+            clipboard_source_bytes(data)
         documents = manifest_documents(data, source_path="creation draft")
         rendered = b"\n".join(item.body for item in documents)
         return FrozenDraftSource(
@@ -200,11 +205,15 @@ class ResourceCreationService:
         from kuberich.domain.resource_templates import render_resource_template
 
         self._require()
+        self.invalidate()
+        generation = self._generation
         await catalog.require_current(entry)
+        self._require(generation)
         template = entry.template
         if template is None or not entry.enabled:
             raise AppError("Choose an available unambiguous resource template.")
         data = await file_worker(lambda: render_resource_template(template, values))
+        self._require(generation)
         return await self._capture(
             data,
             "template",

@@ -437,6 +437,9 @@ def test_frozen_source_and_plan_repr_do_not_retain_raw_body_display(tmp_path):
         plan, items=(replace(item, validation=MutationResult(MutationState.BLOCKED, "safe")),)
     ).ready
     assert "raw-sensitive-sentinel" not in repr((source, disclosure, save, plan))
+    assert snapshot.sha256 not in repr((source, disclosure, save, plan))
+    assert source.source_sha256 not in repr((source, disclosure, save, plan))
+    assert source.rendered_sha256 not in repr(source)
     with pytest.raises(AppError):
         canonical_manifest({"x": float("nan")})
 

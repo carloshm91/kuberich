@@ -85,6 +85,38 @@ def test_macos_shell_delegates_do_not_allow_outside_interpreters_or_source(monke
         assert '(subpath "' + str(path) + '")' in profile
 
 
+def test_creation_private_files_share_controller_uid_without_weakening_other_native_controls(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(verify_standalone.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(verify_standalone.shutil, "which", lambda name: "/owned/docker")
+    monkeypatch.setattr(
+        verify_standalone,
+        "capture_docker",
+        lambda executable: {"DOCKER_HOST": "unix:///owned.sock"},
+    )
+    monkeypatch.setattr(verify_standalone.os, "getuid", lambda: 1234)
+    monkeypatch.setattr(verify_standalone.os, "getgid", lambda: 5678)
+    host = verify_standalone.Host(tmp_path / "bundle", tmp_path, tmp_path)
+    captured = []
+
+    class ReachedTerminalBoundary(Exception):
+        pass
+
+    def terminal(command, directory, evidence, *, mode, wrap, environment, controller_environment):
+        captured.extend(wrap(command, {"HOME": str(tmp_path / "owned-home")}))
+        assert mode == "success"
+        raise ReachedTerminalBoundary
+
+    monkeypatch.setattr(verify_standalone, "terminal_resource_creation_cli", terminal)
+    with pytest.raises(ReachedTerminalBoundary):
+        verify_standalone.creation_requests(host, tmp_path / "creation", tmp_path)
+    position = captured.index("run") + 1
+    assert captured[position : position + 2] == ["--user", "1234:5678"]
+    assert "--pid=host" not in captured
+    assert "--user" not in host.command([host.executable], {}, tty=True)
+
+
 @pytest.mark.skipif(sys.platform != "darwin", reason="Requires actual macOS sandbox-exec")
 def test_macos_system_shell_runs_builtins_but_cannot_launch_controller_python(tmp_path):
     host = verify_standalone.Host(tmp_path / "bundle", tmp_path, tmp_path)

@@ -2,11 +2,14 @@
 
 import queue
 import threading
-from http.server import ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
 def config(path: Path, server: str, user: dict[str, Any]) -> Path: ...
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None: ...
 
 class Server(ThreadingHTTPServer):
     fail_watches: threading.Event

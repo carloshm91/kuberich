@@ -11,6 +11,7 @@ from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.mutations import Confirmation
 from kuberich.services.resource_creation import ResourceCreationService
+from tests.support.workspace import wait_for
 
 PRIVATE = "owned-creation-draft-private"
 BODY = canonical_manifest(
@@ -233,3 +234,69 @@ async def test_close_drains_held_source_worker_before_return(tmp_path, monkeypat
     with pytest.raises(asyncio.CancelledError):
         await operation
     assert service.operation_count == 0 and service.current_source is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "data,kind,message",
+    [
+        (bytearray(BODY), "paste", "immutable"),
+        (b"x" * (1024 * 1024 + 1), "clipboard", "1 MiB"),
+        (b"private\x1bcontrol", "paste", "control"),
+        (BODY, "unknown", "explicit"),
+    ],
+)
+async def test_source_boundary_refuses_mutable_oversized_or_unsafe_captures(
+    tmp_path, data, kind, message
+):
+    service = ResourceCreationService(AccessPolicy(False), {}, tmp_path)
+    try:
+        await service.capture_bytes(BODY, "file", "Original")
+        with pytest.raises(AppError, match=message):
+            await service.capture_bytes(data, kind, "Explicit replacement")
+        assert service.current_source is None
+    finally:
+        await service.close()
+
+
+@pytest.mark.asyncio
+async def test_template_replacement_invalidates_old_source_before_held_origin_check(
+    tmp_path, monkeypatch
+):
+    from kuberich.domain.resource_templates import TemplateCatalogEntry, builtin_templates
+    from kuberich.services.resource_templates import TemplateCatalogService
+
+    template = next(item for item in builtin_templates() if item.id == "configmap")
+    entry = TemplateCatalogEntry(
+        origin="builtin",
+        relative_path="",
+        identity=("builtin", template.id, 1, template.source_sha256),
+        template=template,
+    )
+    catalog = TemplateCatalogService(tmp_path / "config.yaml", tmp_path)
+    catalog.entries = (entry,)
+    service = ResourceCreationService(AccessPolicy(False), {}, tmp_path)
+    original = await service.capture_bytes(BODY, "file", "Original")
+    entered, release = asyncio.Event(), asyncio.Event()
+    current = TemplateCatalogService.require_current
+
+    async def held(owner, candidate):
+        entered.set()
+        await release.wait()
+        await current(owner, candidate)
+
+    monkeypatch.setattr(TemplateCatalogService, "require_current", held)
+    operation = asyncio.create_task(service.capture_template(entry, {"name": "new-owned"}, catalog))
+    try:
+        await wait_for(entered.is_set)
+        assert service.current_source is None
+        with pytest.raises(AppError, match="changed"):
+            await service.require_source(original)
+        service.invalidate()
+        release.set()
+        with pytest.raises(AppError, match="changed"):
+            await operation
+    finally:
+        release.set()
+        await service.close()
+        await catalog.close()

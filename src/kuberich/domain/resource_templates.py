@@ -9,7 +9,9 @@ from typing import Any, Literal, cast
 
 from kuberich.domain.editing import parse_manifest
 from kuberich.domain.manifests import (
+    MAX_MANIFEST_BYTES,
     MAX_MANIFEST_RESOURCES,
+    MAX_SOURCE_BYTES,
     canonical_manifest,
     manifest_documents,
 )
@@ -44,7 +46,7 @@ class TemplateParameter:
     type: ParameterType
     required: bool
     sensitive: bool
-    paths: tuple[str, ...]
+    paths: tuple[str, ...] = field(repr=False)
     has_default: bool
     default: bytes | None = field(repr=False)
     enum: tuple[bytes, ...] = field(repr=False)
@@ -61,7 +63,7 @@ class ResourceTemplate:
     revision: int
     title: str
     description: str
-    parameters: tuple[TemplateParameter, ...]
+    parameters: tuple[TemplateParameter, ...] = field(repr=False)
     objects: bytes = field(repr=False)
     source_sha256: str = field(repr=False)
     builtin: bool = False
@@ -71,7 +73,7 @@ class ResourceTemplate:
 class TemplateCatalogEntry:
     origin: TemplateOrigin
     relative_path: str
-    identity: TemplateIdentity
+    identity: TemplateIdentity = field(repr=False)
     template: ResourceTemplate | None = field(repr=False)
     problem: str | None = None
 
@@ -285,11 +287,76 @@ def _builtin_values(template: ResourceTemplate, objects: list[Any]) -> None:
         raise _invalid("Service ports must be between one and 65535")
 
 
+def _string_json_size(value: str) -> int:
+    """Count UTF-8 JSON bytes without first encoding an unbounded input string."""
+    if len(value) > MAX_MANIFEST_BYTES:
+        raise _invalid("parameter input exceeds the 1 MiB value budget")
+    size = 2
+    for character in value:
+        code = ord(character)
+        if character in {'"', "\\", "\b", "\f", "\n", "\r", "\t"}:
+            size += 2
+        elif code < 0x20:
+            size += 6
+        elif code < 0x80:
+            size += 1
+        elif code < 0x800:
+            size += 2
+        elif 0xD800 <= code <= 0xDFFF:
+            raise _invalid("parameter input must be valid UTF-8")
+        elif code < 0x10000:
+            size += 3
+        else:
+            size += 4
+        if size > MAX_MANIFEST_BYTES:
+            raise _invalid("parameter input exceeds the 1 MiB value budget")
+    return size
+
+
+def _parameter_bytes(value: object, kind: ParameterType) -> bytes:
+    if kind == "string_map":
+        if not isinstance(value, dict):
+            raise _invalid("parameter input has a different type")
+        size = 2
+        for index, (key, item) in enumerate(value.items()):
+            if not isinstance(key, str) or not isinstance(item, str):
+                raise _invalid("parameter input has a different type")
+            size += _string_json_size(key) + 1 + _string_json_size(item) + (1 if index else 0)
+            if size > MAX_MANIFEST_BYTES:
+                raise _invalid("parameter input exceeds the 1 MiB value budget")
+    else:
+        if not _typed(value, kind):
+            raise _invalid("parameter input has a different type")
+        if isinstance(value, str):
+            _string_json_size(value)
+        elif type(value) is int and value.bit_length() > MAX_MANIFEST_BYTES * 4:
+            # Cap decimal conversion before encoding; four bits per allowed byte
+            # bounds even a refused integer's encoding to about 1.21 MiB.
+            raise _invalid("parameter input exceeds the 1 MiB value budget")
+    encoded = canonical_manifest(value)
+    if len(encoded) > MAX_MANIFEST_BYTES:
+        raise _invalid("parameter input exceeds the 1 MiB value budget")
+    return encoded
+
+
+def _render_budget(object_size: int, total: int) -> None:
+    if object_size > MAX_MANIFEST_BYTES:
+        raise _invalid("rendered resource exceeds the 1 MiB object budget")
+    if total > MAX_SOURCE_BYTES:
+        raise _invalid("rendered source exceeds the 8 MiB total budget")
+
+
 def render_resource_template(template: ResourceTemplate, values: Mapping[str, object]) -> bytes:
     """Substitute typed complete values, then enforce the ordinary manifest contract."""
-    if values.keys() - {parameter.name for parameter in template.parameters}:
+    if len(values) > len(template.parameters) or values.keys() - {
+        parameter.name for parameter in template.parameters
+    }:
         raise _invalid("unknown parameter input")
     objects = json.loads(template.objects)
+    sizes = [len(canonical_manifest(item)) for item in objects]
+    total = sum(sizes) + 5 * (len(objects) - 1)
+    for size in sizes:
+        _render_budget(size, total)
     for parameter in template.parameters:
         if parameter.name in values:
             value = values[parameter.name]
@@ -299,13 +366,17 @@ def render_resource_template(template: ResourceTemplate, values: Mapping[str, ob
             raise _invalid("a required parameter is absent")
         else:
             continue
-        if not _typed(value, parameter.type):
-            raise _invalid("parameter input has a different type")
-        encoded = canonical_manifest(value)
+        encoded = _parameter_bytes(value, parameter.type)
         if parameter.enum and encoded not in parameter.enum:
             raise _invalid("parameter input is outside its finite enum")
         for path in parameter.paths:
-            container, key = _location(objects, _pointer(path))
+            parts = _pointer(path)
+            container, key = _location(objects, parts)
+            index = int(parts[0])
+            change = len(encoded) - len(canonical_manifest(container[key]))
+            projected_size, projected_total = sizes[index] + change, total + change
+            _render_budget(projected_size, projected_total)
+            sizes[index], total = projected_size, projected_total
             container[key] = json.loads(encoded)
     _builtin_values(template, objects)
     output = b"\n---\n".join(canonical_manifest(item) for item in objects)

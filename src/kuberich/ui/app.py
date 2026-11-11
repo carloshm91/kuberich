@@ -995,6 +995,7 @@ class KubeRichApp(App[None]):
                 Command.EXPORTS,
                 Command.BENCHMARKS,
                 Command.MANIFESTS,
+                Command.CREATE,
                 Command.NODE_SHELL_RECOVER,
             }:
                 self.call_after_refresh(self.appearance_controller.start_updates)

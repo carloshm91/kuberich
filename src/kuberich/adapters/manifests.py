@@ -17,6 +17,7 @@ from kuberich.domain.manifests import (
     CreatedResourceReceipt,
     ManifestCreateIntent,
     create_manifest_intent,
+    manifest_preview,
     manifest_status,
 )
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState
@@ -46,12 +47,14 @@ class ManifestValidation:
     result: MutationResult
     body: bytes | None = field(default=None, repr=False)
     created: CreatedResourceReceipt | None = None
+    created_pages: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class ManifestCreationResult:
     result: MutationResult
     receipt: CreatedResourceReceipt | None = None
+    preview_pages: tuple[str, ...] = ()
 
 
 class ManifestAdapterPort(Protocol):
@@ -71,7 +74,11 @@ class ManifestAdapterPort(Protocol):
     ) -> ManifestValidation: ...
     async def execute(self, intent: ManifestRequest, guard: ManifestGuard) -> MutationResult: ...
     async def execute_creation(
-        self, intent: ManifestCreateIntent, guard: ManifestGuard
+        self,
+        intent: ManifestCreateIntent,
+        guard: ManifestGuard,
+        *,
+        private_preview: bool = False,
     ) -> ManifestCreationResult: ...
     async def close(self) -> None: ...
 
@@ -325,6 +332,7 @@ class ManifestAdapter:
         guard: ManifestGuard,
         *,
         dry_run: bool,
+        private_preview: bool = False,
     ) -> ManifestValidation:
         self._check(guard)
         if isinstance(intent, ManifestCreateIntent) and intent.policy == "create-only":
@@ -342,6 +350,7 @@ class ManifestAdapter:
                 raise AppError("Create-only request differs from its canonical reviewed input.")
         captured: list[bytes] = []
         created: list[CreatedResourceReceipt] = []
+        created_pages: list[tuple[str, ...]] = []
 
         def receipt(data: bytes) -> MutationResult | None:
             if isinstance(intent, ResourceIntent):
@@ -387,9 +396,13 @@ class ManifestAdapter:
                         resource_version=record.resource_version,
                     )
                 )
+                if intent.policy == "create-only":
+                    created_pages.append(
+                        manifest_preview(intent.body, data, private=private_preview)
+                    )
                 return MutationResult(
                     MutationState.SUCCEEDED,
-                    f"Created {intent.target.resource}/{intent.target.name}; UID: {record.uid}. No retry was made.",
+                    f"Created {intent.target.resource}/{intent.target.name}; UID: {record.uid}; resourceVersion: {record.resource_version}. No retry was made.",
                 )
             return None
 
@@ -418,7 +431,10 @@ class ManifestAdapter:
             error_receipt=manifest_status,
         )
         return ManifestValidation(
-            result, captured[0] if captured else None, created[0] if created else None
+            result,
+            captured[0] if captured else None,
+            created[0] if created else None,
+            created_pages[0] if created_pages else (),
         )
 
     async def validate(self, intent: ManifestRequest, guard: ManifestGuard) -> ManifestValidation:
@@ -428,12 +444,25 @@ class ManifestAdapter:
         return (await self._owned(partial(self._request, intent, guard, dry_run=False))).result
 
     async def execute_creation(
-        self, intent: ManifestCreateIntent, guard: ManifestGuard
+        self,
+        intent: ManifestCreateIntent,
+        guard: ManifestGuard,
+        *,
+        private_preview: bool = False,
     ) -> ManifestCreationResult:
         if intent.policy != "create-only":
             raise AppError("Creation requires an exact create-only request.")
-        response = await self._owned(partial(self._request, intent, guard, dry_run=False))
-        return ManifestCreationResult(response.result, response.created)
+        response = await self._owned(
+            partial(self._request, intent, guard, dry_run=False, private_preview=private_preview)
+        )
+        result = response.result
+        if response.created is not None and result.state is MutationState.UNCERTAIN:
+            result = MutationResult(
+                result.state,
+                result.message
+                + f" Verified persistent creation receipt: UID {response.created.target.uid}; resourceVersion {response.created.resource_version}. This known metadata does not authorize replay.",
+            )
+        return ManifestCreationResult(result, response.created, response.created_pages)
 
     async def _close(self) -> None:
         self._closed = True
