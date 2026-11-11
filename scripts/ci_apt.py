@@ -8,17 +8,18 @@ https://github.com/actions/runner-images/pull/14643
 import argparse
 import os
 import platform
-import stat
 import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+from scripts.ci_apt_sources import MIRRORS as MIRRORS
+from scripts.ci_apt_sources import mirror_for_architecture as mirror_for_architecture
+from scripts.ci_apt_sources import source_bytes, source_changes
+
 MIRROR_FILE = Path("/etc/apt/apt-mirrors.txt")
-MIRRORS = {
-    "amd64": "https://archive.ubuntu.com/ubuntu",
-    "arm64": "https://ports.ubuntu.com/ubuntu-ports",
-}
+SOURCE_LIST = Path("/etc/apt/sources.list")
+SOURCE_DIRECTORY = Path("/etc/apt/sources.list.d")
 PACKAGES = frozenset({"openssh-server", "tmux", "xclip", "xvfb", "gcc", "libc6-dev", "binutils"})
 APT_OPTIONS = (
     "-o",
@@ -32,12 +33,6 @@ APT_OPTIONS = (
     "-o",
     "DPkg::Lock::Timeout=60",
 )
-
-
-def mirror_for_architecture(architecture: str) -> str:
-    if architecture not in MIRRORS:
-        raise ValueError("CI APT supports only the declared amd64 and arm64 Ubuntu runners.")
-    return MIRRORS[architecture]
 
 
 def _root_command(command: tuple[str, ...], seconds: int) -> tuple[str, ...]:
@@ -83,20 +78,17 @@ def bootstrap(packages: Sequence[str]) -> None:
         raise ValueError("CI APT architecture response is missing or oversized.")
     architecture = result.stdout.decode("ascii").strip()
     mirror = mirror_for_architecture(architecture)
-    body = (mirror + "\n").encode("ascii")
-    if len(body) > 256 or not mirror.startswith("https://"):
-        raise ValueError("CI APT mirror selection must be bounded official HTTPS configuration.")
-    try:
-        mode = MIRROR_FILE.lstat().st_mode
-    except FileNotFoundError:
-        print("CI APT: mirror list absent; retaining the image's existing sources.", flush=True)
-    else:
-        if not stat.S_ISREG(mode):
-            raise ValueError("CI APT refuses a symlink or nonregular mirror list.")
-        print(f"CI APT: selecting the official {architecture} HTTPS mirror.", flush=True)
+    changes = source_changes(architecture, SOURCE_LIST, SOURCE_DIRECTORY, MIRROR_FILE)
+    print(
+        f"CI APT: selecting reviewed MIT SIPB HTTPS mirror for {architecture}: {mirror}", flush=True
+    )
+    for change in changes:
+        if source_bytes(change.path) != change.original:
+            raise ValueError("CI APT source configuration changed before preparation.")
+    for change in changes:
         subprocess.run(
-            _root_command(("/usr/bin/tee", str(MIRROR_FILE)), 5),
-            input=body,
+            _root_command(("/usr/bin/tee", str(change.path)), 5),
+            input=change.replacement,
             stdout=subprocess.DEVNULL,
             check=True,
             timeout=15,

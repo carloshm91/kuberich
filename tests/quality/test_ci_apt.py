@@ -1,6 +1,7 @@
 """APT bootstrap contracts use only an owned mirror file and fake command handles."""
 
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -15,6 +16,10 @@ def refuse_real_commands(monkeypatch, tmp_path):
 
     monkeypatch.setattr(ci_apt.subprocess, "run", refuse)
     monkeypatch.setattr(ci_apt, "MIRROR_FILE", tmp_path / "owned-apt-mirrors.txt")
+    monkeypatch.setattr(ci_apt, "SOURCE_LIST", tmp_path / "sources.list")
+    monkeypatch.setattr(ci_apt, "SOURCE_DIRECTORY", tmp_path / "sources.list.d")
+    ci_apt.SOURCE_LIST.write_text("deb mirror+file:/etc/apt/apt-mirrors.txt noble main universe\n")
+    ci_apt.SOURCE_DIRECTORY.mkdir()
     monkeypatch.setattr(ci_apt.platform, "system", lambda: "Linux")
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     monkeypatch.setenv("RUNNER_OS", "Linux")
@@ -41,9 +46,10 @@ def owned_commands(monkeypatch):
         if phase == fixture.fail_phase:
             raise fixture.failure
         if phase == "mirror":
-            assert argv[-1] == str(ci_apt.MIRROR_FILE)
-            assert len(kwargs["input"]) <= 256
-            ci_apt.MIRROR_FILE.write_bytes(kwargs["input"])
+            path = Path(argv[-1])
+            assert path in {ci_apt.MIRROR_FILE, ci_apt.SOURCE_LIST}
+            assert len(kwargs["input"]) <= 65536
+            path.write_bytes(kwargs["input"])
         return subprocess.CompletedProcess(argv, 0, stdout=fixture.architecture)
 
     monkeypatch.setattr(ci_apt.subprocess, "run", command)
@@ -53,8 +59,8 @@ def owned_commands(monkeypatch):
 @pytest.mark.parametrize(
     "architecture,mirror",
     [
-        ("amd64", "https://archive.ubuntu.com/ubuntu"),
-        ("arm64", "https://ports.ubuntu.com/ubuntu-ports"),
+        ("amd64", "https://mirrors.mit.edu/ubuntu"),
+        ("arm64", "https://mirrors.mit.edu/ubuntu-ports"),
     ],
 )
 def test_architecture_selects_only_the_official_matching_https_archive(architecture, mirror):
@@ -126,6 +132,8 @@ def test_bounded_signed_update_and_noninteractive_install_preserve_exact_package
     architecture,
 ):
     owned_commands.architecture = (architecture + "\n").encode()
+    if architecture == "arm64":
+        ci_apt.MIRROR_FILE.write_text("http://ports.ubuntu.com/ubuntu-ports\n")
     packages = ["openssh-server", "tmux", "xclip", "xvfb", "gcc", "libc6-dev", "binutils"]
     ci_apt.bootstrap(packages)
     assert [phase for phase, _, _ in owned_commands.calls] == [
@@ -191,15 +199,80 @@ def test_invalid_or_oversized_dpkg_output_never_starts_sudo(owned_commands, outp
     assert len(owned_commands.calls) == 1 and ci_apt.MIRROR_FILE.read_bytes() == original
 
 
-def test_missing_mirror_list_retains_image_sources_but_still_requires_bounded_update_and_install(
+def test_missing_referenced_mirror_list_refuses_before_update_and_install(
     owned_commands,
     capsys,
 ):
     ci_apt.MIRROR_FILE.unlink()
+    with pytest.raises(FileNotFoundError):
+        ci_apt.bootstrap(["tmux"])
+    assert [phase for phase, _, _ in owned_commands.calls] == ["architecture"]
+    assert not ci_apt.MIRROR_FILE.exists()
+    assert "retaining" not in capsys.readouterr().out
+
+
+def test_actual_arm_source_without_mirror_file_reaches_signed_update_and_install(owned_commands):
+    owned_commands.architecture = b"arm64\n"
+    ci_apt.MIRROR_FILE.unlink()
+    original = (
+        "deb http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse\n"
+        "deb http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse\n"
+    )
+    ci_apt.SOURCE_LIST.write_text(original)
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert ci_apt.SOURCE_LIST.read_text() == original.replace(
+        "http://ports.ubuntu.com/ubuntu-ports", "https://mirrors.mit.edu/ubuntu-ports"
+    )
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "mirror",
+        "update",
+        "install",
+    ]
+    assert not ci_apt.MIRROR_FILE.exists()
+
+
+def test_late_invalid_source_refuses_before_any_source_write(owned_commands):
+    original = ci_apt.MIRROR_FILE.read_bytes()
+    (ci_apt.SOURCE_DIRECTORY / "later.sources").write_text(
+        "Types: deb\nURIs: https://archive.ubuntu.com/ubuntu\nSuites: unknown\nComponents: main\n"
+    )
+    with pytest.raises(ValueError):
+        ci_apt.bootstrap(["tmux"])
+    assert len(owned_commands.calls) == 1 and ci_apt.MIRROR_FILE.read_bytes() == original
+
+
+def test_source_changed_after_plan_refuses_before_tee_or_update(owned_commands, monkeypatch):
+    original = ci_apt.MIRROR_FILE.read_bytes()
+    monkeypatch.setattr(ci_apt, "source_bytes", lambda path: b"changed-source")
+    with pytest.raises(ValueError, match="configuration changed"):
+        ci_apt.bootstrap(["tmux"])
+    assert len(owned_commands.calls) == 1 and ci_apt.MIRROR_FILE.read_bytes() == original
+
+
+def test_later_changed_file_is_refused_before_writing_an_earlier_source(
+    owned_commands, monkeypatch
+):
+    source = "deb http://archive.ubuntu.com/ubuntu noble main\n"
+    ci_apt.SOURCE_LIST.write_text(source)
+    (ci_apt.SOURCE_DIRECTORY / "ubuntu.sources").write_text(
+        "Types: deb\nURIs: mirror+file:/etc/apt/apt-mirrors.txt\nSuites: noble\nComponents: main\n"
+    )
+    original_read = ci_apt.source_bytes
+    monkeypatch.setattr(
+        ci_apt,
+        "source_bytes",
+        lambda path: b"changed-source" if path == ci_apt.MIRROR_FILE else original_read(path),
+    )
+    with pytest.raises(ValueError, match="configuration changed"):
+        ci_apt.bootstrap(["tmux"])
+    assert len(owned_commands.calls) == 1 and ci_apt.SOURCE_LIST.read_text() == source
+
+
+def test_unchanged_selected_mirror_needs_no_file_write(owned_commands):
+    ci_apt.MIRROR_FILE.write_text("https://mirrors.mit.edu/ubuntu\n")
     ci_apt.bootstrap(["tmux"])
     assert [phase for phase, _, _ in owned_commands.calls] == ["architecture", "update", "install"]
-    assert not ci_apt.MIRROR_FILE.exists()
-    assert "mirror list absent; retaining" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("entry", ["symlink", "directory"])
@@ -241,7 +314,7 @@ def test_each_command_failure_stops_without_success_or_automatic_replay(
 @pytest.mark.parametrize("mirror", ["http://archive.ubuntu.com/ubuntu", "https://" + "a" * 256])
 def test_mirror_write_rejects_non_https_or_unbounded_selection(owned_commands, monkeypatch, mirror):
     monkeypatch.setitem(ci_apt.MIRRORS, "amd64", mirror)
-    with pytest.raises(ValueError, match="bounded official HTTPS"):
+    with pytest.raises(ValueError, match="bounded reviewed HTTPS"):
         ci_apt.bootstrap(["tmux"])
     assert len(owned_commands.calls) == 1
 

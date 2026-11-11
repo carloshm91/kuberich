@@ -64,8 +64,13 @@ the fixture now includes create and still navigates to the unchanged ctx alias.
 The second run passes all 12,613 Fast cases (two platform skips), then Ubuntu
 parts/native jobs fail before behavior because official archive DNS is unavailable.
 Original failures remain retained. The explicit owned macOS clipboard step now
-also selects the native-read contract. The complete corrected hosted matrix,
-including hosted dependency recovery, remains required.
+also selects the native-read contract. A third run reproduces the archive DNS
+failure before behavior. The CI source helper now selects documented MIT SIPB
+HTTPS archives, authenticated and current against existing Ubuntu keys/Canonical
+metadata in independent agent checks, and fixes the actual ARM source layout.
+All original trust checks, package closure and hard deadlines remain unchanged.
+The complete corrected hosted matrix, including actual hosted signed dependency
+recovery, remains required.
 
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 

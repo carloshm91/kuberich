@@ -376,7 +376,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_benchmarks_kind"
     )
     assert "trap retain_benchmark_receipt EXIT" in benchmarks["run"]
-    assert "uv run mypy --strict scripts/ci_apt.py" in commands
+    assert "uv run mypy --strict scripts/ci_apt.py scripts/ci_apt_sources.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
         in commands

@@ -247,6 +247,31 @@ control binds both selected nodes. The focused CI/APT/clipboard family passes
 117 cases with two intentional Linux platform skips. No application, APT mirror,
 signature/TLS check, retry count or deadline changes accompany this correction.
 
+Run `43034296431` then failed in Fast before behavioral tests: the same Canonical
+archive DNS failure again reached the unchanged 120-second signed-index deadline.
+Agent reachability therefore did not establish hosted recovery. Original
+`hosted-03-fast-failure.log` remains retained, SHA-256
+`ca79c86d2ff50dec52a2f160926d5b493f3c79029fe6387caacf62101711acf2`.
+
+The CI-only correction selects the fixed, operator-documented
+[MIT SIPB HTTPS mirrors](https://mirrors.mit.edu/) for Ubuntu and Ubuntu Ports.
+Independent agent checks authenticated all four jammy/noble security combinations
+using the existing Ubuntu archive keyring and matched the contemporaneous
+Canonical bytes exactly. This establishes the candidate's metadata authenticity
+and observed currency, not mirror registration or hosted recovery. An earlier
+OCF candidate had valid signatures but lagged security metadata and was rejected.
+
+The bounded source-format helper rewrites recognized Ubuntu one-line, deb822 and
+mirror-list layouts, including actual ARM sources that previously ignored the
+mirror-file-only change. Suites, components, architecture and Signed-By remain
+captured; unrelated sources remain unchanged. Unknown formats, trust overrides,
+unsafe files, oversized inventories and changed preimages refuse before writes.
+Actual `apt-get update --error-on=any` must authenticate the selected pockets with
+the existing keys. No key, TLS/signature option, package closure, retry count,
+120/180-second command deadline or outer six-minute bound changes. Focused source,
+bootstrap, workflow and qualifier controls pass 199 cases; genuine next-hosted
+signed setup plus the complete current matrix remain mandatory.
+
 ## Remaining qualification
 
 Whole production/branch/changed-line gates, native workflows and the
