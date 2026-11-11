@@ -50,8 +50,10 @@ the final exact-head hosted platform matrix; earlier proofs keep their original
 producer identities. Signed `f28c954` passes 1,866 targeted cases (two platform
 skips), all six changed critical modules at 100% lines/branches, whole Ruff and
 formatting, all 402 workflow strict-type sources and the complete private-access
-audit. Creation UI and lazy-SDK controls pass; the complete docs family is being
-rerun after replacing a product term that matched the existing ticket-code guard.
+audit. Creation UI and lazy-SDK controls pass. After correcting a product term
+that matched the existing ticket-code guard, the complete documentation/style/
+link/site family passes 219 cases at docs-only `87b1205`; external sources, both
+static-site surfaces and 1,176 local Markdown links also pass validation.
 Whole/branch/changed-line floors and native/platform checks remain separate. The
 [creation acceptance record](acceptance/resource-creation.md) retains original
 failures and the separate private-root counterexample/correction. Strict server

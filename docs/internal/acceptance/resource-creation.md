@@ -215,10 +215,15 @@ disclosure on the same retained draft. Stop controls preserve in-memory edits,
 join held disclosure preparation on Back, reject stale source/policy results and
 restore fresh consent without recapture. Original failures retain their own logs.
 
+The corrected complete internal-documentation, style, link and site test family
+passed all 219 cases in 93.13 seconds at docs-only producer `87b1205`. The actual
+external-source checker and both static-site build/check surfaces pass: 53 pages,
+2,230 local links/assets and 70 files. Plan validation reports 1,176 local Markdown
+links. Production bytes remain identical to the audited `f28c954` source.
+
 ## Remaining qualification
 
-Complete corrected documentation checks, whole production/branch/changed-line
-gates, native workflows and the
+Whole production/branch/changed-line gates, native workflows and the
 ordinary exact-head hosted matrix remain separate requirements. Provider
 certification remains Q05
 #87. D09 #82 owns cumulative v0.5 qualification and any source version change;
