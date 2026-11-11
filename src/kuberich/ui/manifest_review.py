@@ -14,6 +14,7 @@ from textual.widgets import Button, DataTable, Input, Select, Static
 
 from kuberich.domain.manifests import ManifestAction, ManifestPlan
 from kuberich.domain.mutations import MutationResult
+from kuberich.domain.targets import MutationTarget
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.manifests import ManifestMutationService
@@ -72,13 +73,17 @@ class ManifestReviewScreen(ModalScreen[None]):
             max_length=63,
         )
         self.action_field: Select[str] = Select(
-            (("Apply", "apply"), ("Delete", "delete")),
+            (("Create", "create"),)
+            if action == "create"
+            else (("Apply", "apply"), ("Delete", "delete")),
             value=action,
             allow_blank=False,
             id="manifest-review-action",
         )
         self.status = Static(
-            "Validate requests a strict server dry-run; no writes until separate confirmation.",
+            "Validate requests strict server dry-run; creation binds namespace names and reserves no names."
+            if action == "create"
+            else "Validate requests a strict server dry-run; no writes until separate confirmation.",
             markup=False,
             id="manifest-review-status",
         )
@@ -103,7 +108,8 @@ class ManifestReviewScreen(ModalScreen[None]):
         self.namespace.value = scope.namespace or ""
         with Vertical(id="manifest-review-form"):
             yield Static(
-                "Manifest cluster review · Validate / explicit Apply or Delete",
+                "Manifest cluster review · Validate / explicit "
+                + ("Create" if self.action == "create" else "Apply or Delete"),
                 markup=False,
                 id="manifest-review-title",
             )
@@ -171,7 +177,7 @@ class ManifestReviewScreen(ModalScreen[None]):
             return
         busy = self._operation_task is not None and not self._operation_task.done()
         writing = self._write is not None
-        self.action_field.disabled = writing
+        self.action_field.disabled = writing or self.action == "create"
         self.namespace.disabled = writing
         self.query_one("#manifest-review-validate", Button).disabled = (
             busy or self.service.policy.read_only or self._stopped
@@ -216,6 +222,14 @@ class ManifestReviewScreen(ModalScreen[None]):
             for item in plan.items:
                 outcome = results.get(item.target)
                 validation = outcome or item.validation
+                created = next(
+                    (
+                        receipt
+                        for receipt in self.service.created_receipts
+                        if self._same_address(receipt.target, item.target)
+                    ),
+                    None,
+                )
                 self.table.add_row(
                     *(
                         safe_text(value)
@@ -229,8 +243,12 @@ class ManifestReviewScreen(ModalScreen[None]):
                             item.target.namespace or "(cluster)",
                             item.target.name,
                             item.change,
-                            item.target.uid or "new name / no UID captured",
-                            item.resource_version
+                            created.target.uid
+                            if created
+                            else item.target.uid or "new name / no UID captured",
+                            created.resource_version
+                            if created
+                            else item.resource_version
                             or (
                                 "absent at review"
                                 if item.change == "absent"
@@ -249,6 +267,16 @@ class ManifestReviewScreen(ModalScreen[None]):
         self.table.scroll_to(x=x, y=y, animate=False, force=True)
         self._preview()
 
+    @staticmethod
+    def _same_address(left: MutationTarget, right: MutationTarget) -> bool:
+        return (left.session, left.group, left.resource, left.namespace, left.name) == (
+            right.session,
+            right.group,
+            right.resource,
+            right.namespace,
+            right.name,
+        )
+
     def _preview(self) -> None:
         plan, index = self.plan, self.table.cursor_row
         self.pages = (
@@ -259,6 +287,14 @@ class ManifestReviewScreen(ModalScreen[None]):
         self.page = 0
         if plan is not None and 0 <= index < len(plan.items):
             item = plan.items[index]
+            actual = next(
+                (
+                    (receipt, pages)
+                    for receipt, pages in self.service.created_previews
+                    if self._same_address(receipt.target, item.target)
+                ),
+                None,
+            )
             outcome = next(
                 (
                     result
@@ -278,6 +314,17 @@ class ManifestReviewScreen(ModalScreen[None]):
                 ),
                 *self.pages[1:],
             )
+            if actual is not None:
+                receipt, pages = actual
+                self.pages = (
+                    f"{outcome.state.value}: {outcome.message}\n"
+                    f"Verified persistent creation receipt · UID {receipt.target.uid} · resourceVersion {receipt.resource_version}\n"
+                    "A known receipt remains known if completion was interrupted. No automatic replay.\n"
+                    "Actual server response compared with submitted input:\n\n"
+                    + (pages[0] if pages else "No server content preview is available."),
+                    *pages[1:],
+                    *self.pages,
+                )
         self._page()
 
     def _page(self) -> None:
@@ -301,14 +348,18 @@ class ManifestReviewScreen(ModalScreen[None]):
         self._controls()
 
     @on(Input.Changed, "#manifest-review-namespace")
-    def namespace_changed(self) -> None:
-        if self.is_mounted:
+    def namespace_changed(self, event: Input.Changed) -> None:
+        if (
+            self.is_mounted
+            and event.value == self.namespace.value
+            and (event.value or None) != self.service.scope.namespace
+        ):
             self._invalidate()
 
     @on(Select.Changed, "#manifest-review-action")
     def action_changed(self, event: Select.Changed) -> None:
-        if event.value in {"apply", "delete"}:
-            action = cast(Literal["apply", "delete"], event.value)
+        if event.value in ({"create"} if self.action == "create" else {"apply", "delete"}):
+            action = cast(Literal["apply", "delete", "create"], event.value)
             if action != self.action:
                 self.action = action
                 if self.is_mounted:

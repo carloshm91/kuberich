@@ -26,6 +26,7 @@ class Command(Enum):
     BENCHMARK = auto()
     BENCHMARKS = auto()
     MANIFESTS = auto()
+    CREATE = auto()
     RBAC = auto()
     CAN_I = auto()
     WHO_CAN = auto()

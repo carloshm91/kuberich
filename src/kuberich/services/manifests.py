@@ -22,12 +22,15 @@ from kuberich.domain.connections import (
     namespace_name,
 )
 from kuberich.domain.manifests import (
-    FrozenManifestSource,
+    CreatedResourceReceipt,
+    FrozenDraftSource,
     ManifestAction,
     ManifestChange,
+    ManifestCreateIntent,
     ManifestPlan,
     ManifestPlanItem,
     ManifestScope,
+    ManifestSource,
     canonical_manifest,
     create_manifest_intent,
     manifest_preview,
@@ -80,7 +83,7 @@ class ManifestMutationService:
         scope: ManifestScope,
         discovery: Discovery,
         policy: AccessPolicy,
-        source: FrozenManifestSource,
+        source: ManifestSource,
         current: Callable[[], bool],
         require_source: Callable[[], Awaitable[None]],
         environment: Mapping[str, str],
@@ -90,6 +93,7 @@ class ManifestMutationService:
     ) -> None:
         self.client, self.scope, self.discovery, self.policy = client, scope, discovery, policy
         self.source = self._source = source
+        self._private_preview = isinstance(source, FrozenDraftSource) and source.private_preview
         self._scope = scope
         self.current, self.require_source = current, require_source
         self.adapter = adapter or ManifestAdapter(client, policy, environment, directory)
@@ -99,6 +103,8 @@ class ManifestMutationService:
         self._approved: ManifestPlan | None = None
         self._versions: tuple[str | None, ...] = ()
         self._results: list[tuple[MutationTarget, MutationResult]] = []
+        self._created: list[CreatedResourceReceipt] = []
+        self._created_previews: list[tuple[CreatedResourceReceipt, tuple[str, ...]]] = []
         self._operations: set[asyncio.Task[object]] = set()
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
@@ -117,6 +123,14 @@ class ManifestMutationService:
     @property
     def results(self) -> tuple[tuple[MutationTarget, MutationResult], ...]:
         return tuple(self._results)
+
+    @property
+    def created_receipts(self) -> tuple[CreatedResourceReceipt, ...]:
+        return tuple(self._created)
+
+    @property
+    def created_previews(self) -> tuple[tuple[CreatedResourceReceipt, tuple[str, ...]], ...]:
+        return tuple(self._created_previews)
 
     def require_current(self) -> None:
         self.policy.require(Action.MUTATE)
@@ -168,8 +182,10 @@ class ManifestMutationService:
     async def prepare(self, action: ManifestAction) -> ManifestPlan:
         async with self._operation():
             self.invalidate()
-            if action not in {"apply", "delete"}:
-                raise AppError("Choose apply or delete for this manifest review.")
+            if action not in {"apply", "delete", "create"}:
+                raise AppError(
+                    "Choose apply or delete, or explicit create for this manifest review."
+                )
             generation = self._generation
             guard = partial(self._guard, generation)
             await self.require_source()
@@ -187,6 +203,17 @@ class ManifestMutationService:
             ]
             if not keys or len(keys) != len(set(keys)):
                 raise AppError("Manifest source must contain distinct exact resource destinations.")
+            create_requests = (
+                await parse_owned(
+                    lambda: tuple(
+                        create_manifest_intent(resource, address, desired, policy="create-only")
+                        for resource, address, desired in resolved
+                    )
+                )
+                if action == "create"
+                else None
+            )
+            guard()
             items: list[ManifestPlanItem] = []
             versions: list[str | None] = []
             for document, (resource, address, desired) in zip(
@@ -210,16 +237,48 @@ class ManifestMutationService:
                                 "Absent at review; no deletion request planned.",
                             )
                         else:
-                            request = await parse_owned(
-                                partial(create_manifest_intent, resource, address, desired)
+                            request = (
+                                create_requests[len(items)]
+                                if create_requests is not None
+                                else await parse_owned(
+                                    partial(create_manifest_intent, resource, address, desired)
+                                )
                             )
                             change = "create"
                             receipt = await self.adapter.validate(request, guard)
                             validation = receipt.result
                             if receipt.body is not None:
                                 pages = await parse_owned(
-                                    partial(manifest_preview, None, receipt.body)
+                                    partial(
+                                        manifest_preview,
+                                        None,
+                                        receipt.body,
+                                        private=self._private_preview,
+                                    )
                                 )
+                                if action == "create":
+                                    submitted = await parse_owned(
+                                        partial(
+                                            manifest_preview,
+                                            None,
+                                            request.body,
+                                            private=self._private_preview,
+                                        )
+                                    )
+                                    defaults = await parse_owned(
+                                        partial(
+                                            manifest_preview,
+                                            request.body,
+                                            receipt.body,
+                                            private=self._private_preview,
+                                        )
+                                    )
+                                    pages = (
+                                        "Submitted create-only request (redacted):\n",
+                                        *submitted,
+                                        "Server strict dry-run changes (not persisted or reserved):\n",
+                                        *defaults,
+                                    )
                     else:
                         target = ResourceTarget(
                             address.session,
@@ -231,7 +290,12 @@ class ManifestMutationService:
                         )
                         version = baseline.resource_version
                         before = await parse_owned(partial(_record_bytes, baseline))
-                        if action == "delete":
+                        if action == "create":
+                            validation = MutationResult(
+                                MutationState.CONFLICT,
+                                "Already exists; use the existing Apply/Edit workflow.",
+                            )
+                        elif action == "delete":
                             request = await parse_owned(
                                 partial(
                                     delete_intent,
@@ -305,6 +369,8 @@ class ManifestMutationService:
             self._versions = tuple(versions)
             self._target = items[0].target
             self._results = []
+            self._created = []
+            self._created_previews = []
             return self.intent
 
     def confirm(self, intent: ManifestPlan) -> Confirmation:
@@ -438,13 +504,31 @@ class ManifestMutationService:
                     try:
                         result = await self._revalidate(item, version, guard)
                         if result is None:
-                            result = (
-                                MutationResult(
-                                    MutationState.SUCCEEDED, "Reviewed no-op; no request sent."
+                            if intent.action == "create" and isinstance(
+                                item.request, ManifestCreateIntent
+                            ):
+                                response = await self.adapter.execute_creation(
+                                    item.request, guard, private_preview=self._private_preview
                                 )
-                                if item.request is None
-                                else await self.adapter.execute(item.request, guard)
-                            )
+                                result = response.result
+                                if response.receipt is not None:
+                                    self._created.append(response.receipt)
+                                    self._created_previews.append(
+                                        (response.receipt, response.preview_pages)
+                                    )
+                                elif result.state is MutationState.SUCCEEDED:
+                                    result = MutationResult(
+                                        MutationState.UNCERTAIN,
+                                        "No verified persistent creation receipt was returned. Inspect before a new review; no retry was sent.",
+                                    )
+                            else:
+                                result = (
+                                    MutationResult(
+                                        MutationState.SUCCEEDED, "Reviewed no-op; no request sent."
+                                    )
+                                    if item.request is None
+                                    else await self.adapter.execute(item.request, guard)
+                                )
                             if result.state is MutationState.ACCEPTED and isinstance(
                                 item.request, ResourceIntent
                             ):

@@ -39,6 +39,7 @@ from tests.support.operation_terminal import terminal_operation
 from tests.support.operations import operation_api
 from tests.support.plugins_terminal import terminal_plugins
 from tests.support.preferences_terminal import terminal_preferences
+from tests.support.resource_creation_terminal import terminal_resource_creation
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
 from tests.support.themes_terminal import terminal_themes
@@ -242,6 +243,27 @@ def test_installed_local_manifest_editor_save_and_terminal_restoration(
     terminal_local_manifests(
         command, local_directory, f"installed-local-manifests-{entry_point}", size=(80, 24)
     )
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_creation_draft_import_editor_and_terminal_restoration(
+    installed_wheel, entry_point
+):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    receipt = terminal_resource_creation(
+        command,
+        directory / f"resource-creation-{entry_point}",
+        f"installed-resource-creation-{entry_point}",
+        size=(80, 24),
+        shell_editor=True,
+    )
+    assert receipt["private_files_absent"] and receipt["source_unchanged"]
+    assert receipt["kubeconfig_unchanged"] and receipt["editor_sessions"] == 1
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])

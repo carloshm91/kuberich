@@ -381,3 +381,102 @@ admission is uncertain and requires inspection before another reviewed attempt.
 Accepted deletion can remain pending because of finalizers. Errors show safe
 categories, codes and limited known field paths; freeform server details and
 arbitrary mapping keys are withheld because they can contain submitted values.
+
+## Create resources in development source
+
+Use `:create` or **Create** in the local manifest browser. Published
+0.4.0 predates this workflow. Choose a built-in template, user template, file or
+explicit clipboard capture. Source inspection stays offline; importing never
+connects to a context or creates a resource.
+
+The six built-ins are Deployment, Service, ConfigMap, Opaque Secret, Job and
+Namespace. Supply an explicit name; workload images have no implicit default.
+Deployment replicas default to one and accept zero. Service uses ClusterIP/TCP,
+an explicit selector and ports from 1 to 65,535. Templates are starting points,
+not policy-compliance or workload-readiness guarantees. Edit advanced fields
+through the explicitly disclosed trusted editor. A returned edit replaces only
+the in-memory draft; it does not save over the imported file.
+
+Choose **Read clipboard** only when you intend to import its current text.
+Native reads need the selected macOS, Wayland or X Window System helper/session. SSH, tmux,
+OSC52 or unavailable native reads offer an explicit focused **Paste** capture.
+It accepts a public terminal paste event without echoing the payload. Clipboard
+and paste retention is limited to 1 MiB UTF-8; invalid, truncated, excessive or
+unsafe-control input is refused. KubeRich never queries terminal clipboard
+contents or rereads a captured clipboard at Confirm.
+
+After capture, choose **Review Create** for an existing connection. When started
+offline, check the displayed selected context and choose **Connect & Review**;
+this explicit transition retains the same draft through connection setup.
+Import/render never connects automatically. Back closes and discards the local
+draft, so use the explicit action to continue an offline capture.
+Review the exact GVK, endpoint, name and every namespace or cluster-scoped effect.
+All-namespaces view supplies no implicit destination. **Validate** resolves
+captured discovery and requests an exact named POST with strict server validation
+and server-side dry-run. Local syntax and typed parameters are separate from
+that server's acceptance; there is no complete offline Kubernetes schema check.
+Served CRD schemas, CEL, defaults and admission apply as supported by that server.
+Preserved-unknown regions and permissive/aggregated APIs do not establish complete
+field validation.
+
+Inspect submitted/server changes, then choose **Confirm Create** separately.
+Creation refuses an existing name; use the existing Apply/Edit workflow for an
+update. It never adds a last-applied annotation, overwrites, adopts or retries a
+possibly committed request. Dry-run reserves no name and guarantees no later
+admission/default equality. The actual result retains verified persistent UID
+and version metadata; interrupted completion can retain known created metadata
+while the batch remains uncertain. Inspect before a fresh review.
+
+Read-only mode allows local capture/inspection and blocks editor, validation and
+creation at the service/transport boundaries. Every item must validate before
+confirmation. Execution is sequential; completed resources remain if a later
+item conflicts or fails, and later items are unsent. Namespace/CRD prerequisites
+require separate batches. Namespaced POST binds a namespace name, without an
+atomic namespace-UID precondition; replacement between requests remains possible.
+
+### Add a user template
+
+Place ordinary `.yaml`, `.yml` or `.json` files in `templates/` beside the selected
+[preference file](configuration.md#create-and-check-preferences), including an
+explicit `--config` selection. A missing directory is empty; browsing never
+creates it. Built-ins and users have separate catalog identities. Duplicate user
+ID/revision pairs are disabled. Symlinks, special files, changed captures and
+ambiguous identities are refused. The catalog accepts at most 256 files, 1 MiB
+per file and 8 MiB combined.
+
+```yaml
+schema_version: 1
+kind: ResourceTemplate
+id: team-config
+revision: 1
+title: Team ConfigMap
+parameters:
+  name:
+    type: string
+    required: true
+    paths: ["/0/metadata/name"]
+objects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata: {name: ""}
+    data: {}
+```
+
+Parameters use `string`, `integer`, `boolean` or `string_map`, a required flag,
+literal paths and optional default, finite enum and sensitive flag. Required
+means present, so permitted false, zero and empty values keep their type.
+RFC 6901 paths begin with an existing object index and replace a complete
+existing value of that type. Paths cannot overlap, generate keys or alter
+apiVersion/kind, status or server-owned metadata. There is no interpolation,
+expression engine, include, hook, environment lookup or code execution.
+
+Any parameter declared sensitive or supplying data/stringData makes the whole
+draft's ordinary content preview opaque, including keys and server/editor copies.
+Sensitivity remains after editing or reordering objects. Name/namespace routing
+values must remain visible, so a sensitive parameter cannot supply them. A fresh
+trusted-editor disclosure permits deliberate inspection; it does not enable
+ordinary export or history disclosure. Private-template edits preserve the captured
+GVK, name and namespace of every object; object order may change. Use the template's
+public parameter controls and capture a fresh draft to change those identities.
+Changing source, parameters, destination
+or connection requires fresh validation and confirmation.

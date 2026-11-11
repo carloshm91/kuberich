@@ -75,6 +75,15 @@ def test_macos_transport_and_clipboard_steps_follow_the_selected_source_runner()
                 == "Verify plaintext clipboard on the owned ephemeral macOS runner"
             )
             assert clipboard["if"] == expected
+            assert clipboard["env"] == {"KUBERICH_NATIVE_CLIPBOARD_TEST": "1"}
+            assert clipboard["run"].split() == [
+                "uv",
+                "run",
+                "pytest",
+                "-q",
+                "tests/contract/test_clipboard.py::test_owned_hosted_macos_plaintext_roundtrip",
+                "tests/contract/test_clipboard_reads.py::test_owned_ephemeral_macos_native_read_roundtrip",
+            ]
 
 
 def test_retained_test_parts_preserve_clean_source_before_debug_preflight(tmp_path):
@@ -367,7 +376,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_benchmarks_kind"
     )
     assert "trap retain_benchmark_receipt EXIT" in benchmarks["run"]
-    assert "uv run mypy --strict scripts/ci_apt.py" in commands
+    assert "uv run mypy --strict scripts/ci_apt.py scripts/ci_apt_sources.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
         in commands

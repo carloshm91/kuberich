@@ -24,6 +24,11 @@ An absent default file uses defaults; an explicitly selected missing file fails.
 An empty or comment-only YAML file also uses defaults. An empty `--config` path
 or a path containing control characters is invalid.
 
+Development source for 0.5 reads optional resource templates from `templates/`
+beside this selected preference file. It never creates that directory during
+browsing. See [create resources](workloads.md#create-resources-in-development-source)
+for the finite data-only format and explicit source/validation workflow.
+
 ```yaml
 schema_version: 1
 theme: k9s

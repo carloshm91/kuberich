@@ -174,6 +174,7 @@ class WorkspaceCommands:
             Command.EXPORTS,
             Command.BENCHMARKS,
             Command.MANIFESTS,
+            Command.CREATE,
             Command.HISTORY,
             Command.HELM_CATALOG,
         }:

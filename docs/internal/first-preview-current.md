@@ -1,5 +1,105 @@
 # Development checkpoint
 
+## Create-only resource checkpoint — 2026-11-11 UTC
+
+M10 #234 is the active implementation issue. Development source provides six
+built-ins, selected-config user templates, explicit file/clipboard/paste capture,
+private draft editing and separate strict server review/creation. Source and
+published packages remain 0.4.0. Complete final qualification is in progress;
+no publication is performed or authorized by this checkpoint.
+
+M09 #233 is delivered by protected signed-off squash
+`7b69e226189758c805d1d67c10b01630c8ccbb2c`, parent
+`d6ee8c7dfc6f7bf057e925f7eb86e792bdf349c5`, tree
+`ae978481c19859223d47c272b84b7ab65ffcceb8`. Its genuine
+[PR Application run](https://github.com/carloshm91/kuberich/actions/runs/42999870240)
+passed all 27 selected jobs plus required app/CodeQL checks. Independent source,
+runtime, four native artifacts and real Helm behavior audits passed; the
+[main Repository run](https://github.com/carloshm91/kuberich/actions/runs/43011121526)
+passed. See the [delivery receipt](https://github.com/carloshm91/kuberich/issues/233#issuecomment-6794562958).
+These are #233's identities and do not qualify #234.
+
+Signed #234 producer `59d6233` passed twelve owned-kind assertions with all 342
+measured inputs unchanged: strict dry-run absence, verified actual 201 UID/version,
+create-only collisions/refusals, read-only and cleanup. Signed `186668e` passed
+all eight real source editor/PTY cases in 20.69 seconds, including 80×24 geometry,
+Ctrl-C/SIGTERM, repeat/resize and Escape held cleanup. Reproduction commands are
+shown with explicit owned-tool placeholders:
+
+```sh
+uv run python -m scripts.verify_manifests_kind --creation-spine --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl --evidence artifacts/issue234/create-spine-02.json
+uv run pytest -q tests/terminal/test_resource_creation.py -x -n 0 --basetemp=/tmp/kuberich-234-source-pty-04
+```
+
+Later signed producer `b94d277` passed 110 actual owned-kind creation and existing
+Apply/Delete regression checks, including user/built-in templates, CRD served
+schemas/defaults/CEL/preserved unknown fields, quota/Pod Security/admission,
+partial batches and lost-receipt uncertainty. All 342 measured inputs remained
+unchanged and the owned cluster was deleted. Signed `3976e3c` passed three public
+CLI PTYs, including initially offline capture followed by explicit Connect &
+Review, and eleven private editor PTYs. Fresh installed-wheel console/module
+creation and shell-editor checks passed four cases at `b94d277` in 21.49 seconds:
+
+```sh
+uv run pytest -q tests/packaging/test_resource_creation_cli.py tests/packaging/test_distribution.py::test_installed_creation_draft_import_editor_and_terminal_restoration -x -n 0 --basetemp=/tmp/kuberich-234-wheel-01
+```
+
+Subsequent private-template edits preserve public routing identities, and Stop
+retains a draft for fresh editor disclosure/review. These later changes require
+the final exact-head hosted platform matrix; earlier proofs keep their original
+producer identities. Signed `f28c954` passes 1,866 targeted cases (two platform
+skips), all six changed critical modules at 100% lines/branches, whole Ruff and
+formatting, all 402 workflow strict-type sources and the complete private-access
+audit. Creation UI and lazy-SDK controls pass. After correcting a product term
+that matched the existing ticket-code guard, the complete documentation/style/
+link/site family passes 219 cases at docs-only `87b1205`; external sources, both
+static-site surfaces and 1,176 local Markdown links also pass validation.
+Whole/branch/changed-line floors and native/platform checks remain separate. The
+[creation acceptance record](acceptance/resource-creation.md) retains original
+failures and the separate private-root counterexample/correction. Strict server
+validation is authoritative; no offline schema completeness, namespace-UID atomic
+precondition, write replay, provider or final release qualification is claimed.
+The first genuine PR run failed on a remaining old UI completion expectation;
+the fixture now includes create and still navigates to the unchanged ctx alias.
+The second run passes all 12,613 Fast cases (two platform skips), then Ubuntu
+parts/native jobs fail before behavior because official archive DNS is unavailable.
+Original failures remain retained. The explicit owned macOS clipboard step now
+also selects the native-read contract. A third run reproduces the archive DNS
+failure before behavior. The CI source helper now selects documented MIT SIPB
+HTTPS archives, authenticated and current against existing Ubuntu keys/Canonical
+metadata in independent agent checks, and fixes the actual ARM source layout.
+All original trust checks, package closure and hard deadlines remain unchanged.
+The first source-preparation attempt safely refused the pinned image's mirror
+priority metadata before network access. Exact priority fixtures and controlled
+safe diagnostics are corrected and pass 205 focused cases.
+The following run passes Fast (12,613 cases, two platform skips) and all Linux
+signed dependency setups. Both Linux native creation drivers then expose a
+verifier cwd omission: Docker looked for the relative fixture file under `/`.
+The scoped wrapper now preserves the actual owned cwd alongside UID/GID, with
+global Host controls and application checks unchanged. The complete corrected
+hosted source/native matrix remains required.
+
+That run passes all four native jobs, then macOS source part three stalls before
+public validation feedback. Original output exposes a mixed modal repaint that
+the driver could mistake for a ready footer. Input timing and original HTTP
+counts are unavailable. The helper now waits for the complete phase-specific
+control row and sends one click; deterministic split-frame controls and all three
+real source CLI variants pass with unchanged effects, cleanup and deadlines.
+Application source is unchanged. The original run remains failed and the next
+complete current matrix and independent artifact audits remain required.
+
+The next run confirms all three actual public source CLI parameters on macOS
+part one, including cancellation and initially offline capture, with original
+JSON/ANSI restoration evidence. Part numbering changed after a new test file;
+the acceptance record binds the exact nodes. The run still fails Linux ARM APT
+index transfer at the unchanged deadline and an existing debug-return test that
+asserted before its queued feedback callback published. Compiler-only setup now
+verifies the pinned image's complete installed package/tool/header cohort before
+avoiding unnecessary APT work; missing tools retain signed setup. A bounded
+process-group guard and the debug UI's held-result publication control pass in
+focused cohorts of 241 and 44 cases respectively. Application bytes, original
+failures and all trust/deadline gates remain intact; fresh full CI is required.
+
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 
 M09 #233 is the active implementation issue. Its source adds public `:helmcharts`,

@@ -10,6 +10,7 @@ from kuberich.domain.editing import parse_manifest, parse_manifest_documents
 from kuberich.domain.exports import DirectoryRef, FileIdentity
 from kuberich.domain.manifests import (
     LAST_APPLIED,
+    FrozenDraftSource,
     FrozenManifestSource,
     ManifestDisclosureIntent,
     ManifestFileSnapshot,
@@ -436,6 +437,9 @@ def test_frozen_source_and_plan_repr_do_not_retain_raw_body_display(tmp_path):
         plan, items=(replace(item, validation=MutationResult(MutationState.BLOCKED, "safe")),)
     ).ready
     assert "raw-sensitive-sentinel" not in repr((source, disclosure, save, plan))
+    assert snapshot.sha256 not in repr((source, disclosure, save, plan))
+    assert source.source_sha256 not in repr((source, disclosure, save, plan))
+    assert source.rendered_sha256 not in repr(source)
     with pytest.raises(AppError):
         canonical_manifest({"x": float("nan")})
 
@@ -475,6 +479,58 @@ def test_create_rechecks_final_request_budget_after_apply_annotation_expansion(m
     monkeypatch.setattr(manifests, "MAX_MANIFEST_BYTES", len(raw) + 20)
     with pytest.raises(AppError, match="including apply annotation"):
         create_manifest_intent(resource(), address, raw)
+
+
+@pytest.mark.parametrize("policy,generated", [("unknown", False), ("create-only", True)])
+def test_create_only_refuses_unknown_policy_and_generated_name_even_with_literal_name(
+    policy, generated
+):
+    descriptor, address, raw = resolve_manifest(document(), Discovery((resource(),)), scope())
+    value = json.loads(raw)
+    if generated:
+        value["metadata"]["generateName"] = "ignored-prefix-"
+    with pytest.raises(AppError, match="exact discovered"):
+        create_manifest_intent(descriptor, address, canonical_manifest(value), policy=policy)
+
+
+def test_create_only_final_size_limit_and_private_draft_representation(monkeypatch):
+    from kuberich.domain import manifests
+
+    descriptor, address, raw = resolve_manifest(document(), Discovery((resource(),)), scope())
+    monkeypatch.setattr(manifests, "MAX_MANIFEST_BYTES", len(raw))
+    with pytest.raises(AppError, match="request exceeds"):
+        create_manifest_intent(descriptor, address, raw, policy="create-only")
+    source = FrozenDraftSource(
+        identity=uuid4(),
+        kind="template",
+        title="Private template",
+        generation=1,
+        documents=(document(),),
+        source_sha256="private-source-digest",
+        rendered_sha256="private-rendered-digest",
+        body=b"private-raw-source",
+        private_preview=True,
+    )
+    assert "private-source-digest" not in repr(source)
+    assert "private-rendered-digest" not in repr(source)
+    assert "private-raw-source" not in repr(source)
+
+
+def test_sensitive_template_preview_is_opaque_for_keys_values_and_arbitrary_server_copies():
+    before = canonical_manifest(
+        {
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {"name": "owned"},
+            "spec": {"image": "private-arbitrary-value"},
+            "data": {"private-map-key": "private-map-value"},
+        }
+    )
+    after = json.loads(before)
+    after["metadata"]["annotations"] = {"example.io/copied": "private-arbitrary-value"}
+    pages = manifest_preview(before, canonical_manifest(after), private=True)
+    assert "Content withheld" in pages[0]
+    assert all(value not in "".join(pages) for value in ("private-", "image", "annotations"))
 
 
 @pytest.mark.parametrize(

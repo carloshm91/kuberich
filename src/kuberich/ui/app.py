@@ -633,6 +633,7 @@ class KubeRichApp(App[None]):
                 Command.BENCHMARK: self.benchmarks.open,
                 Command.BENCHMARKS: self.benchmarks.open_browser,
                 Command.MANIFESTS: self.action_manifests,
+                Command.CREATE: self.action_create,
                 Command.RBAC: lambda: self.authorization.command(authorization_command("rbac")),
                 Command.CAN_I: lambda: self.authorization.command(authorization_command("can-i")),
                 Command.WHO_CAN: lambda: self.authorization.command(
@@ -994,6 +995,7 @@ class KubeRichApp(App[None]):
                 Command.EXPORTS,
                 Command.BENCHMARKS,
                 Command.MANIFESTS,
+                Command.CREATE,
                 Command.NODE_SHELL_RECOVER,
             }:
                 self.call_after_refresh(self.appearance_controller.start_updates)
@@ -1569,7 +1571,90 @@ class KubeRichApp(App[None]):
         self.push_screen(screen)
 
     def action_manifests(self) -> None:
+        self._manifest_actions().open_browser()
+
+    def action_create(self) -> None:
+        self._manifest_actions().open_creation()
+
+    def _creation_context(self) -> str | None:
+        connection = self._manifest_connection()
+        return (
+            connection.scope.session.context
+            if connection is not None
+            else self.workspace.store.observation.context
+            or self.sessions.request.context
+            or self.sessions.catalog.current
+        )
+
+    async def _connect_creation_context(self, context: str) -> ManifestConnection:
+        if self._creation_context() != context:
+            raise AppError(
+                "Selected creation context changed; open a fresh explicit connection review."
+            )
+        self._apply_theme(context)
+        self.commands.policy.require(Action.MUTATE)
+        connection = self._manifest_connection()
+        if connection is not None:
+            return connection
+        task = self.workspace.task
+        if task is not None and not task.done():
+            raise AppError(
+                "A workspace connection is already active; finish it before creation review."
+            )
+        captured_client = self.sessions.client
+        captured_identity = self.sessions.observation.identity
+        if captured_client is not None:
+            if (
+                captured_identity is None
+                or captured_identity.context != context
+                or self.sessions.observation.state not in USABLE_CONNECTIONS
+                or self.workspace.store.observation.connection.identity != captured_identity
+                or self.workspace.discovery is not None
+            ):
+                raise AppError(
+                    "The existing creation connection changed; select its context again."
+                )
+            task = self.workspace.refresh_discovery()
+        else:
+            self._start_connection(context, remember=False)
+            task = self.workspace.task
+        if task is None:
+            raise AppError("The explicit creation connection could not be started.")
+        revision = self.workspace.store.observation.revision
+        try:
+            await task
+        except asyncio.CancelledError:
+            task.cancel()
+            await finish_owned(asyncio.gather(task, return_exceptions=True))
+            self.workspace.finish_cancelled_connect(task, context, revision)
+            raise
+        owner = asyncio.current_task()
+        if owner is not None and owner.cancelling():
+            self.workspace.finish_cancelled_connect(task, context, revision)
+            raise asyncio.CancelledError
+        self.commands.policy.require(Action.MUTATE)
+        connection = self._manifest_connection()
+        if (
+            connection is None
+            or connection.scope.session.context != context
+            or not connection.current()
+            or self.workspace.store.observation.revision != revision
+            or (
+                captured_client is not None
+                and (
+                    self.sessions.client is not captured_client
+                    or self.sessions.observation.identity != captured_identity
+                )
+            )
+        ):
+            raise AppError(
+                "Selected context connection did not establish current discovery; draft retained."
+            )
+        return connection
+
+    def _manifest_actions(self) -> ManifestActions:
         if self.manifests is None:
+            from kuberich.config.paths import config_location
             from kuberich.services.local_manifests import LocalManifestService
             from kuberich.ui.manifest_actions import ManifestActions
 
@@ -1582,8 +1667,13 @@ class KubeRichApp(App[None]):
                 capture_connection=self._manifest_connection,
                 push_screen=self._push_manifest_screen,
                 notice=self._set_notice,
+                config_path=self.preferences.location.path
+                if self.preferences is not None
+                else config_location(None, self._process_environment).path,
+                selected_context=self._creation_context,
+                connect_context=self._connect_creation_context,
             )
-        self.manifests.open_browser()
+        return self.manifests
 
     def _forwarding_preferences(self) -> ForwardPreferences:
         return (
@@ -1952,11 +2042,17 @@ class KubeRichApp(App[None]):
             from kuberich.ui.manifest_browser import ManifestBrowserScreen
             from kuberich.ui.manifest_editor import ManifestEditorScreen
             from kuberich.ui.manifest_review import ManifestReviewScreen
+            from kuberich.ui.resource_creation import ResourceCreationScreen
 
             manifest_screen = self.screen
             if isinstance(
                 manifest_screen,
-                (ManifestBrowserScreen, ManifestEditorScreen, ManifestReviewScreen),
+                (
+                    ManifestBrowserScreen,
+                    ManifestEditorScreen,
+                    ManifestReviewScreen,
+                    ResourceCreationScreen,
+                ),
             ):
                 # App priority Escape must drain ownership before popping the screen.
                 await manifest_screen.action_back()

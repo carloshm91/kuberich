@@ -185,6 +185,7 @@ critical_modules = [
     "src/kuberich/domain/node_shell.py",
     "src/kuberich/domain/node_shell_journal.py",
     "src/kuberich/domain/manifests.py",
+    "src/kuberich/domain/resource_templates.py",
     "src/kuberich/domain/kustomize.py",
     "src/kuberich/domain/helm.py",
     "src/kuberich/domain/helm_cli.py",

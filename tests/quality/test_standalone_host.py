@@ -69,6 +69,7 @@ def test_helm_native_editor_uses_controller_uid_without_changing_other_host_coho
     assert captured[position : position + 2] == ["--user", "1234:5678"]
     assert "--pid=host" not in captured
     assert "--user" not in host.command([host.executable], {}, tty=True)
+    assert "--workdir" not in host.command([host.executable], {}, tty=True)
 
 
 def test_macos_shell_delegates_do_not_allow_outside_interpreters_or_source(monkeypatch, tmp_path):
@@ -83,6 +84,78 @@ def test_macos_shell_delegates_do_not_allow_outside_interpreters_or_source(monke
     assert "(deny process-exec (require-not (require-any " in profile
     for path in {ROOT.resolve(), Path(sys.prefix).resolve(), Path(sys.base_prefix).resolve()}:
         assert '(subpath "' + str(path) + '")' in profile
+
+
+def test_creation_private_files_share_controller_uid_without_weakening_other_native_controls(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(verify_standalone.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(verify_standalone.shutil, "which", lambda name: "/owned/docker")
+    monkeypatch.setattr(
+        verify_standalone,
+        "capture_docker",
+        lambda executable: {"DOCKER_HOST": "unix:///owned.sock"},
+    )
+    monkeypatch.setattr(verify_standalone.os, "getuid", lambda: 1234)
+    monkeypatch.setattr(verify_standalone.os, "getgid", lambda: 5678)
+    host = verify_standalone.Host(tmp_path / "bundle", tmp_path, tmp_path)
+    captured = []
+
+    class ReachedTerminalBoundary(Exception):
+        pass
+
+    def terminal(
+        command,
+        directory,
+        evidence,
+        *,
+        mode,
+        initial_offline,
+        wrap,
+        environment,
+        controller_environment,
+    ):
+        captured.extend(wrap(command, {"HOME": str(tmp_path / "owned-home")}, directory))
+        assert mode == "success"
+        assert initial_offline
+        raise ReachedTerminalBoundary
+
+    monkeypatch.setattr(verify_standalone, "terminal_resource_creation_cli", terminal)
+    with pytest.raises(ReachedTerminalBoundary):
+        verify_standalone.creation_requests(host, tmp_path / "creation", tmp_path)
+    position = captured.index("run") + 1
+    assert captured[position : position + 4] == [
+        "--user",
+        "1234:5678",
+        "--workdir",
+        str(tmp_path / "creation" / "success"),
+    ]
+    assert "--pid=host" not in captured
+    assert "--user" not in host.command([host.executable], {}, tty=True)
+    assert "--workdir" not in host.command([host.executable], {}, tty=True)
+
+
+def test_creation_editor_driver_passes_the_actual_owned_working_directory(tmp_path):
+    from tests.support.resource_creation_terminal import terminal_resource_creation
+
+    directory = tmp_path / "editor"
+
+    class ReachedOwnedEditorBoundary(Exception):
+        pass
+
+    def wrap(argv, environment, cwd):
+        assert cwd == directory and (cwd / "owned.yaml").is_file()
+        assert environment["KUBERICH_CONFIG"] == str(cwd / "preferences.yaml")
+        raise ReachedOwnedEditorBoundary
+
+    with pytest.raises(ReachedOwnedEditorBoundary):
+        terminal_resource_creation(
+            [sys.executable, "-m", "kuberich"],
+            directory,
+            "owned-editor-cwd",
+            wrap=wrap,
+            shell_editor=True,
+        )
 
 
 @pytest.mark.skipif(sys.platform != "darwin", reason="Requires actual macOS sandbox-exec")

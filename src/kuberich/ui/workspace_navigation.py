@@ -177,6 +177,7 @@ class WorkspaceNavigation:
             Command.EXPORTS,
             Command.BENCHMARKS,
             Command.MANIFESTS,
+            Command.CREATE,
             Command.NODE_SHELL_RECOVER,
         }:
             apply(initial)

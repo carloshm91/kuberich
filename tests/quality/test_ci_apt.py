@@ -1,6 +1,7 @@
 """APT bootstrap contracts use only an owned mirror file and fake command handles."""
 
 import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -15,6 +16,10 @@ def refuse_real_commands(monkeypatch, tmp_path):
 
     monkeypatch.setattr(ci_apt.subprocess, "run", refuse)
     monkeypatch.setattr(ci_apt, "MIRROR_FILE", tmp_path / "owned-apt-mirrors.txt")
+    monkeypatch.setattr(ci_apt, "SOURCE_LIST", tmp_path / "sources.list")
+    monkeypatch.setattr(ci_apt, "SOURCE_DIRECTORY", tmp_path / "sources.list.d")
+    ci_apt.SOURCE_LIST.write_text("deb mirror+file:/etc/apt/apt-mirrors.txt noble main universe\n")
+    ci_apt.SOURCE_DIRECTORY.mkdir()
     monkeypatch.setattr(ci_apt.platform, "system", lambda: "Linux")
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     monkeypatch.setenv("RUNNER_OS", "Linux")
@@ -22,14 +27,36 @@ def refuse_real_commands(monkeypatch, tmp_path):
 
 @pytest.fixture
 def owned_commands(monkeypatch):
-    ci_apt.MIRROR_FILE.write_text("http://azure.archive.ubuntu.com/ubuntu\n")
-    fixture = SimpleNamespace(calls=[], architecture=b"amd64\n", fail_phase=None, failure=None)
+    ci_apt.MIRROR_FILE.write_text(
+        "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n"
+        "https://archive.ubuntu.com/ubuntu/\tpriority:2\n"
+        "https://security.ubuntu.com/ubuntu/\tpriority:3\n"
+    )
+    fixture = SimpleNamespace(
+        calls=[],
+        architecture=b"amd64\n",
+        fail_phase=None,
+        failure=None,
+        compiler_status_code=1,
+        compiler_status=b"",
+        unavailable_tool=None,
+    )
 
     def command(argv, **kwargs):
         assert isinstance(argv, tuple) and all(isinstance(part, str) for part in argv)
-        assert kwargs["check"] is True and not kwargs.get("shell", False)
+        assert not kwargs.get("shell", False)
         if argv == ("/usr/bin/dpkg", "--print-architecture"):
             phase = "architecture"
+        elif argv[0] == "/usr/bin/dpkg-query":
+            phase = "compiler-status"
+        elif argv[0] in {
+            "/usr/bin/gcc",
+            "/usr/bin/cc",
+            "/usr/bin/readelf",
+            "/usr/bin/objdump",
+            "/usr/bin/timeout",
+        }:
+            phase = "compiler-tool"
         elif "/usr/bin/tee" in argv:
             phase = "mirror"
         elif "update" in argv:
@@ -38,12 +65,22 @@ def owned_commands(monkeypatch):
             assert "install" in argv
             phase = "install"
         fixture.calls.append((phase, argv, kwargs))
+        assert kwargs["check"] is (phase not in {"compiler-status", "compiler-tool"})
         if phase == fixture.fail_phase:
             raise fixture.failure
+        if phase == "compiler-status":
+            return subprocess.CompletedProcess(
+                argv, fixture.compiler_status_code, stdout=fixture.compiler_status
+            )
+        if phase == "compiler-tool":
+            return subprocess.CompletedProcess(
+                argv, int(argv[0] == fixture.unavailable_tool or argv == fixture.unavailable_tool)
+            )
         if phase == "mirror":
-            assert argv[-1] == str(ci_apt.MIRROR_FILE)
-            assert len(kwargs["input"]) <= 256
-            ci_apt.MIRROR_FILE.write_bytes(kwargs["input"])
+            path = Path(argv[-1])
+            assert path in {ci_apt.MIRROR_FILE, ci_apt.SOURCE_LIST}
+            assert len(kwargs["input"]) <= 65536
+            path.write_bytes(kwargs["input"])
         return subprocess.CompletedProcess(argv, 0, stdout=fixture.architecture)
 
     monkeypatch.setattr(ci_apt.subprocess, "run", command)
@@ -53,8 +90,8 @@ def owned_commands(monkeypatch):
 @pytest.mark.parametrize(
     "architecture,mirror",
     [
-        ("amd64", "https://archive.ubuntu.com/ubuntu"),
-        ("arm64", "https://ports.ubuntu.com/ubuntu-ports"),
+        ("amd64", "https://mirrors.mit.edu/ubuntu"),
+        ("arm64", "https://mirrors.mit.edu/ubuntu-ports"),
     ],
 )
 def test_architecture_selects_only_the_official_matching_https_archive(architecture, mirror):
@@ -126,6 +163,8 @@ def test_bounded_signed_update_and_noninteractive_install_preserve_exact_package
     architecture,
 ):
     owned_commands.architecture = (architecture + "\n").encode()
+    if architecture == "arm64":
+        ci_apt.MIRROR_FILE.write_text("http://ports.ubuntu.com/ubuntu-ports\n")
     packages = ["openssh-server", "tmux", "xclip", "xvfb", "gcc", "libc6-dev", "binutils"]
     ci_apt.bootstrap(packages)
     assert [phase for phase, _, _ in owned_commands.calls] == [
@@ -191,15 +230,254 @@ def test_invalid_or_oversized_dpkg_output_never_starts_sudo(owned_commands, outp
     assert len(owned_commands.calls) == 1 and ci_apt.MIRROR_FILE.read_bytes() == original
 
 
-def test_missing_mirror_list_retains_image_sources_but_still_requires_bounded_update_and_install(
+def test_missing_referenced_mirror_list_refuses_before_update_and_install(
     owned_commands,
     capsys,
 ):
     ci_apt.MIRROR_FILE.unlink()
+    with pytest.raises(FileNotFoundError):
+        ci_apt.bootstrap(["tmux"])
+    assert [phase for phase, _, _ in owned_commands.calls] == ["architecture"]
+    assert not ci_apt.MIRROR_FILE.exists()
+    assert "retaining" not in capsys.readouterr().out
+
+
+def test_actual_arm_source_without_mirror_file_reaches_signed_update_and_install(owned_commands):
+    owned_commands.architecture = b"arm64\n"
+    ci_apt.MIRROR_FILE.unlink()
+    original = (
+        "deb http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse\n"
+        "deb http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse\n"
+    )
+    ci_apt.SOURCE_LIST.write_text(original)
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert ci_apt.SOURCE_LIST.read_text() == original.replace(
+        "http://ports.ubuntu.com/ubuntu-ports", "https://mirrors.mit.edu/ubuntu-ports"
+    )
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "compiler-status",
+        "mirror",
+        "update",
+        "install",
+    ]
+    assert not ci_apt.MIRROR_FILE.exists()
+
+
+INSTALLED_COMPILER = (
+    b"gcc\tinstall ok installed\t4:11.2.0-1ubuntu1\n"
+    b"libc6-dev\tinstall ok installed\t2.35-0ubuntu3.15\n"
+    b"binutils\tinstall ok installed\t2.38-4ubuntu2.12\n"
+)
+
+
+@pytest.mark.parametrize("architecture", ["amd64", "arm64"])
+def test_complete_installed_compiler_cohort_checks_real_tool_ports_without_apt_or_source_writes(
+    owned_commands, monkeypatch, capsys, architecture
+):
+    owned_commands.architecture = (architecture + "\n").encode()
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    original = ci_apt.MIRROR_FILE.read_bytes()
+    monkeypatch.setattr(
+        ci_apt,
+        "source_changes",
+        lambda *args: pytest.fail("Installed tools need no APT source plan"),
+    )
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "compiler-status",
+        *["compiler-tool"] * 5,
+    ]
+    assert [kwargs["timeout"] for _, _, kwargs in owned_commands.calls] == [10, 5, 2, 2, 2, 2, 8]
+    query = owned_commands.calls[1][1]
+    assert query == (
+        "/usr/bin/dpkg-query",
+        "--show",
+        "--showformat=${Package}\t${Status}\t${Version}\n",
+        "--",
+        "gcc",
+        "libc6-dev",
+        "binutils",
+    )
+    tools = [argv for _, argv, _ in owned_commands.calls[2:]]
+    assert tools == [
+        ("/usr/bin/gcc", "--version"),
+        ("/usr/bin/cc", "--version"),
+        ("/usr/bin/readelf", "--version"),
+        ("/usr/bin/objdump", "--version"),
+        (
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=1s",
+            "5s",
+            "/usr/bin/cc",
+            "-fsyntax-only",
+            "-x",
+            "c",
+            "-",
+        ),
+    ]
+    assert b"#include <stdio.h>" in owned_commands.calls[-1][2]["input"]
+    assert not any(
+        "sudo" in part or "apt-get" in part for _, argv, _ in owned_commands.calls for part in argv
+    )
+    assert ci_apt.MIRROR_FILE.read_bytes() == original
+    output = capsys.readouterr().out
+    assert "installed gcc=4:11.2.0-1ubuntu1" in output
+    assert "installed libc6-dev=2.35-0ubuntu3.15" in output
+    assert "installed binutils=2.38-4ubuntu2.12" in output
+    assert "compiler, headers and inspection tools verified" in output
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        b"",
+        None,
+        "not bytes",
+        b"x" * 4097,
+        INSTALLED_COMPILER.replace(b"install ok installed", b"deinstall ok config-files", 1),
+        INSTALLED_COMPILER.replace(b"gcc\t", b"unknown\t", 1),
+        INSTALLED_COMPILER.replace(b"gcc\t", b"binutils\t", 1),
+        INSTALLED_COMPILER.replace(b"4:11.2.0-1ubuntu1", b""),
+        INSTALLED_COMPILER.replace(b"4:11.2.0-1ubuntu1", b"private-version-\x1b[31m"),
+        INSTALLED_COMPILER.replace(b"4:11.2.0-1ubuntu1", b"1" * 129),
+        INSTALLED_COMPILER.splitlines()[0] + b"\n",
+        INSTALLED_COMPILER + b"unexpected\n",
+    ],
+)
+def test_missing_partial_or_malformed_compiler_status_keeps_signed_install_flow(
+    owned_commands, capsys, status
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = status
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "compiler-status",
+        "mirror",
+        "update",
+        "install",
+    ]
+    assert owned_commands.calls[-1][1][-3:] == ("gcc", "libc6-dev", "binutils")
+    assert "private-version" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "tool",
+    [
+        "/usr/bin/gcc",
+        "/usr/bin/cc",
+        "/usr/bin/readelf",
+        "/usr/bin/objdump",
+        (
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=1s",
+            "5s",
+            "/usr/bin/cc",
+            "-fsyntax-only",
+            "-x",
+            "c",
+            "-",
+        ),
+    ],
+)
+def test_installed_package_metadata_cannot_skip_missing_compiler_inspection_or_headers(
+    owned_commands, tool
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    owned_commands.unavailable_tool = tool
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [phase for phase, _, _ in owned_commands.calls][-3:] == ["mirror", "update", "install"]
+    assert [kwargs["timeout"] for _, _, kwargs in owned_commands.calls][-3:] == [15, 130, 190]
+
+
+@pytest.mark.parametrize("phase", ["compiler-status", "compiler-tool"])
+@pytest.mark.parametrize(
+    "failure", [FileNotFoundError(), PermissionError(), subprocess.TimeoutExpired(("owned",), 2)]
+)
+def test_unavailable_preflight_retains_the_original_signed_apt_commands(
+    owned_commands, phase, failure
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    owned_commands.fail_phase, owned_commands.failure = phase, failure
+    ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert [entry[0] for entry in owned_commands.calls][-3:] == ["mirror", "update", "install"]
+    assert [entry[1][6] for entry in owned_commands.calls[-3:]] == ["5s", "120s", "180s"]
+
+
+@pytest.mark.parametrize(
+    "packages", [["gcc"], ["gcc", "binutils"], ["gcc", "libc6-dev", "binutils", "tmux"]]
+)
+def test_compiler_shortcut_cannot_omit_other_requested_packages(owned_commands, packages):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    ci_apt.bootstrap(packages)
+    assert [phase for phase, _, _ in owned_commands.calls] == [
+        "architecture",
+        "mirror",
+        "update",
+        "install",
+    ]
+
+
+def test_installed_compiler_shortcut_cannot_bypass_the_explicit_runner_guard(
+    owned_commands, monkeypatch
+):
+    owned_commands.compiler_status_code = 0
+    owned_commands.compiler_status = INSTALLED_COMPILER
+    monkeypatch.delenv("GITHUB_ACTIONS")
+    with pytest.raises(ValueError, match="Linux GitHub Actions"):
+        ci_apt.bootstrap(["gcc", "libc6-dev", "binutils"])
+    assert owned_commands.calls == []
+
+
+def test_late_invalid_source_refuses_before_any_source_write(owned_commands):
+    original = ci_apt.MIRROR_FILE.read_bytes()
+    (ci_apt.SOURCE_DIRECTORY / "later.sources").write_text(
+        "Types: deb\nURIs: https://archive.ubuntu.com/ubuntu\nSuites: unknown\nComponents: main\n"
+    )
+    with pytest.raises(ValueError):
+        ci_apt.bootstrap(["tmux"])
+    assert len(owned_commands.calls) == 1 and ci_apt.MIRROR_FILE.read_bytes() == original
+
+
+def test_source_changed_after_plan_refuses_before_tee_or_update(owned_commands, monkeypatch):
+    original = ci_apt.MIRROR_FILE.read_bytes()
+    monkeypatch.setattr(ci_apt, "source_bytes", lambda path: b"changed-source")
+    with pytest.raises(ValueError, match="configuration changed"):
+        ci_apt.bootstrap(["tmux"])
+    assert len(owned_commands.calls) == 1 and ci_apt.MIRROR_FILE.read_bytes() == original
+
+
+def test_later_changed_file_is_refused_before_writing_an_earlier_source(
+    owned_commands, monkeypatch
+):
+    source = "deb http://archive.ubuntu.com/ubuntu noble main\n"
+    ci_apt.SOURCE_LIST.write_text(source)
+    (ci_apt.SOURCE_DIRECTORY / "ubuntu.sources").write_text(
+        "Types: deb\nURIs: mirror+file:/etc/apt/apt-mirrors.txt\nSuites: noble\nComponents: main\n"
+    )
+    original_read = ci_apt.source_bytes
+    monkeypatch.setattr(
+        ci_apt,
+        "source_bytes",
+        lambda path: b"changed-source" if path == ci_apt.MIRROR_FILE else original_read(path),
+    )
+    with pytest.raises(ValueError, match="configuration changed"):
+        ci_apt.bootstrap(["tmux"])
+    assert len(owned_commands.calls) == 1 and ci_apt.SOURCE_LIST.read_text() == source
+
+
+def test_unchanged_selected_mirror_needs_no_file_write(owned_commands):
+    ci_apt.MIRROR_FILE.write_text("https://mirrors.mit.edu/ubuntu\n")
     ci_apt.bootstrap(["tmux"])
     assert [phase for phase, _, _ in owned_commands.calls] == ["architecture", "update", "install"]
-    assert not ci_apt.MIRROR_FILE.exists()
-    assert "mirror list absent; retaining" in capsys.readouterr().out
 
 
 @pytest.mark.parametrize("entry", ["symlink", "directory"])
@@ -241,7 +519,7 @@ def test_each_command_failure_stops_without_success_or_automatic_replay(
 @pytest.mark.parametrize("mirror", ["http://archive.ubuntu.com/ubuntu", "https://" + "a" * 256])
 def test_mirror_write_rejects_non_https_or_unbounded_selection(owned_commands, monkeypatch, mirror):
     monkeypatch.setitem(ci_apt.MIRRORS, "amd64", mirror)
-    with pytest.raises(ValueError, match="bounded official HTTPS"):
+    with pytest.raises(ValueError, match="bounded reviewed HTTPS"):
         ci_apt.bootstrap(["tmux"])
     assert len(owned_commands.calls) == 1
 
@@ -249,6 +527,15 @@ def test_mirror_write_rejects_non_https_or_unbounded_selection(owned_commands, m
 def test_cli_success_runs_declared_packages_without_extra_configuration(owned_commands):
     assert ci_apt.main(["xclip", "xvfb"]) == 0
     assert owned_commands.calls[-1][1][-2:] == ("xclip", "xvfb")
+
+
+def test_cli_source_refusal_exposes_fixed_reason_without_raw_credentials(owned_commands, capsys):
+    ci_apt.MIRROR_FILE.write_text("https://credential@archive.ubuntu.com/ubuntu\tpriority:1\n")
+    assert ci_apt.main(["tmux"]) == 1
+    message = capsys.readouterr().err
+    assert "unrecognized Ubuntu source URI" in message
+    assert "credential" not in message and "archive.ubuntu.com" not in message
+    assert len(owned_commands.calls) == 1
 
 
 @pytest.mark.parametrize("arguments", [[], ["--allow-unauthenticated"], ["curl"]])

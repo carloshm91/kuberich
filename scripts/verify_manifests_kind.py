@@ -10,7 +10,7 @@ import platform
 import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from aiohttp import web
 from kubernetes_asyncio import client
@@ -19,12 +19,15 @@ from kubernetes_asyncio.client.exceptions import ApiException
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import Entry, load_catalog
 from kuberich.diagnostics.redaction import sanitize_text
-from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.connections import ConnectionRequest, HttpProblem
 from kuberich.domain.manifests import (
+    LAST_APPLIED,
+    FrozenDraftSource,
     ManifestAction,
     ManifestPlan,
     ManifestScope,
     ManifestSourceKind,
+    canonical_manifest,
 )
 from kuberich.domain.mutations import MutationResult, MutationState
 from kuberich.domain.resources import Discovery
@@ -34,6 +37,8 @@ from kuberich.services.access import AccessPolicy
 from kuberich.services.local_manifests import LocalManifestService
 from kuberich.services.manifests import ManifestMutationService
 from kuberich.services.mutations import MutationManager
+from kuberich.services.resource_creation import ResourceCreationService
+from kuberich.services.resource_templates import TemplateCatalogService
 from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from scripts.diagnostics_tools import KIND_SHA256, sha256_file
@@ -238,6 +243,8 @@ class Harness:
         self.local = LocalManifestService(self.policy, self.environment, self.root)
         self.manager = MutationManager()
         self.services: list[ManifestMutationService] = []
+        self.drafts: list[ResourceCreationService] = []
+        self.catalogs: list[TemplateCatalogService] = []
         self.request = ConnectionRequest(
             kubeconfig=str(cluster.path), context=cluster.context, namespace=NAMESPACE, timeout=20
         )
@@ -308,6 +315,23 @@ class Harness:
         plan = await self.prepare(service, action)
         return service, plan
 
+    async def draft_service(
+        self, local: ResourceCreationService, source: FrozenDraftSource
+    ) -> ManifestMutationService:
+        service = ManifestMutationService(
+            self.connection,
+            ManifestScope(session=self.identity, namespace=NAMESPACE),
+            self.discovery,
+            self.policy,
+            source,
+            lambda: self.sessions.client is self.connection and local.current_source is source,
+            lambda: local.require_source(source),
+            self.environment,
+            self.root,
+        )
+        self.services.append(service)
+        return service
+
     async def prepare(
         self, service: ManifestMutationService, action: ManifestAction
     ) -> ManifestPlan:
@@ -356,12 +380,18 @@ class Harness:
         await self.manager.close()
         for service in reversed(self.services):
             await service.close()
+        for draft in reversed(self.drafts):
+            await draft.close()
+        for catalog in reversed(self.catalogs):
+            await catalog.close()
         await self.local.close()
         self.check(
             "all-owned-manifest-services-and-workers-drained",
             self.manager.active_count == 0
             and self.local.operation_count == 0
-            and all(service.operation_count == 0 for service in self.services),
+            and all(service.operation_count == 0 for service in self.services)
+            and all(draft.operation_count == 0 for draft in self.drafts)
+            and all(catalog.operation_count == 0 for catalog in self.catalogs),
         )
         connection = self.sessions.client
         self.check(
@@ -369,6 +399,566 @@ class Harness:
             connection is None or not list(Path(connection.directory.name).glob("manifest-*")),
         )
         await self.sessions.close()
+
+
+async def creation_cases(h: Harness) -> None:
+    """Early create-only spine with independent observations of actual storage."""
+    h.report["active_case"] = "strict-create-only-spine"
+    name = "owned-create-only"
+    service, plan = await h.reviewed("create-only.yaml", (fixture_manifest(name),), action="create")
+    h.check(
+        "create-only-strict-dryrun-validates-without-persisting-or-capturing-preview-uid",
+        plan.ready and await h.cm(name) is None and not service.created_receipts,
+    )
+    result = await h.execute(service, plan)
+    persisted = await h.require_cm(name)
+    receipts = service.created_receipts
+    h.check(
+        "create-only-201-receipt-matches-independent-persistent-uid-and-version",
+        result.state is MutationState.SUCCEEDED
+        and len(receipts) == 1
+        and receipts[0].target.uid == persisted.metadata.uid
+        and receipts[0].resource_version == persisted.metadata.resource_version,
+    )
+    h.check(
+        "create-only-does-not-add-last-applied-annotation",
+        LAST_APPLIED not in (persisted.metadata.annotations or {}),
+    )
+    original_uid, original_version = persisted.metadata.uid, persisted.metadata.resource_version
+    conflict = await h.prepare(service, "create")
+    h.check(
+        "create-only-existing-name-refuses-without-update-or-adoption",
+        not conflict.ready
+        and conflict.items[0].request is None
+        and conflict.items[0].validation.state is MutationState.CONFLICT
+        and (await h.require_cm(name)).metadata.uid == original_uid
+        and (await h.require_cm(name)).metadata.resource_version == original_version,
+    )
+    race = "owned-create-after-review"
+    service, plan = await h.reviewed(
+        "create-after-review.yaml", (fixture_manifest(race),), action="create"
+    )
+    proof = service.confirm(plan)
+    appeared = await h.core.create_namespaced_config_map(
+        NAMESPACE,
+        client.V1ConfigMap(metadata=client.V1ObjectMeta(name=race), data={"owned": "collision"}),
+    )
+    result = await service.execute(proof)
+    h.check(
+        "create-only-after-review-collision-leaves-existing-uid-and-data-untouched",
+        result.state is MutationState.CONFLICT
+        and not service.created_receipts
+        and (await h.require_cm(race)).metadata.uid == appeared.metadata.uid
+        and (await h.require_cm(race)).data == {"owned": "collision"},
+    )
+    for suffix, change in (
+        ("unknown-field", {"unknownCreationField": "private-invalid-field"}),
+        ("wrong-type", {"data": ["private-invalid-type"]}),
+    ):
+        invalid_name = "owned-create-" + suffix
+        service, plan = await h.reviewed(
+            "create-" + suffix + ".yaml",
+            ({**fixture_manifest(invalid_name), **change},),
+            action="create",
+        )
+        h.check(
+            "create-only-strict-server-rejects-" + suffix + "-without-persistence",
+            not plan.ready
+            and plan.items[0].validation.state is MutationState.REJECTED
+            and await h.cm(invalid_name) is None,
+        )
+    blocked = "owned-create-readonly"
+    write_documents(h.root / "create-readonly.yaml", (fixture_manifest(blocked),))
+    service = await h.source("create-readonly.yaml")
+    h.policy.restrict(True)
+    try:
+        try:
+            await service.prepare("create")
+        except AppError:
+            refused = True
+        else:
+            refused = False
+        h.check(
+            "create-only-readonly-refuses-validation-and-persistent-write",
+            refused and service.intent is None and await h.cm(blocked) is None,
+        )
+    finally:
+        h.policy.restrict(False)
+
+
+async def template_creation_cases(h: Harness) -> None:
+    h.report["active_case"] = "actual-builtin-and-selected-config-user-templates"
+    configuration = h.root / "selected-config"
+    configuration.mkdir(mode=0o700)
+    templates = configuration / "templates"
+    templates.mkdir(mode=0o700)
+    user = {
+        "schema_version": 1,
+        "kind": "ResourceTemplate",
+        "id": "owned-user",
+        "revision": 1,
+        "title": "Owned user ConfigMap",
+        "parameters": {
+            "name": {"type": "string", "required": True, "paths": ["/0/metadata/name"]},
+            "message": {
+                "type": "string",
+                "required": True,
+                "paths": ["/0/data/message"],
+            },
+        },
+        "objects": [fixture_manifest("placeholder", data={"message": ""})],
+    }
+    user_path = templates / "owned.yaml"
+    user_path.write_bytes(canonical_manifest(user))
+    user_path.chmod(0o600)
+    catalog = TemplateCatalogService(configuration / "config.yaml", h.root)
+    h.catalogs.append(catalog)
+    entries = await catalog.load()
+    h.check(
+        "selected-config-catalog-has-six-distinct-builtins-and-user-template",
+        len(entries) == 7
+        and len({entry.identity for entry in entries}) == 7
+        and sum(entry.origin == "builtin" for entry in entries) == 6
+        and all(entry.enabled for entry in entries),
+    )
+    for entry in entries:
+        template = entry.template
+        assert template is not None
+        name = "owned-template-" + template.id
+        values: dict[str, object] = {"name": name}
+        if template.id in {"deployment", "job"}:
+            values["image"] = SHELL_IMAGE
+        if template.id == "deployment":
+            values["replicas"] = 0
+        if template.id == "service":
+            values["selector"] = "explicit-owned-workload"
+        if template.id == "owned-user":
+            values["message"] = "private-owned-template-value"
+        local = ResourceCreationService(h.policy, h.environment, h.root)
+        h.drafts.append(local)
+        source = await local.capture_template(entry, values, catalog)
+        service = await h.draft_service(local, source)
+        plan = await h.prepare(service, "create")
+        item = plan.items[0]
+        path = item.resource.path(item.target.namespace) + "/" + name
+        try:
+            await h.connection.get_json(path)
+        except HttpProblem as error:
+            absent = error.status == 404
+        else:
+            absent = False
+        h.check(
+            "template-" + template.id + "-strict-preview-leaves-name-absent", plan.ready and absent
+        )
+        if source.private_preview:
+            h.check(
+                "template-" + template.id + "-sensitive-source-review-opaque",
+                "Content withheld" in "".join(item.preview_pages)
+                and "private-owned-template-value" not in repr(plan),
+            )
+        result = await h.execute(service, plan)
+        observed = await h.connection.get_json(path)
+        receipt = service.created_receipts[0]
+        h.report.setdefault("template_creation_receipts", []).append(
+            {
+                "kind": receipt.resource.kind,
+                "name": receipt.target.name,
+                "namespace": receipt.target.namespace,
+                "uid": receipt.target.uid,
+                "returned_resource_version": receipt.resource_version,
+                "later_observed_resource_version": observed["metadata"]["resourceVersion"],
+            }
+        )
+        h.check(
+            "template-" + template.id + "-actual-201-retains-version-and-matches-persisted-uid",
+            result.state is MutationState.SUCCEEDED
+            and receipt.target.uid == observed["metadata"]["uid"]
+            and bool(receipt.resource_version)
+            and bool(observed["metadata"]["resourceVersion"])
+            and LAST_APPLIED not in observed["metadata"].get("annotations", {}),
+        )
+        if template.id == "deployment":
+            h.check(
+                "template-replicas-zero-is-not-replaced-by-default",
+                observed["spec"]["replicas"] == 0,
+            )
+        if template.id == "owned-user":
+            h.check(
+                "user-template-request-values-persist-without-default-preview-disclosure",
+                observed["data"]["message"] == "private-owned-template-value"
+                and "private-owned-template-value" not in repr(service.created_previews),
+            )
+
+    entry = next(entry for entry in entries if entry.origin == "user")
+    local = ResourceCreationService(h.policy, h.environment, h.root)
+    h.drafts.append(local)
+    source = await local.capture_template(
+        entry, {"name": "owned-template-source-changed", "message": "private-before"}, catalog
+    )
+    service = await h.draft_service(local, source)
+    plan = await h.prepare(service, "create")
+    proof = service.confirm(plan)
+    user_path.write_bytes(canonical_manifest({**user, "revision": 2}))
+    result = await service.execute(proof)
+    h.check(
+        "changed-user-template-invalidates-reviewed-draft-before-write",
+        result.state is MutationState.STALE and await h.cm("owned-template-source-changed") is None,
+    )
+
+
+async def reviewed_creation_document(
+    h: Harness, value: dict[str, Any]
+) -> tuple[ManifestMutationService, ManifestPlan]:
+    local = ResourceCreationService(h.policy, h.environment, h.root)
+    h.drafts.append(local)
+    source = await local.capture_bytes(canonical_manifest(value), "paste", "Owned explicit capture")
+    service = await h.draft_service(local, source)
+    return service, await h.prepare(service, "create")
+
+
+async def schema_creation_cases(h: Harness) -> None:
+    h.report["active_case"] = "served-crd-schema-default-cel-preserved-unknown"
+    assert h.connection.api is not None
+    extensions = client.ApiextensionsV1Api(h.connection.api)
+    definition = "creationchecks.creation.kuberich.example"
+
+    def version(name: str, *, storage: bool, maximum: int) -> dict[str, Any]:
+        return {
+            "name": name,
+            "served": True,
+            "storage": storage,
+            "schema": {
+                "openAPIV3Schema": {
+                    "type": "object",
+                    "properties": {
+                        "spec": {
+                            "type": "object",
+                            "required": ["replicas"],
+                            "properties": {
+                                "replicas": {"type": "integer", "minimum": 0, "maximum": maximum},
+                                "mode": {"type": "string", "default": "allowed", "maxLength": 16},
+                                "nullableText": {"type": "string", "nullable": True},
+                                "defaultedText": {"type": "string", "default": "owned-default"},
+                                "opaque": {
+                                    "type": "object",
+                                    "x-kubernetes-preserve-unknown-fields": True,
+                                },
+                            },
+                            "x-kubernetes-validations": [
+                                {
+                                    "rule": "self.mode != 'denied'",
+                                    "message": "private-owned-cel-message",
+                                }
+                            ],
+                        }
+                    },
+                }
+            },
+        }
+
+    await extensions.create_custom_resource_definition(
+        cast(
+            client.V1CustomResourceDefinition,
+            {
+                "apiVersion": "apiextensions.k8s.io/v1",
+                "kind": "CustomResourceDefinition",
+                "metadata": {"name": definition},
+                "spec": {
+                    "group": "creation.kuberich.example",
+                    "scope": "Namespaced",
+                    "names": {
+                        "plural": "creationchecks",
+                        "singular": "creationcheck",
+                        "kind": "CreationCheck",
+                    },
+                    "versions": [
+                        version("v1", storage=True, maximum=5),
+                        version("v1beta1", storage=False, maximum=2),
+                    ],
+                },
+            },
+        )
+    )
+    async with asyncio.timeout(30):
+        while True:
+            observed = await extensions.read_custom_resource_definition(definition)
+            if any(
+                condition.type == "Established" and condition.status == "True"
+                for condition in observed.status.conditions or ()
+            ):
+                break
+            await asyncio.sleep(0.05)
+    h.discovery = await ResourceReader(h.connection).discover()
+
+    def custom(name: str, spec: dict[str, Any], *, api_version: str = "v1beta1") -> dict[str, Any]:
+        return {
+            "apiVersion": "creation.kuberich.example/" + api_version,
+            "kind": "CreationCheck",
+            "metadata": {"name": name},
+            "spec": spec,
+        }
+
+    service, plan = await reviewed_creation_document(
+        h,
+        custom(
+            "owned-crd-default",
+            {
+                "replicas": 1,
+                "opaque": {"unknown": {"accepted": False}},
+                "nullableText": None,
+                "defaultedText": None,
+            },
+        ),
+    )
+    h.check(
+        "crd-served-version-strict-dryrun-accepts-default-and-preserved-unknown-region",
+        plan.ready
+        and plan.items[0].resource.api_version == "creation.kuberich.example/v1beta1"
+        and not service.created_receipts,
+    )
+    address = plan.items[0].request
+    assert address is not None
+    try:
+        await h.connection.get_json(address.path + "/owned-crd-default")
+    except HttpProblem as error:
+        absent = error.status == 404
+    else:
+        absent = False
+    h.check("crd-schema-dryrun-leaves-storage-absent", absent)
+    result = await h.execute(service, plan)
+    value = await h.connection.get_json(address.path + "/owned-crd-default")
+    h.check(
+        "crd-default-and-preserved-false-persist-with-verified-201-uid",
+        result.state is MutationState.SUCCEEDED
+        and value["spec"]["mode"] == "allowed"
+        and value["spec"]["opaque"]["unknown"]["accepted"] is False
+        and value["spec"]["nullableText"] is None
+        and value["spec"]["defaultedText"] == "owned-default"
+        and service.created_receipts[0].target.uid == value["metadata"]["uid"],
+    )
+    for name, spec in (
+        ("owned-crd-field", {"replicas": 1, "unknown": "private-value"}),
+        ("owned-crd-type", {"replicas": "private-wrong-type"}),
+        ("owned-crd-version", {"replicas": 3}),
+        ("owned-crd-cel", {"replicas": 1, "mode": "denied"}),
+    ):
+        service, plan = await reviewed_creation_document(h, custom(name, spec))
+        try:
+            await h.connection.get_json(plan.items[0].resource.path(NAMESPACE) + "/" + name)
+        except HttpProblem as error:
+            absent = error.status == 404
+        else:
+            absent = False
+        h.check(
+            name + "-strict-served-schema-or-cel-refused",
+            not plan.ready
+            and plan.items[0].validation.state is MutationState.REJECTED
+            and "private-" not in plan.items[0].validation.message
+            and absent,
+        )
+    _, preferred = await reviewed_creation_document(
+        h, custom("owned-crd-preferred-only", {"replicas": 3}, api_version="v1")
+    )
+    try:
+        await h.connection.get_json(
+            preferred.items[0].resource.path(NAMESPACE) + "/owned-crd-preferred-only"
+        )
+    except HttpProblem as error:
+        absent = error.status == 404
+    else:
+        absent = False
+    h.check(
+        "served-version-rejection-never-falls-back-to-accepting-preferred-version",
+        preferred.ready
+        and preferred.items[0].resource.api_version == "creation.kuberich.example/v1"
+        and absent,
+    )
+
+
+async def creation_admission_cases(h: Harness) -> None:
+    h.report["active_case"] = "create-only-quota-podsecurity-and-admission-denials"
+    quota_namespace, security_namespace = NAMESPACE + "-create-quota", NAMESPACE + "-security"
+    for name in (quota_namespace, security_namespace):
+        await h.core.create_namespace(
+            client.V1Namespace(
+                metadata=client.V1ObjectMeta(
+                    name=name,
+                    labels={
+                        "pod-security.kubernetes.io/enforce": "restricted",
+                        "pod-security.kubernetes.io/enforce-version": "v1.36",
+                    }
+                    if name == security_namespace
+                    else None,
+                )
+            )
+        )
+    await h.core.create_namespaced_resource_quota(
+        quota_namespace,
+        client.V1ResourceQuota(
+            metadata=client.V1ObjectMeta(name="owned-create-quota"),
+            spec=client.V1ResourceQuotaSpec(hard={"count/configmaps": "0"}),
+        ),
+    )
+    async with asyncio.timeout(30):
+        while True:
+            quota = await h.core.read_namespaced_resource_quota(
+                "owned-create-quota", quota_namespace
+            )
+            if (
+                quota.status is not None
+                and (quota.status.hard or {}).get("count/configmaps") == "0"
+            ):
+                break
+            await asyncio.sleep(0.05)
+    _, quota_plan = await reviewed_creation_document(
+        h, fixture_manifest("owned-create-quota-denied", namespace=quota_namespace)
+    )
+    h.check(
+        "create-only-real-resourcequota-refuses-server-dryrun-without-persistence",
+        not quota_plan.ready
+        and quota_plan.items[0].validation.state is MutationState.DENIED
+        and await h.cm("owned-create-quota-denied", quota_namespace) is None,
+    )
+    _, security_plan = await reviewed_creation_document(
+        h,
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {"name": "owned-create-policy-pod", "namespace": security_namespace},
+            "spec": {"containers": [{"name": "owned", "image": SHELL_IMAGE}]},
+        },
+    )
+    try:
+        await h.core.read_namespaced_pod("owned-create-policy-pod", security_namespace)
+    except ApiException as error:
+        absent = error.status == 404
+    else:
+        absent = False
+    h.check(
+        "create-only-real-podsecurity-refuses-unsafe-template-without-policy-relaxation",
+        not security_plan.ready
+        and security_plan.items[0].validation.state is MutationState.DENIED
+        and absent,
+    )
+    assert h.connection.api is not None
+    admission = client.AdmissionregistrationV1Api(h.connection.api)
+    policy = "owned-creation-deny"
+    await admission.create_validating_admission_policy(
+        cast(
+            client.V1ValidatingAdmissionPolicy,
+            {
+                "apiVersion": "admissionregistration.k8s.io/v1",
+                "kind": "ValidatingAdmissionPolicy",
+                "metadata": {"name": policy},
+                "spec": {
+                    "failurePolicy": "Fail",
+                    "matchConstraints": {
+                        "resourceRules": [
+                            {
+                                "apiGroups": [""],
+                                "apiVersions": ["v1"],
+                                "operations": ["CREATE"],
+                                "resources": ["configmaps"],
+                            }
+                        ]
+                    },
+                    "validations": [
+                        {
+                            "expression": "object.metadata.name != 'owned-creation-policy-denied'",
+                            "message": "private-owned-admission-refusal",
+                        }
+                    ],
+                },
+            },
+        )
+    )
+    await admission.create_validating_admission_policy_binding(
+        cast(
+            client.V1ValidatingAdmissionPolicyBinding,
+            {
+                "apiVersion": "admissionregistration.k8s.io/v1",
+                "kind": "ValidatingAdmissionPolicyBinding",
+                "metadata": {"name": policy},
+                "spec": {"policyName": policy, "validationActions": ["Deny"]},
+            },
+        )
+    )
+    service, plan = await reviewed_creation_document(
+        h, fixture_manifest("owned-creation-policy-denied")
+    )
+    async with asyncio.timeout(30):
+        while plan.ready:
+            await asyncio.sleep(0.05)
+            plan = await h.prepare(service, "create")
+    h.check(
+        "create-only-real-validating-admission-refusal-hides-freeform-private-message",
+        plan.items[0].validation.state is MutationState.REJECTED
+        and "private-" not in plan.items[0].validation.message
+        and await h.cm("owned-creation-policy-denied") is None,
+    )
+
+
+async def creation_batch_cases(h: Harness) -> None:
+    h.report["active_case"] = "create-only-partial-and-committed-uncertain-batches"
+    async with LoopbackProxy(h.connection) as proxy:
+        connection = await h.proxy_client(proxy)
+        try:
+            names = ("owned-create-partial-one", "owned-create-partial-two")
+            service, plan = await h.reviewed(
+                "create-partial.yaml",
+                tuple(fixture_manifest(name) for name in names),
+                action="create",
+                owner=connection,
+            )
+
+            async def collide_second() -> None:
+                await h.core.create_namespaced_config_map(
+                    NAMESPACE,
+                    client.V1ConfigMap(
+                        metadata=client.V1ObjectMeta(name=names[1]),
+                        data={"owned": "external-collision"},
+                    ),
+                )
+
+            proxy.before_write = collide_second
+            result = await h.execute(service, plan)
+            h.check(
+                "create-only-partial-retains-first-created-uid-without-compensating-rollback",
+                result.state is MutationState.PARTIAL
+                and len(service.created_receipts) == 1
+                and service.created_receipts[0].target.uid
+                == (await h.require_cm(names[0])).metadata.uid
+                and (await h.require_cm(names[1])).data == {"owned": "external-collision"}
+                and len(proxy.writes) == 1,
+            )
+            names = ("owned-create-uncertain-one", "owned-create-uncertain-two")
+            service, plan = await h.reviewed(
+                "create-uncertain.yaml",
+                tuple(fixture_manifest(name) for name in names),
+                action="create",
+                owner=connection,
+            )
+            proxy.hold = True
+            operation = h.manager.start(service, service.confirm(plan))
+            await asyncio.wait_for(proxy.committed.wait(), 20)
+            result = await h.manager.cancel(operation)
+            observed = await h.require_cm(names[0])
+            h.check(
+                "create-only-committed-lost-receipt-stays-uncertain-and-later-item-unsent",
+                bool(observed.metadata.uid)
+                and result.state is MutationState.UNCERTAIN
+                and tuple(item.state for _, item in result.items)
+                == (MutationState.UNCERTAIN, MutationState.BLOCKED)
+                and not service.created_receipts
+                and await h.cm(names[1]) is None
+                and len(proxy.writes) == 2,
+            )
+            proxy.release.set()
+        finally:
+            for service in h.services:
+                if service.client is connection:
+                    await service.close()
+            await connection.close()
 
 
 async def apply_cases(h: Harness) -> None:
@@ -979,8 +1569,14 @@ async def ui_case(h: Harness) -> None:
 
             await click("#manifest-review-validate")
             async with asyncio.timeout(30):
-                while screen.plan is None or screen.operation_count:
+                while (
+                    app.screen is not screen
+                    or screen.plan is None
+                    or screen.operation_count
+                    or "All resources validated" not in str(screen.status.render())
+                ):
                     await asyncio.sleep(0.01)
+                assert await screen.wait_for_refresh()
             h.report["last_review"] = review_diagnostics(screen.plan)
             h.check(
                 "actual-ui-" + action + "-explicit-server-review",
@@ -993,8 +1589,14 @@ async def ui_case(h: Harness) -> None:
             )
             await click("#manifest-review-confirm")
             async with asyncio.timeout(30):
-                while screen.result is None or screen.operation_count:
+                while (
+                    app.screen is not screen
+                    or screen.result is None
+                    or screen.operation_count
+                    or screen.result.state.value not in str(screen.status.render())
+                ):
                     await asyncio.sleep(0.01)
+                assert await screen.wait_for_refresh()
             h.record_result(screen.result)
             h.check(
                 "actual-ui-" + action + "-confirmed-api-effect",
@@ -1013,13 +1615,19 @@ async def verify(cluster: OwnedCluster, kubectl: Path, report: dict[str, Any]) -
     try:
         async with asyncio.timeout(VERIFY_SECONDS):
             await h.open()
-            await apply_cases(h)
-            await kustomize_and_scope(h)
-            await refusal_and_races(h)
-            await rbac_cases(h)
-            await deletion_cases(h)
-            await proxy_cases(h)
-            await ui_case(h)
+            await creation_cases(h)
+            if not report.get("creation_spine_only", False):
+                await template_creation_cases(h)
+                await schema_creation_cases(h)
+                await creation_admission_cases(h)
+                await creation_batch_cases(h)
+                await apply_cases(h)
+                await kustomize_and_scope(h)
+                await refusal_and_races(h)
+                await rbac_cases(h)
+                await deletion_cases(h)
+                await proxy_cases(h)
+                await ui_case(h)
             h.check(
                 "owned-kubeconfig-and-ambient-sentinel-unchanged",
                 cluster.path.read_bytes() == before
@@ -1040,6 +1648,7 @@ def run(args: argparse.Namespace, root: Path) -> int:
         "scope": "Owned Linux amd64 kind only; no provider, macOS or public-release qualification.",
         "owned_cluster_deleted": False,
         "source_unchanged": False,
+        "creation_spine_only": getattr(args, "creation_spine", False),
     }
     failure: BaseException | None = None
     before: dict[str, str] = {}
@@ -1110,6 +1719,9 @@ def main() -> None:
     parser.add_argument("--kubectl", type=Path, required=True)
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument(
+        "--creation-spine", action="store_true", help="Run only the early create-only API proof."
+    )
     args = parser.parse_args()
     raise SystemExit(run(args, Path(__file__).resolve().parent.parent))
 

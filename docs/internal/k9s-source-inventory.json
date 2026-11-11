@@ -3305,7 +3305,8 @@
       "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/dir.go",
       "sha256": "ad7c0d108986e997efa7bda6443ce6562fd811ec44f79e317ee3bcd9e6e13e09",
       "tasks": [
-        "M07"
+        "M07",
+        "M10"
       ],
       "symbols": {
         "action_labels_or_identifiers": [
