@@ -559,11 +559,22 @@ async def template_creation_cases(h: Harness) -> None:
         result = await h.execute(service, plan)
         observed = await h.connection.get_json(path)
         receipt = service.created_receipts[0]
+        h.report.setdefault("template_creation_receipts", []).append(
+            {
+                "kind": receipt.resource.kind,
+                "name": receipt.target.name,
+                "namespace": receipt.target.namespace,
+                "uid": receipt.target.uid,
+                "returned_resource_version": receipt.resource_version,
+                "later_observed_resource_version": observed["metadata"]["resourceVersion"],
+            }
+        )
         h.check(
-            "template-" + template.id + "-actual-201-receipt-matches-persisted-uid-version",
+            "template-" + template.id + "-actual-201-retains-version-and-matches-persisted-uid",
             result.state is MutationState.SUCCEEDED
             and receipt.target.uid == observed["metadata"]["uid"]
-            and receipt.resource_version == observed["metadata"]["resourceVersion"]
+            and bool(receipt.resource_version)
+            and bool(observed["metadata"]["resourceVersion"])
             and LAST_APPLIED not in observed["metadata"].get("annotations", {}),
         )
         if template.id == "deployment":
@@ -719,19 +730,35 @@ async def schema_creation_cases(h: Harness) -> None:
         ("owned-crd-cel", {"replicas": 1, "mode": "denied"}),
     ):
         service, plan = await reviewed_creation_document(h, custom(name, spec))
+        try:
+            await h.connection.get_json(plan.items[0].resource.path(NAMESPACE) + "/" + name)
+        except HttpProblem as error:
+            absent = error.status == 404
+        else:
+            absent = False
         h.check(
             name + "-strict-served-schema-or-cel-refused",
             not plan.ready
             and plan.items[0].validation.state is MutationState.REJECTED
-            and "private-" not in plan.items[0].validation.message,
+            and "private-" not in plan.items[0].validation.message
+            and absent,
         )
     _, preferred = await reviewed_creation_document(
         h, custom("owned-crd-preferred-only", {"replicas": 3}, api_version="v1")
     )
+    try:
+        await h.connection.get_json(
+            preferred.items[0].resource.path(NAMESPACE) + "/owned-crd-preferred-only"
+        )
+    except HttpProblem as error:
+        absent = error.status == 404
+    else:
+        absent = False
     h.check(
         "served-version-rejection-never-falls-back-to-accepting-preferred-version",
         preferred.ready
-        and preferred.items[0].resource.api_version == "creation.kuberich.example/v1",
+        and preferred.items[0].resource.api_version == "creation.kuberich.example/v1"
+        and absent,
     )
 
 

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 from urllib.parse import parse_qs, urlsplit
 
-from tests.support.resources import legacy_roots
+from tests.support.resources import descriptor, legacy_roots
 from tests.support.terminal_api import Handler, Server, config
 from tests.terminal.pty_support import TerminalSession
 
@@ -33,9 +33,11 @@ class CreationHandler(Handler):
 
     def do_GET(self) -> None:
         server = cast("CreationServer", self.server)
+        server.get_requests += 1
         path = urlsplit(self.path).path
         if path == "/api/v1":
             value = legacy_roots()[path]
+            value["resources"].append(descriptor("configmaps", kind="ConfigMap"))
             for resource in value["resources"]:
                 if resource["name"] == "configmaps":
                     resource["verbs"] = ["get", "list", "watch", "create", "patch", "delete"]
@@ -96,6 +98,28 @@ class CreationServer(Server):
         self.requests: list[dict[str, object]] = []
         self.committed, self.release = threading.Event(), threading.Event()
         self.hold = hold
+        self.get_requests = 0
+        self.handler_threads: list[threading.Thread] = []
+        self.handler_lock = threading.Lock()
+
+    def process_request(self, request: Any, client_address: Any) -> None:
+        # Register before start, so shutdown cannot miss a scheduled handler.
+        request.settimeout(5)
+        owner = threading.Thread(
+            target=self.process_request_thread, args=(request, client_address), daemon=True
+        )
+        with self.handler_lock:
+            self.handler_threads.append(owner)
+        owner.start()
+
+    def drain_handlers(self) -> None:
+        deadline = time.monotonic() + 5
+        with self.handler_lock:
+            owners = tuple(self.handler_threads)
+        for owner in owners:
+            owner.join(timeout=max(0, deadline - time.monotonic()))
+        if any(owner.is_alive() for owner in owners):
+            raise ValueError("Owned creation API request handlers were not drained")
 
 
 def click_visible(terminal: TerminalSession, label: str) -> None:
@@ -116,6 +140,7 @@ def terminal_resource_creation_cli(
     evidence: str,
     *,
     mode: Literal["success", "cancel"] = "success",
+    initial_offline: bool = False,
     wrap: CommandWrap | None = None,
     environment: Mapping[str, str] | None = None,
     controller_environment: Mapping[str, str] | None = None,
@@ -141,6 +166,7 @@ def terminal_resource_creation_cli(
         **{key: str(path) for key, path in owned.items()},
         "PATH": str(directory / "no-tools"),
         "KUBERICH_CONFIG": str(preferences),
+        "KUBERICH_LOG_FILE": str(directory / "kuberich.log"),
         "KUBERICH_CLIPBOARD": "osc52",
     }
     source = directory / "owned-create.yaml"
@@ -166,23 +192,46 @@ def terminal_resource_creation_cli(
     original = source.read_bytes()
     server = CreationServer(hold=mode == "cancel")
     thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    kubeconfig = config(
-        directory / "owned-kubeconfig",
-        f"http://127.0.0.1:{server.server_port}",
-        {"token": "synthetic-pty"},
-    )
-    kubeconfig.chmod(0o600)
-    original_config = kubeconfig.read_bytes()
-    argv = [*command, "--kubeconfig", str(kubeconfig), "--namespace", "team"]
-    launched = wrap(argv, variables) if wrap is not None else argv
-    outside = dict(controller_environment or {})
-    if wrap is None:
-        outside.update(variables)
     try:
+        thread.start()
+    except BaseException:
+        server.server_close()
+        raise
+    closed = False
+
+    def close_server() -> None:
+        nonlocal closed
+        if closed:
+            return
+        server.release.set()
+        server.stopping.set()
+        server.shutdown()
+        thread.join(timeout=3)
+        server.server_close()
+        if thread.is_alive():
+            raise ValueError("Owned creation API controller was not reaped")
+        server.drain_handlers()
+        closed = True
+
+    try:
+        kubeconfig = config(
+            directory / "owned-kubeconfig",
+            f"http://127.0.0.1:{server.server_port}",
+            {"token": "synthetic-pty"},
+        )
+        kubeconfig.chmod(0o600)
+        original_config = kubeconfig.read_bytes()
+        argv = [*command, "--kubeconfig", str(kubeconfig), "--namespace", "team"]
+        if initial_offline:
+            argv.extend(("--command", "create"))
+        launched = wrap(argv, variables) if wrap is not None else argv
+        outside = dict(controller_environment or {})
+        if wrap is None:
+            outside.update(variables)
         with TerminalSession(launched, directory, environment=outside, size=(120, 36)) as terminal:
-            terminal.wait_for_screen("80 pods")
-            terminal.send(b":create\r")
+            if not initial_offline:
+                terminal.wait_for_screen("80 pods")
+                terminal.send(b":create\r")
             terminal.wait_for_screen("Create resources · offline source")
             click_visible(terminal, "Explicit local manifest file path")
             terminal.send(b"owned-create.yaml")
@@ -190,7 +239,9 @@ def terminal_resource_creation_cli(
             click_visible(terminal, "Import file")
             terminal.wait_for_screen("File captured offline")
             assert not server.bodies and PRIVATE not in "\n".join(terminal.screen.display)
-            click_visible(terminal, "Review Create")
+            if initial_offline:
+                assert server.get_requests == 0
+            click_visible(terminal, "Connect & Review" if initial_offline else "Review Create")
             terminal.wait_for_screen("Manifest cluster review")
             click_visible(terminal, "Validate")
             terminal.wait_for_screen("All resources validated")
@@ -224,10 +275,20 @@ def terminal_resource_creation_cli(
             terminal.wait_for_screen("80 pods", absent=("Create resources · offline source",))
             terminal.send(b"\x11")
             terminal.finish()
+            assert PRIVATE.encode() not in terminal.transcript
             terminal.save_evidence(evidence)
+        close_server()
+        requests = [body for dry, _, body in server.bodies if not dry]
+        assert len(requests) == 1 and requests[0] == server.bodies[0][2]
+        assert set(server.values) == {names[0]}
+        assert sum(dry for dry, _, _ in server.bodies) == len(names)
         assert source.read_bytes() == original and kubeconfig.read_bytes() == original_config
+        log = directory / "kuberich.log"
+        assert log.is_file() and PRIVATE.encode() not in log.read_bytes()
         receipt: dict[str, object] = {
             "mode": mode,
+            "initially_offline": initial_offline,
+            "source_capture_network_absent": initial_offline,
             "wrapped": wrap is not None,
             "server_validation": "Owned controlled HTTP fixture, not a Kubernetes schema authority",
             "dry_runs": len(names),
@@ -241,14 +302,10 @@ def terminal_resource_creation_cli(
             "no_replay": True,
             "source_and_kubeconfig_unchanged": True,
             "external_tool_executed": False,
+            "api_handlers_drained": True,
+            "complete_ansi_and_log_private_value_absent": True,
         }
         (directory / "creation-cli-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
         return receipt
     finally:
-        server.release.set()
-        server.stopping.set()
-        server.shutdown()
-        thread.join(timeout=3)
-        server.server_close()
-        if thread.is_alive():
-            raise ValueError("Owned creation API was not reaped")
+        close_server()

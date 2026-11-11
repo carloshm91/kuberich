@@ -24,7 +24,7 @@ def owned_app(tmp_path, *, environment=None):
         logging.Logger("owned-creation-sources"),
         catalog=KubeCatalog(),
         directory=tmp_path,
-        environment=environment or {},
+        environment={"KUBERICH_CONFIG": str(tmp_path / "config.yaml"), **(environment or {})},
     )
 
 

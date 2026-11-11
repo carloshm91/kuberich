@@ -348,8 +348,12 @@ class ManifestReviewScreen(ModalScreen[None]):
         self._controls()
 
     @on(Input.Changed, "#manifest-review-namespace")
-    def namespace_changed(self) -> None:
-        if self.is_mounted:
+    def namespace_changed(self, event: Input.Changed) -> None:
+        if (
+            self.is_mounted
+            and event.value == self.namespace.value
+            and (event.value or None) != self.service.scope.namespace
+        ):
             self._invalidate()
 
     @on(Select.Changed, "#manifest-review-action")

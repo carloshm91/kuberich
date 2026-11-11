@@ -63,7 +63,8 @@ class ResourceCreationScreen(ModalScreen[None]):
     ResourceCreationScreen { align: center middle; background: $background 80%; }
     #creation-form { width: 98%; height: 96%; border: solid $primary;
         padding: 0 1; background: $surface; }
-    #creation-title, #creation-source, #creation-status, #creation-page { height: 1; }
+    #creation-title, #creation-source, #creation-status, #creation-page,
+    #creation-destination { height: 1; }
     #creation-file { height: 3; }
     #creation-source-choice, #creation-template { height: 3; }
     #creation-parameters { height: auto; max-height: 9; min-height: 1; }
@@ -80,7 +81,7 @@ class ResourceCreationScreen(ModalScreen[None]):
     ResourceCreationScreen.compact #creation-template,
     ResourceCreationScreen.compact #creation-parameters Input,
     ResourceCreationScreen.compact #creation-parameters Select { height: 1; border: none; padding: 0 1; }
-    ResourceCreationScreen.compact #creation-parameters { max-height: 7; }
+    ResourceCreationScreen.compact #creation-parameters { max-height: 6; }
     """
 
     def __init__(
@@ -90,9 +91,15 @@ class ResourceCreationScreen(ModalScreen[None]):
         runner: ProcessRunner,
         open_review: Callable[[FrozenDraftSource], None],
         catalog: TemplateCatalogService | None = None,
+        selected_context: str | None = None,
+        connection_ready: Callable[[], bool] | None = None,
+        connect_review: Callable[[FrozenDraftSource], Awaitable[None]] | None = None,
     ) -> None:
         super().__init__()
         self.service, self.runner, self.open_review = service, runner, open_review
+        self.selected_context = selected_context
+        self.connection_ready = connection_ready or (lambda: False)
+        self.connect_review = connect_review
         self.catalog = catalog or TemplateCatalogService(
             service.directory / "config.yaml", service.directory
         )
@@ -151,6 +158,14 @@ class ResourceCreationScreen(ModalScreen[None]):
         with Vertical(id="creation-form"):
             yield Static("Create resources · offline source", markup=False, id="creation-title")
             yield Static("No source captured", markup=False, id="creation-source")
+            yield Static(
+                safe_text(
+                    f"Selected context: {self.selected_context} · Connect & Review is explicit"
+                    if self.selected_context
+                    else "No selected context · source capture remains offline"
+                ),
+                id="creation-destination",
+            )
             yield self.source_choice
             yield self.template_choice
             yield self.parameters
@@ -186,7 +201,7 @@ class ResourceCreationScreen(ModalScreen[None]):
         self.set_class(self.size.height < 28, "compact")
 
     def _current(self) -> bool:
-        return not self._stopped and self.is_attached
+        return not self._stopped and self.is_attached and self.app.screen is self
 
     def _controls(self) -> None:
         if not self.viewer.is_attached:
@@ -221,6 +236,13 @@ class ResourceCreationScreen(ModalScreen[None]):
         )
         self.query_one("#creation-review", Button).disabled = (
             busy or self._stopped or source is None or self.service.policy.read_only
+        )
+        self.query_one("#creation-review", Button).label = (
+            "Connect & Review"
+            if not self.connection_ready()
+            and self.connect_review is not None
+            and self.selected_context is not None
+            else "Review Create"
         )
         self.query_one("#creation-disclosure", Checkbox).disabled = (
             busy or self._stopped or self.service.policy.read_only or source is None
@@ -574,6 +596,14 @@ class ResourceCreationScreen(ModalScreen[None]):
             if self._current() and self.service.current_source is not None:
                 self.disclosure = await self.service.prepare_editor()
 
+    async def _connect_review(self, source: FrozenDraftSource) -> str:
+        callback = self.connect_review
+        if callback is None:
+            raise AppError("Select a configured context before connecting for creation review.")
+        self.status.update("Connecting the explicit selected context; frozen draft retained…")
+        await callback(source)
+        return ""
+
     @on(Input.Changed, "#creation-file")
     def file_changed(self) -> None:
         if self.is_mounted and self._current():
@@ -603,7 +633,15 @@ class ResourceCreationScreen(ModalScreen[None]):
             else:
                 self._start(self._edit)
         elif name == "review" and self.service.current_source is not None:
-            self.open_review(self.service.current_source)
+            source = self.service.current_source
+            if (
+                not self.connection_ready()
+                and self.connect_review is not None
+                and self.selected_context is not None
+            ):
+                self._start(lambda: self._connect_review(source))
+            else:
+                self.open_review(source)
         elif name in {"previous", "next"} and self.pages:
             self.page = max(0, min(len(self.pages) - 1, self.page + (1 if name == "next" else -1)))
             self._page()

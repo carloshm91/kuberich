@@ -405,7 +405,11 @@ and paste retention is limited to 1 MiB UTF-8; invalid, truncated, excessive or
 unsafe-control input is refused. KubeRich never queries terminal clipboard
 contents or rereads a captured clipboard at Confirm.
 
-After capture, connect to the intended context and choose **Review Create**.
+After capture, choose **Review Create** for an existing connection. When started
+offline, check the displayed selected context and choose **Connect & Review**;
+this explicit transition retains the same draft through connection setup.
+Import/render never connects automatically. Back closes and discards the local
+draft, so use the explicit action to continue an offline capture.
 Review the exact GVK, endpoint, name and every namespace or cluster-scoped effect.
 All-namespaces view supplies no implicit destination. **Validate** resolves
 captured discovery and requests an exact named POST with strict server validation

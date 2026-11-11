@@ -45,6 +45,7 @@ from kuberich.domain.views import (
     ResourceScope,
     ResourceSelection,
     ViewObservation,
+    ViewStatus,
     ViewStore,
 )
 from kuberich.domain.watches import SyncUpdate, WatchEvent
@@ -357,6 +358,34 @@ class WorkspaceService:
                 helm=helm,
             )
         )
+
+    def finish_cancelled_connect(
+        self, task: asyncio.Task[None], context: str, revision: int
+    ) -> None:
+        """Publish a drained, still-pending explicit connection without retargeting work."""
+        observed = self.sessions.observation
+        view = self.store.observation
+        if (
+            self._closed
+            or task is not self.task
+            or not task.done()
+            or self._desired is not None
+            or self.sessions.client is not None
+            or view.context != context
+            or view.revision != revision
+            or view.status is not ViewStatus.CONNECTING
+            or (observed.identity is not None and observed.identity.context != context)
+            or observed.state not in {ConnectionState.CONNECTING, ConnectionState.DISCONNECTED}
+        ):
+            return
+        cancelled = replace(
+            observed,
+            state=ConnectionState.DISCONNECTED,
+            message="Connection cancelled; no client is active. Select the context to retry.",
+        )
+        self.sessions.observation = cancelled
+        self.store.observation = replace(view, connection=cancelled, status=ViewStatus.DISCONNECTED)
+        self._publish()
 
     def _current_context(self) -> str:
         self._require_open()

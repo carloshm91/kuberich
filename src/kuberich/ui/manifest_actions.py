@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -14,6 +14,8 @@ from kuberich.domain.manifests import (
     ManifestScope,
 )
 from kuberich.domain.resources import Discovery
+from kuberich.errors import AppError
+from kuberich.services.access import Action
 from kuberich.services.local_manifests import LocalManifestService
 from kuberich.services.manifests import ManifestMutationService
 from kuberich.services.mutations import MutationManager
@@ -48,6 +50,8 @@ class ManifestActions:
         push_screen: Callable[[Screen[None]], None],
         notice: Callable[[str], None],
         config_path: Path | None = None,
+        selected_context: Callable[[], str | None] | None = None,
+        connect_context: Callable[[str], Awaitable[ManifestConnection]] | None = None,
     ) -> None:
         self.local, self.manager, self.runner = local, manager, runner
         self.capture_connection, self.push_screen, self.notice = (
@@ -60,6 +64,8 @@ class ManifestActions:
         self._reviews: list[ManifestReviewScreen] = []
         self._failed_owners: set[int] = set()
         self.config_path = config_path or local.directory / "config.yaml"
+        self.selected_context, self.connect_context = selected_context, connect_context
+        self._connecting_source: ResourceCreationService | None = None
         self._stopped = False
 
     @property
@@ -99,11 +105,15 @@ class ManifestActions:
         local = ResourceCreationService(
             self.local.policy, self.local.environment, self.local.directory
         )
+        context = self.selected_context() if self.selected_context is not None else None
         screen = ResourceCreationScreen(
             service=local,
             runner=self.runner,
             open_review=lambda source: self.open_creation_review(source, local),
             catalog=TemplateCatalogService(self.config_path, local.directory),
+            connection_ready=lambda: self.capture_connection() is not None,
+            selected_context=context,
+            connect_review=lambda source: self.connect_creation_review(source, local, context),
         )
         self._creators.append(screen)
         self.push_screen(screen)
@@ -113,7 +123,6 @@ class ManifestActions:
     ) -> None:
         if self._stopped:
             return
-        from kuberich.ui.manifest_review import ManifestReviewScreen
 
         connection = self.capture_connection()
         if connection is None:
@@ -121,6 +130,16 @@ class ManifestActions:
                 "Connect to a context before strict server validation; draft inspection is offline."
             )
             return
+        self._push_creation_review(source, local, connection)
+
+    def _push_creation_review(
+        self,
+        source: FrozenDraftSource,
+        local: ResourceCreationService,
+        connection: ManifestConnection,
+    ) -> None:
+        from kuberich.ui.manifest_review import ManifestReviewScreen
+
         self._retain()
         service = ManifestMutationService(
             connection.client,
@@ -136,6 +155,30 @@ class ManifestActions:
         screen = ManifestReviewScreen(service=service, manager=self.manager, action="create")
         self._reviews.append(screen)
         self.push_screen(screen)
+
+    async def connect_creation_review(
+        self, source: FrozenDraftSource, local: ResourceCreationService, context: str | None
+    ) -> None:
+        if self._stopped or self._connecting_source is not None:
+            raise AppError(
+                "Creation connection is closed or another explicit connection is active."
+            )
+        local.policy.require(Action.MUTATE)
+        await local.require_source(source)
+        connection = self.capture_connection()
+        if connection is None:
+            if context is None or self.connect_context is None:
+                raise AppError("Select a configured context before connecting for creation review.")
+            self._connecting_source = local
+            try:
+                connection = await self.connect_context(context)
+            finally:
+                self._connecting_source = None
+        await local.require_source(source)
+        local.policy.require(Action.MUTATE)
+        if self._stopped or not connection.current() or connection.scope.session.context != context:
+            raise AppError("Creation connection changed; review the explicit context again.")
+        self._push_creation_review(source, local, connection)
 
     def open_browser(self) -> None:
         if self._stopped:
@@ -191,6 +234,8 @@ class ManifestActions:
                 else:
                     self._failed_owners.discard(id(screen))
         for creator in tuple(self._creators):
+            if creator.service is self._connecting_source:
+                continue
             try:
                 await creator.stop_owned()
             except BaseException as error:

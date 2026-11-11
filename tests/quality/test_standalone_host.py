@@ -103,9 +103,20 @@ def test_creation_private_files_share_controller_uid_without_weakening_other_nat
     class ReachedTerminalBoundary(Exception):
         pass
 
-    def terminal(command, directory, evidence, *, mode, wrap, environment, controller_environment):
+    def terminal(
+        command,
+        directory,
+        evidence,
+        *,
+        mode,
+        initial_offline,
+        wrap,
+        environment,
+        controller_environment,
+    ):
         captured.extend(wrap(command, {"HOME": str(tmp_path / "owned-home")}))
         assert mode == "success"
+        assert initial_offline
         raise ReachedTerminalBoundary
 
     monkeypatch.setattr(verify_standalone, "terminal_resource_creation_cli", terminal)

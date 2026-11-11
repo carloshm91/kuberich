@@ -15,4 +15,6 @@ def test_installed_creation_public_dryrun_review_and_created_uid(
         if entry_point == "console"
         else [str(binary / "python"), "-m", "kuberich"]
     )
-    terminal_resource_creation_cli(command, tmp_path, "installed-creation-cli-" + entry_point)
+    terminal_resource_creation_cli(
+        command, tmp_path, "installed-creation-cli-" + entry_point, initial_offline=True
+    )
