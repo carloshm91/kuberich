@@ -21,8 +21,11 @@ and no enforcement simulator is claimed. After two public composition/version
 boundary corrections, all 23 families passed actual kind in 64.5607 seconds with
 326 unchanged inputs and complete cleanup. Four matching source-terminal cases
 passed in 41.71 seconds, the navigation cohort passed 304 cases, and 190 docs/site
-cases passed. Fresh installed terminals, complete coverage and normal hosted
-platform checks remain separate in [policy acceptance](acceptance/policy-exploration.md).
+cases passed. Signed implementation `da5920fc78327c877d9c44735758d10fccebe7b7`
+then passed four fresh installed-wheel console/module cases in 66.88 seconds;
+all 320 Python payload modules matched source and cleanup passed. Complete
+coverage and normal hosted platform checks remain separate in
+[policy acceptance](acceptance/policy-exploration.md).
 Published packages remain 0.4.0; no publication occurs. Earlier checkpoint text
 below is retained history, including #79 implementation and verification attempts.
 

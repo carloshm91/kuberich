@@ -140,11 +140,33 @@ receipts remain historical. The documentation/site cohort passed 190 cases in
 98.17 seconds. Ruff, formatting, the strict workflow target union (61 targets,
 380 source files at that check) and changed-boundary strict types passed.
 
+## Clean installed candidate
+
+Signed implementation `da5920fc78327c877d9c44735758d10fccebe7b7` passed four
+fresh installed-wheel cases in 66.88 seconds (console/module, families/admission):
+
+```sh
+uv run pytest tests/packaging/test_curated_terminal.py -q \
+  -k 'families or admission' \
+  --basetemp /tmp/kuberich-80-curated-installed-pty-01
+```
+
+The wheel SHA-256 is
+`4b8b71670eb229ddd4deaeafb47aa1a4486d8a44d92902be4a5798c44911229c`.
+All 320 Python payload modules matched source byte-for-byte. Actual imported
+paths and cwd were outside the checkout. Every family route, both admission
+link paths, Back, resize, interruption, concealed API/log payloads, GET-only
+ledger, zero helper/egress and terminal/process/API cleanup checks passed.
+Original receipts and the wheel are preserved under
+`proof-lane/installed-001-receipts/`; there was no installer failure or retry.
+This documentation-only evidence update preserves the measured implementation
+commit and receipt identities rather than relabeling them as a later source.
+
 ## Remaining qualification at this source freeze
 
-The signed candidate, fresh-wheel terminal receipts, ordinary 27-job PR matrix,
-complete independent production/changed-line coverage and protected delivery are
-tracked live in [issue #80](https://github.com/carloshm91/kuberich/issues/80).
+The ordinary 27-job PR matrix, complete independent production/changed-line
+coverage and protected delivery are tracked live in
+[issue #80](https://github.com/carloshm91/kuberich/issues/80).
 No focused cohort substitutes for those checks. The six-environment manual matrix and three repeated release
 contracts belong to #82; provider certification remains opt-in #87. Startup and
 runtime latency are advisory for 0.x with actual misses retained; RSS, import
