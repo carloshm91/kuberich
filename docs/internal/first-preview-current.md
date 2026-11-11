@@ -29,7 +29,11 @@ coverage and normal hosted platform checks remain separate in
 caught a stale partial-webhook-URL assertion and a CodeQL heuristic on the
 apiVersion prefix classifier. Exact group/version parsing preserves the privacy
 contract, and 246 corrected boundary cases pass with 100% helper coverage;
-original failures remain retained and the corrected hosted matrix is required.
+original failures remain retained. A later Fast attempt exposed a benchmark
+browser test that advanced before a canceled confirmation's owned callback
+retired. The public busy guard and a held-callback control preserve the original
+deadline; all 17 affected UI cases pass. A complete corrected hosted matrix is
+still required.
 Published packages remain 0.4.0; no publication occurs. Earlier checkpoint text
 below is retained history, including #79 implementation and verification attempts.
 

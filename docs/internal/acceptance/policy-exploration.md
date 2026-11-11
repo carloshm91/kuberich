@@ -191,6 +191,28 @@ retained under `artifacts/issue80/root-audit/codeql-01/` and `hosted-01/`.
 Earlier native/installed receipts above retain their original source identities;
 the corrected head requires its own genuine CodeQL and complete normal matrix.
 
+## Benchmark browser readiness correction
+
+The corrected source passed CodeQL (including its aggregate), Repository checks
+and DCO, but Application run
+[42944996063](https://github.com/carloshm91/kuberich/actions/runs/42944996063)
+stopped Fast after 6,582 passes and one failure in 316.63 seconds. The saved
+benchmark browser test requested another delete after its confirmation modal
+left the stack but before Textual delivered that modal's completion callback.
+The still-owned operation correctly refused overlap. No source/native matrix
+ran, and the original failure remains in
+`artifacts/issue80/fast-corrected-head-full.log`.
+
+The browser now exposes `busy` as the same state used by its operation guard.
+The test waits for the visible browser and retired operation under its original
+five-second deadline. A held-callback control proves that modal disappearance
+and an unrelated completed filesystem read do not establish readiness; an early
+second delete is refused without deleting a record. After releasing the original
+callback, the next fresh delete is admitted. Stored-count, selection/viewport,
+restart and cleanup assertions remain intact. The affected UI cohort passed
+17 cases in 14.82 seconds; Ruff and strict types passed. No sleeps, larger
+deadlines or unchanged retry were substituted for this correction.
+
 ## Remaining qualification at this source freeze
 
 The ordinary 27-job PR matrix, complete independent production/changed-line
