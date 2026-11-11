@@ -777,7 +777,7 @@ async def schema_creation_cases(h: Harness) -> None:
 
 async def creation_admission_cases(h: Harness) -> None:
     h.report["active_case"] = "create-only-quota-podsecurity-and-admission-denials"
-    quota_namespace, security_namespace = NAMESPACE + "-quota", NAMESPACE + "-security"
+    quota_namespace, security_namespace = NAMESPACE + "-create-quota", NAMESPACE + "-security"
     for name in (quota_namespace, security_namespace):
         await h.core.create_namespace(
             client.V1Namespace(
