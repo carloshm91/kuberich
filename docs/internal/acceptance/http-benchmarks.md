@@ -363,3 +363,42 @@ the child removes it before reporting. These controls are not Darwin runtime
 qualification. Ruff, formatting and the full private-access audit pass. The
 completed original matrix remains failed, and the integrated correction still
 requires its own complete ordinary protected matrix.
+
+## Retained installer and cleanup-observation failures
+
+The fifth ordinary attempt, run `42925608596` on actual checkout
+`335e25a474e7dcd35671d99d206d05335f0510c9`, passes Fast tests and all four
+native targets, including the corrected Darwin compile/runtime paths. The
+original ordinary native archives and their 24 PTY/restoration receipts are
+independently verified. They remain PR evidence rather than release qualification.
+
+Linux Python 3.13 part 4 fails four installed-curated setup cases because its
+isolated `uv pip install` exits 1. The authenticated original JUnit/archive
+contains neither captured installer stream nor an installer-specific diagnostic.
+The original cause is unknown; no transient-network or corrected-installation
+claim can be made from that receipt.
+
+The shared test runner now attaches two credential-redacted exception notes,
+each limited to 8,192 characters with an explicit truncation marker. Redaction
+precedes clipping. The original exception type, exit, command and raw stream
+attributes, process-group ownership, installation and timeout contracts remain
+unchanged; there is no automatic retry or new logging directory. Two regressions
+fail against the original runner, then all six real-child diagnostic/descendant/
+timeout cases pass in 1.65 seconds. A separate intentionally failing pytest case
+proves both sanitized notes reach JUnit: its synthetic causal sentinel remains
+visible and its credential canary is absent. That sentinel does not explain the
+original installer failure.
+
+The same matrix's macOS part 3 catches an earlier debug test's non-atomic
+observation: service retirement happens before its retained screen's final
+cleanup callback. A controlled post-drain handoff reproduces the original
+immediate assertion, with the actual child and private exec files already gone
+while the screen remains retained. One unchanged five-second wait now requires
+all service, process and retained-view counts to be zero. Every original
+client/PID/private-file/no-PATCH/remote-entry assertion remains. The same
+controlled schedule passes, followed by all 43 debug UI cases in 51.53 seconds.
+
+The installer helper is a native-build input, so earlier native manifests and
+runtime receipts remain historical for that source. Application bytes are
+unchanged. The original installer and UI failures stay failed; fresh complete
+hosted qualification must bind the improved diagnostics and observation barrier.

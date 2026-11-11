@@ -7,11 +7,73 @@ import signal
 import subprocess
 import sys
 import time
+import traceback
 from contextlib import suppress
 
 import pytest
 
 from tests.support.distribution import run
+
+FAILURE_PROGRAM = """
+import sys
+from pathlib import Path
+directory = Path(__file__).parent
+sys.stdout.write((directory / 'stdout.txt').read_text())
+sys.stderr.write((directory / 'stderr.txt').read_text())
+raise SystemExit(19)
+"""
+
+
+def failing_command(tmp_path, stdout, stderr):
+    script = tmp_path / "owned-failing-installer.py"
+    script.write_text(FAILURE_PROGRAM)
+    for name, value in (("stdout", stdout), ("stderr", stderr)):
+        path = tmp_path / (name + ".txt")
+        path.write_text(value)
+        path.chmod(0o600)
+    return [sys.executable, "-I", "-S", str(script)]
+
+
+def test_failed_installer_notes_preserve_cause_and_raw_attributes_without_credentials(tmp_path):
+    stdout = "Preparing the owned fixture wheel.\n"
+    stderr = (
+        "Dependency download refused: HTTP 503.\n"
+        "Authorization: Bearer synthetic-private-bearer\n"
+        "https://fixture-user:synthetic-private-password@example.invalid/simple\n"
+        "password=synthetic-private-assignment\n"
+        "-----BEGIN PRIVATE KEY-----\nsynthetic-private-key\n-----END PRIVATE KEY-----\n"
+        "\x1b]52;c;synthetic-clipboard\x07\x1b[31mterminal controls\x1b[0m\n"
+    )
+    command = failing_command(tmp_path, stdout, stderr)
+    with pytest.raises(subprocess.CalledProcessError) as caught:
+        run(command, tmp_path, timeout=3)
+    error = caught.value
+    assert error.returncode == 19 and error.cmd == command
+    assert error.stdout == stdout and error.stderr == stderr
+    notes = error.__notes__
+    assert len(notes) == 2 and all(len(note) <= 8192 for note in notes)
+    rendered = "".join(traceback.format_exception_only(error))
+    assert "Preparing the owned fixture wheel." in rendered
+    assert "Dependency download refused: HTTP 503." in rendered
+    assert "[REDACTED]" in rendered and "[REDACTED KEY]" in rendered
+    assert "synthetic-private" not in rendered and "fixture-user" not in rendered
+    assert "\x1b" not in rendered and "\x07" not in rendered
+
+
+def test_failed_installer_redacts_before_clipping_and_reports_the_bound(tmp_path):
+    secret = "synthetic-private-" + "x" * 10000
+    stdout = "password=" + secret + "\nCausal detail after the long credential.\n" + "f" * 70000
+    command = failing_command(tmp_path, stdout, "Owned fixture failure.\n")
+    with pytest.raises(subprocess.CalledProcessError) as caught:
+        run(command, tmp_path, timeout=3)
+    error = caught.value
+    assert error.returncode == 19 and error.cmd == command and error.stdout == stdout
+    notes = error.__notes__
+    assert len(notes) == 2 and all(len(note) <= 8192 for note in notes)
+    assert notes[0].endswith("[diagnostic truncated]")
+    assert "Causal detail after the long credential." in notes[0]
+    assert "synthetic-private" not in "".join(notes) and "x" * 100 not in "".join(notes)
+
 
 CHILD = """
 import json, os, signal, sys, time

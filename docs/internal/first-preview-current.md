@@ -64,6 +64,16 @@ environment assertions retain the credential/proxy boundary while recognizing
 only that later Darwin observation; 60 related cases and the full private-access
 audit pass. Actual macOS success and complete protected delivery remain pending.
 
+The fifth ordinary attempt passes all four native targets on the corrected
+source. A Linux installed-test setup then exits without retained installer
+stderr, leaving its original cause unknown. The shared runner now preserves
+bounded redacted failure notes in existing pytest/JUnit output; six real-child
+checks and an actual rendering control verify that boundary without retrying or
+explaining the old failure. A separate debug UI test now waits for complete
+service/process/view retirement within its original five-second budget; its
+controlled regression and all 43 UI cases pass. Both original failures remain
+retained, and fresh complete hosted checks are required before merge.
+
 ## Ephemeral debugging verified candidate — 2026-11-10 UTC
 
 A03 #78 adds `:debug` for a captured Pod: explicit image/target/nonprivileged

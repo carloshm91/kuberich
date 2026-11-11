@@ -11,8 +11,20 @@ from pathlib import Path
 
 import pytest
 
+from kuberich.diagnostics.redaction import sanitize_text
+
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
+MAX_FAILURE_NOTE_CHARACTERS = 8192
+
+
+def _failure_note(stream: str, output: str) -> str:
+    safe = sanitize_text(output, allow_newlines=True)
+    note = f"Captured {stream} (redacted diagnostic):\n{safe}"
+    if len(note) > MAX_FAILURE_NOTE_CHARACTERS or len(output) > 65536:
+        marker = "\n[diagnostic truncated]"
+        note = note[: MAX_FAILURE_NOTE_CHARACTERS - len(marker)] + marker
+    return note
 
 
 def clean_environment(directory: Path) -> dict[str, str]:
@@ -93,7 +105,10 @@ def run(
             os.killpg(process.pid, signal.SIGKILL)
         process.wait()
     if check and process.returncode:
-        raise subprocess.CalledProcessError(process.returncode, command, stdout, stderr)
+        error = subprocess.CalledProcessError(process.returncode, command, stdout, stderr)
+        error.add_note(_failure_note("stdout", stdout))
+        error.add_note(_failure_note("stderr", stderr))
+        raise error
     return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
