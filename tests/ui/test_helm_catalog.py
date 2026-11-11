@@ -1,5 +1,6 @@
 """Actual repository HTTP/storage and public cached chart/catalog controls."""
 
+import asyncio
 import base64
 import logging
 from contextlib import asynccontextmanager
@@ -67,6 +68,38 @@ async def add_form(app, screen, fixture, pilot):
     form.query_one("#helm-repository-url", Input).value = fixture.origin + "/charts"
     form.query_one("#helm-repository-loopback", Checkbox).value = True
     return form
+
+
+@asynccontextmanager
+async def held_owner_completion(owner, monkeypatch):
+    """Delay a screen's task-completion callback without changing its operation."""
+    loop = asyncio.get_running_loop()
+    schedule = loop.call_soon
+    entered = asyncio.Event()
+    held = []
+
+    def hold(callback, *args, context=None):
+        if (
+            getattr(callback, "__self__", None) is owner
+            and len(args) == 1
+            and isinstance(args[0], asyncio.Task)
+        ):
+            held.append((callback, args, context))
+            entered.set()
+            return schedule(lambda: None)
+        return schedule(callback, *args, context=context)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(loop, "call_soon", hold)
+        try:
+            yield entered, held
+        finally:
+            patch.undo()
+            for callback, args, context in held:
+                schedule(callback, *args, context=context)
+            drained = asyncio.Event()
+            schedule(drained.set)
+            await drained.wait()
 
 
 @pytest.mark.asyncio
@@ -154,7 +187,10 @@ async def test_registration_private_credentials_real_index_and_exact_version_lif
 
 
 @pytest.mark.asyncio
-async def test_repository_update_remove_reviews_bind_displayed_generation(tmp_path):
+@pytest.mark.parametrize("hold_completion", [False, True])
+async def test_repository_update_remove_reviews_bind_displayed_generation(
+    tmp_path, monkeypatch, hold_completion
+):
     async with catalog_app(tmp_path) as (app, screen, fixture), app.run_test() as pilot:
         await catalog_ready(screen, rows=0)
         form = await add_form(app, screen, fixture, pilot)
@@ -178,8 +214,26 @@ async def test_repository_update_remove_reviews_bind_displayed_generation(tmp_pa
         removal = app.screen
         await fixture.service.catalog.update("owned")
         before = len(fixture.api.requests)
-        removal.confirm()
-        await wait_for(lambda: removal.operation_count == 0)
+        if hold_completion:
+            async with held_owner_completion(removal, monkeypatch) as (entered, held):
+                removal.confirm()
+                await wait_for(entered.is_set)
+                await wait_for(lambda: removal.operation_count == 0)
+                assert len(held) == 1 and held[0][1][0].done()
+                assert "generation" not in str(removal.query_one(".helm-catalog-status").content)
+                assert removal.query_one("#helm-repository-confirm", Button).disabled
+                assert app.screen is removal
+                assert len(fixture.api.requests) == before
+                assert fixture.service.catalog.snapshot.repositories
+        else:
+            removal.confirm()
+        await wait_for(
+            lambda: (
+                app.screen is removal
+                and removal.operation_count == 0
+                and "generation" in str(removal.query_one(".helm-catalog-status").content)
+            )
+        )
         assert app.screen is removal
         assert "generation" in str(removal.query_one(".helm-catalog-status").content)
         assert len(fixture.api.requests) == before
