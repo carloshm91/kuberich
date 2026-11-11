@@ -777,11 +777,25 @@ def test_last_source_audit_cannot_leave_pending_or_success_after_late_mutation(
 def test_repetition_pipeline_uses_three_real_tiny_suites_fresh_temps_and_captured_wheel(
     checkout, monkeypatch, tmp_path
 ):
+    import inspect
+
+    from tests.quality.test_qualification_retention import runtime_fixture
+
     monkeypatch.setattr(driver, "__file__", str(checkout / "scripts/qualification_runner.py"))
-    (checkout / ".gitignore").write_text("artifacts/\ndist/\n.pytest_cache/\n__pycache__/\n")
+    (checkout / ".gitignore").write_text(
+        "artifacts/\ndist/\n.pytest_cache/\n__pycache__/\n.coverage\ncoverage.*\n"
+    )
     contracts = checkout / "tests/contract"
     contracts.mkdir(parents=True)
-    (contracts / "test_owned.py").write_text("def test_owned():\n    assert True\n")
+    (contracts / "test_owned.py").write_text(
+        inspect.getsource(runtime_fixture) + "\ndef test_owned():\n"
+        "    from pathlib import Path\n"
+        "    counter = Path('artifacts/round')\n"
+        "    counter.parent.mkdir(exist_ok=True)\n"
+        "    round_number = int(counter.read_text()) + 1 if counter.exists() else 1\n"
+        "    runtime_fixture(Path.cwd(), round_number)\n"
+        "    counter.write_text(str(round_number))\n"
+    )
     subprocess.run(["git", "add", "."], cwd=checkout, check=True)
     subprocess.run(["git", "commit", "-qm", "Owned pipeline fixture"], cwd=checkout, check=True)
     binaries = tmp_path / "bin"
@@ -813,6 +827,10 @@ def test_repetition_pipeline_uses_three_real_tiny_suites_fresh_temps_and_capture
                     f"--basetemp={temporary / 'tests-pytest'}",
                     f"--junitxml={out / 'cases.xml'}",
                 ),
+            ),
+            catalog.Stage(
+                "runtime-controls",
+                (sys.executable, "-c", "print('synthetic merger emitted by owned fixture')"),
             ),
             catalog.Stage(
                 "build",
