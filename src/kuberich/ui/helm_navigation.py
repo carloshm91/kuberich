@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -32,7 +33,9 @@ class HelmNavigation:
             navigation,
             settings,
         )
-        self._pending: tuple[str, NamespaceChoice | None, NavigationState | None] | None = None
+        self._pending: tuple[str, NamespaceChoice | None, NavigationState | None, bool] | None = (
+            None
+        )
         self._picker_parent: NavigationState | None = None
 
     @property
@@ -67,7 +70,8 @@ class HelmNavigation:
         *,
         state: NavigationState | None = None,
         remember: bool = True,
-    ) -> None:
+        collect: bool = True,
+    ) -> asyncio.Task[None] | None:
         settings = self.settings()
         view = self.workspace.store.observation
         session = view.connection.identity
@@ -89,16 +93,16 @@ class HelmNavigation:
                 self.navigation.remember()
             self.navigation.display("helm")
             self.navigation.clear_rows()
-            self._pending = context, choice, state
+            self._pending = context, choice, state, collect
             if context != view.context or view.connection.state not in USABLE_CONNECTIONS:
                 self.navigation.connect(context, scope=choice, remember=False)
             self.navigation.notice("Helm is waiting for the current context connection.")
-            return
+            return None
         choice = choice or NamespaceChoice(view.connection.namespace)
         previous = self.navigation.capture()
         self.navigation.cancel_pending_resource_restore()
-        self.workspace.select_helm(
-            HelmScope(session, choice.namespace, settings.driver), header=choice
+        transition = self.workspace.select_helm(
+            HelmScope(session, choice.namespace, settings.driver), header=choice, collect=collect
         )
         if remember and previous is not None:
             self.navigation.history.visit(previous)
@@ -110,16 +114,17 @@ class HelmNavigation:
         if state is not None:
             self.navigation.restore_pending(state)
         self.views.request()
+        return transition
 
     def resolve_pending(self) -> None:
         pending = self._pending
         if pending is None:
             return
-        context, choice, state = pending
+        context, choice, state, collect = pending
         view = self.workspace.store.observation
         if self.active and context == view.context and view.connection.state in USABLE_CONNECTIONS:
             self._pending = None
-            self.open(choice, state=state, remember=False)
+            self.open(choice, state=state, remember=False, collect=collect)
 
     def restore(self, state: NavigationState) -> None:
         bookmark = state.helm
@@ -146,9 +151,9 @@ class HelmNavigation:
         request = self.workspace.helm_request
         if request is None or view.connection.state not in USABLE_CONNECTIONS:
             if self._pending is not None:
-                context, choice, state = self._pending
+                context, choice, state, collect = self._pending
                 if view.connection.state in USABLE_CONNECTIONS:
-                    self.open(choice, state=state, remember=False)
+                    self.open(choice, state=state, remember=False, collect=collect)
                 else:
                     # None preserves an inherited namespace until connection;
                     # NamespaceChoice(None) preserves explicitly requested all.
@@ -192,6 +197,8 @@ class HelmNavigation:
             return str(snapshot.problem) + retained + " · F4 retry · :helm NAMESPACE narrow scope"
         if snapshot.collecting:
             return "Helm · refreshing release storage · previous rows are stale"
+        if snapshot.listing is None:
+            return "Helm release collection has not started · F4 collect · :helmcharts browse cached charts"
         return "Helm releases · Enter inspect · F4 refresh · :helm NAMESPACE or *" + (
             " · INCOMPLETE: first 500 releases; narrow namespace"
             if snapshot.listing is not None and not snapshot.listing.complete

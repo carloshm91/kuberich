@@ -1,5 +1,54 @@
 # Development checkpoint
 
+## Helm catalog and release changes checkpoint — 2026-11-11 UTC
+
+M09 #233 is the active implementation issue. Its source adds public `:helmcharts`,
+private classic/registered-OCI catalogs, immutable chart/version selection,
+one-use values-editor disclosure, native dry-run/live comparison and separate
+install/upgrade/uninstall confirmation. This is development work for cumulative
+0.5; source and published packages remain 0.4.0. Full final qualification remains
+pending; this checkpoint does not authorize publication.
+
+The preceding #80 policy issue is delivered by protected squash
+`d6ee8c7dfc6f7bf057e925f7eb86e792bdf349c5`, tree
+`f8e085d78e6f2bd771532ef3901c1f7cd2c4f1ad`; see its
+[delivery receipt](https://github.com/carloshm91/kuberich/issues/80#issuecomment-6787369969).
+Actual PR CI commit `29c8905` is a distinct identity with the same tree. Earlier
+entries below remain their original implementation/verification history.
+
+Focused catalog/archive/transport/helper tests passed 310 cases with both
+deterministic catalog/archive modules at 100% line/branch coverage. The new live
+adapter HTTP contract passed 48 cases at 116/116 lines and 44/44 branches. Its
+exact measured command was:
+
+```sh
+COVERAGE_FILE=artifacts/issue233/catalog/live-03.coverage uv run pytest -q -o addopts='' --basetemp=/tmp/kuberich-233-catalog-live-03 tests/contract/test_helm_live.py --cov=kuberich.adapters.helm_live --cov-branch --cov-report=term-missing --cov-report=json:artifacts/issue233/catalog/live-03.json
+```
+
+Authority (286), teardown (111), current UI guard (40) and actual-root direct/
+wrapped CLI (2) cohorts passed separately. The earlier 56-case UI cohort retains
+its prior input identity. These overlapping results are not a complete-suite or
+whole-production coverage claim. The source has explicit supported-chart/schema/
+dependency limits, isolated authentication/origins, read-only guards and uncertain-
+write behavior described in [lifecycle acceptance](acceptance/helm-lifecycle.md).
+
+Historical first-spine `spine-04/evidence.json` SHA-256
+`e2a94c3f0558ee4cec38136f50a44c802f99a83787b40ebc78994f16fb0c2614`
+passed 20 public operations across both pinned Helm versions/drivers with actual
+resource/storage effects and cleanup. The independent owned-registry component
+`registry-01/evidence.json` SHA-256
+`90b0b0de691ff31bae29f256ec22c7b0ca74f7890fc802b0bb9394ae61a7d62f`
+passed OCI version/build-tag/exact-digest retrieval and update/remove. Both bind
+frozen uncommitted working-tree inventories; neither qualifies later changed
+source, protected base or final native/installed/CI behavior. Original failures
+and their cleanup observations remain retained.
+
+One coherent final owned-kind run with earlier M06 regressions, real OCI/public
+routes, admission/quota/retention/hooks/uncertainty effects, fresh outside-checkout
+wheel/native terminal checks, ordinary exact-head required CI and independent
+final source/artifact review are **pending**. The lead records their exact source,
+command and receipt identities after they pass.
+
 ## Policy exploration implementation checkpoint — 2026-11-11 UTC
 
 A05 #80 is the active implementation issue. The validating-v1 thin spine passed

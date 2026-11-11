@@ -14,6 +14,36 @@ from tests.support.helm import KEY, PRIVATE_VALUE, adapter_source, storage, stor
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("driver", list(HelmDriver))
+async def test_real_metadata_null_empty_slice_proves_complete_absence_only(tmp_path, driver):
+    async with adapter_source(tmp_path) as (adapter, _, api, request, *_):
+        adapter.settings = replace(adapter.settings, driver=driver)
+        request = replace(request, scope=replace(request.scope, driver=driver))
+        page = storage_list([])
+        page["items"] = None
+        api.pages = [page]
+        assert await adapter.storage_history(request, KEY, lambda: None) == ()
+        del page["items"]
+        with pytest.raises(HelmProblem):
+            await adapter.storage_history(request, KEY, lambda: None)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("items", [False, 0, "", {}, "malformed"])
+async def test_metadata_falsy_or_malformed_items_never_prove_absence(tmp_path, items):
+    async with adapter_source(tmp_path) as (adapter, _, api, request, *_):
+        page = storage_list([])
+        page["items"] = items
+        api.pages = [page]
+        with pytest.raises(HelmProblem):
+            await adapter.storage_history(request, KEY, lambda: None)
+        page["items"] = None
+        page["metadata"]["remainingItemCount"] = 1
+        with pytest.raises(HelmProblem):
+            await adapter.storage_history(request, KEY, lambda: None)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("driver", list(HelmDriver))
 async def test_metadata_only_get_and_complete_paginated_history_for_both_drivers(tmp_path, driver):
     async with adapter_source(tmp_path) as (adapter, client, api, request, *_):
         # Driver agreement is enforced even at the adapter boundary.

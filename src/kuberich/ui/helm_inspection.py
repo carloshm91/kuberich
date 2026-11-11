@@ -26,6 +26,7 @@ from kuberich.errors import AppError
 from kuberich.security.controls import escape_controls
 from kuberich.security.presentation import safe_text
 from kuberich.services.ownership import finish_owned
+from kuberich.services.processes import ProcessRunner
 from kuberich.ui.chrome import WorkspaceBars, WorkspaceFrame
 from kuberich.ui.nested import CommandWorkspace
 from kuberich.ui.read_only_text import ReadOnlyText
@@ -102,7 +103,8 @@ class HelmInspectionScreen(_OwnedHelmScreen):
     ]
     DEFAULT_CSS = """
     HelmInspectionScreen { layout: vertical; background: $background; }
-    #helm-inspection-title, #helm-inspection-buttons, .helm-status { height: 1; }
+    #helm-inspection-title, .helm-status { height: 1; }
+    #helm-inspection-buttons { height: 2; layout: grid; grid-size: 6; grid-rows: 1 1; }
     #helm-inspection-title { color: $accent; text-overflow: ellipsis; }
     #helm-inspection-buttons Button { height: 1; border: none; min-width: 4; width: 1fr; }
     #helm-document, #helm-revision-history { height: 1fr; min-height: 1; border: none; }
@@ -110,9 +112,16 @@ class HelmInspectionScreen(_OwnedHelmScreen):
     .helm-status { text-overflow: ellipsis; }
     """
 
-    def __init__(self, service: HelmService, inspection: HelmInspection) -> None:
+    def __init__(
+        self,
+        service: HelmService,
+        inspection: HelmInspection,
+        *,
+        runner: ProcessRunner | None = None,
+    ) -> None:
         super().__init__(service)
         self.inspection = inspection
+        self.runner = runner
         self.page = "status"
         self.revealed = False
         self.selected_revision: int | None = None
@@ -140,6 +149,8 @@ class HelmInspectionScreen(_OwnedHelmScreen):
                     ("History", "history"),
                     ("Reveal", "reveal"),
                     ("Rollback", "rollback"),
+                    ("Upgrade", "upgrade"),
+                    ("Uninstall", "uninstall"),
                     ("Back", "back"),
                 ):
                     yield Button(label, id="helm-" + page, compact=True)
@@ -173,6 +184,12 @@ class HelmInspectionScreen(_OwnedHelmScreen):
                 key=str(revision.revision),
             )
         self.query_one("#helm-rollback", Button).disabled = True
+        for name in ("upgrade", "uninstall"):
+            self.query_one("#helm-" + name, Button).disabled = (
+                self.runner is None
+                or self.service.policy.read_only
+                or self.inspection.status.status not in {"deployed", "failed"}
+            )
         self._show_status()
 
     def _show_status(self) -> None:
@@ -351,6 +368,36 @@ class HelmInspectionScreen(_OwnedHelmScreen):
                 HelmRollbackReviewScreen(self.service, self.inspection, self.selected_revision)
             )
 
+    def action_upgrade(self) -> None:
+        from kuberich.domain.helm_lifecycle import HelmLifecycleKind
+        from kuberich.ui.helm_catalog import HelmCatalogScreen
+
+        if self.runner is not None and not self.invalidated and not self.service.policy.read_only:
+            self.app.push_screen(
+                HelmCatalogScreen(
+                    service=self.service,
+                    request=self.inspection.target.request,
+                    runner=self.runner,
+                    address=self.inspection.target.head.key,
+                    operation=HelmLifecycleKind.UPGRADE,
+                )
+            )
+
+    def action_uninstall(self) -> None:
+        from kuberich.domain.helm_lifecycle import HelmLifecycleKind
+        from kuberich.ui.helm_lifecycle import HelmLifecycleScreen
+
+        if self.runner is not None and not self.invalidated and not self.service.policy.read_only:
+            self.app.push_screen(
+                HelmLifecycleScreen(
+                    service=self.service,
+                    request=self.inspection.target.request,
+                    address=self.inspection.target.head.key,
+                    operation=HelmLifecycleKind.UNINSTALL,
+                    runner=self.runner,
+                )
+            )
+
     @on(Button.Pressed)
     async def button_pressed(self, event: Button.Pressed) -> None:
         event.stop()
@@ -361,6 +408,10 @@ class HelmInspectionScreen(_OwnedHelmScreen):
             self.action_reveal()
         elif name == "rollback":
             self.action_rollback()
+        elif name == "upgrade":
+            self.action_upgrade()
+        elif name == "uninstall":
+            self.action_uninstall()
         else:
             self.action_page(name)
 

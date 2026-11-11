@@ -198,19 +198,19 @@ def fake_helm(directory: Path, **options) -> tuple[HelmSettings, dict[str, str],
     executable.write_text(
         f"#!{sys.executable}\n"
         + """import json, os, pathlib, signal, stat, subprocess, sys, time
-scenario_path = pathlib.Path(os.environ["HELM_TEST_SCENARIO"])
+scenario_path = pathlib.Path(os.environ["KUBERICH_HELM_FIXTURE_SCENARIO"])
 scenario = json.loads(scenario_path.read_text())
 args = sys.argv[1:]
 command = next((part for part in args if not part.startswith("-")), "")
 config = os.environ.get("KUBECONFIG")
 entry = {"argv": args, "pid": os.getpid(), "environment": {key: value for key, value in os.environ.items() if key.startswith("HELM_") or key == "KUBECONFIG"}, "config_mode": stat.S_IMODE(pathlib.Path(config).stat().st_mode) if config and pathlib.Path(config).exists() else None}
-with open(os.environ["HELM_TEST_RECORD"], "a") as stream:
+with open(os.environ["KUBERICH_HELM_FIXTURE_RECORD"], "a") as stream:
     stream.write(json.dumps(entry) + "\\n")
 mode = scenario.get("version_mode", "") if command == "version" else scenario.get(command + "_mode", scenario.get("mode", ""))
 if mode == "sleep":
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
     child = subprocess.Popen([sys.executable, "-c", "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(60)"])
-    pathlib.Path(os.environ["HELM_TEST_RECORD"] + ".child").write_text(str(child.pid))
+    pathlib.Path(os.environ["KUBERICH_HELM_FIXTURE_RECORD"] + ".child").write_text(str(child.pid))
     time.sleep(60)
 if mode == "overflow":
     sys.stdout.write("x" * (9 * 1024 * 1024))
@@ -249,8 +249,8 @@ elif command == "rollback":
     if mode == "rollback-error":
         scenario["status"] = "failed"
     scenario_path.write_text(json.dumps(scenario))
-    if "HELM_TEST_ROLLBACK_MARKER" in os.environ:
-        pathlib.Path(os.environ["HELM_TEST_ROLLBACK_MARKER"]).write_text(scenario.get("status", "deployed"))
+    if "KUBERICH_HELM_FIXTURE_ROLLBACK_MARKER" in os.environ:
+        pathlib.Path(os.environ["KUBERICH_HELM_FIXTURE_ROLLBACK_MARKER"]).write_text(scenario.get("status", "deployed"))
     if mode == "rollback-error":
         sys.stderr.write("hook failed: synthetic-private-helm-value")
         sys.exit(1)
@@ -262,8 +262,8 @@ else:
     executable.chmod(0o700)
     environment = {
         "PATH": os.environ.get("PATH", ""),
-        "HELM_TEST_SCENARIO": str(scenario),
-        "HELM_TEST_RECORD": str(record),
+        "KUBERICH_HELM_FIXTURE_SCENARIO": str(scenario),
+        "KUBERICH_HELM_FIXTURE_RECORD": str(record),
     }
     return HelmSettings(str(executable)), environment, scenario, record
 
@@ -386,7 +386,7 @@ async def helm_source(
         policy = AccessPolicy(read_only)
         settings, environment, scenario, record = fake_helm(directory)
         settings = replace(settings, driver=driver)
-        environment["HELM_TEST_ROLLBACK_MARKER"] = str(directory / "rollback-effect")
+        environment["KUBERICH_HELM_FIXTURE_ROLLBACK_MARKER"] = str(directory / "rollback-effect")
         api.rollback_marker = directory / "rollback-effect"
         adapter = None if real_cli else ScriptedHelmAdapter(captured)
         service = HelmService(

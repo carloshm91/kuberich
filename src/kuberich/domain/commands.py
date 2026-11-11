@@ -17,6 +17,7 @@ class Command(Enum):
     PULSE = auto()
     HISTORY = auto()
     HELM = auto()
+    HELM_CATALOG = auto()
     DIAGNOSTICS = auto()
     DIAGNOSE = auto()
     POPEYE = auto()

@@ -365,7 +365,27 @@ def test_unsupported_storage_never_falls_back(value):
 @pytest.mark.parametrize("text,expected", [(b"v3.22.1", V3), (b"v4.3.1\n", V4)])
 def test_exact_supported_cli_versions(text, expected):
     assert parse_helm_version(text) == expected
-    assert helm_version_argv(SETTINGS) == ("helm", "version", "--template={{.Version}}")
+    assert helm_version_argv(SETTINGS, SCOPE, KUBECONFIG) == (
+        "helm",
+        "--kubeconfig=/private/scope/config",
+        "--kube-context=owned-context",
+        "--namespace=team",
+        "--debug=false",
+        "version",
+        "--template={{.Version}}",
+    )
+
+
+@pytest.mark.parametrize("captured_driver", list(HelmDriver))
+def test_version_probe_refuses_settings_from_a_different_storage_scope(captured_driver):
+    scope = replace(SCOPE, driver=captured_driver)
+    other_driver = next(driver for driver in HelmDriver if driver != captured_driver)
+    settings = replace(SETTINGS, driver=other_driver)
+
+    with pytest.raises(HelmProblem, match="captured scope") as failure:
+        helm_version_argv(settings, scope, KUBECONFIG)
+
+    assert failure.value.kind == "stale"
 
 
 @pytest.mark.parametrize(

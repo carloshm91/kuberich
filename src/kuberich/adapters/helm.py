@@ -2,6 +2,8 @@
 
 import asyncio
 import json
+import os
+import shutil
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
@@ -9,6 +11,8 @@ from pathlib import Path
 from typing import Protocol
 from urllib.parse import quote
 
+from kuberich.adapters.editing import file_worker
+from kuberich.adapters.helm_files import HelmCommandFiles
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
 from kuberich.domain.helm import (
@@ -43,8 +47,16 @@ from kuberich.domain.helm_cli import (
     parse_storage_identity,
 )
 from kuberich.domain.helm_documents import helm_document_text
+from kuberich.domain.helm_lifecycle import (
+    HelmLifecycleKind,
+    HelmLifecycleOptions,
+    HelmRenderedRelease,
+    rendered_release,
+)
+from kuberich.domain.helm_lifecycle_cli import lifecycle_argv
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose, ProcessStatus
 from kuberich.errors import AppError, ExecutableUnavailable
+from kuberich.runtime import external_environment
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.delegation import capture_delegation, stage_connection
 from kuberich.services.processes import ProcessRunner
@@ -108,6 +120,30 @@ class HelmAdapterPort(Protocol):
         self, request: HelmRequest, key: HelmReleaseKey, guard: HelmGuard
     ) -> tuple[HelmStorageIdentity, ...]: ...
     async def rollback(self, intent: HelmRollbackIntent, guard: HelmGuard) -> None: ...
+    async def release_content(
+        self, request: HelmRequest, address: HelmReleaseKey, revision: int, guard: HelmGuard
+    ) -> HelmRenderedRelease: ...
+    async def reserved_storage_absent(
+        self, request: HelmRequest, address: HelmReleaseKey, guard: HelmGuard
+    ) -> None: ...
+    async def lifecycle_preview(
+        self,
+        request: HelmRequest,
+        address: HelmReleaseKey,
+        operation: HelmLifecycleKind,
+        options: HelmLifecycleOptions,
+        files: HelmCommandFiles,
+        guard: HelmGuard,
+    ) -> HelmRenderedRelease | None: ...
+    async def lifecycle_execute(
+        self,
+        request: HelmRequest,
+        address: HelmReleaseKey,
+        operation: HelmLifecycleKind,
+        options: HelmLifecycleOptions,
+        files: HelmCommandFiles,
+        guard: HelmGuard,
+    ) -> None: ...
     async def close(self) -> None: ...
 
 
@@ -182,6 +218,9 @@ def _storage_page(
             "The API did not return metadata-only release storage; identity-sensitive operations are disabled.",
         )
     metadata, items = data.get("metadata"), data.get("items")
+    # The real metadata API encodes a nil, empty Go slice as JSON null.
+    if "items" in data and items is None:
+        items = []
     if not isinstance(metadata, dict) or not isinstance(items, list) or len(items) > 200:
         raise invalid
     resource_version, continuation = metadata.get("resourceVersion"), metadata.get("continue", "")
@@ -241,6 +280,7 @@ class HelmAdapter:
             for limit in (16384, MAX_HELM_LIST_BYTES, MAX_HELM_OUTPUT_BYTES)
         }
         self._closed = False
+        self._executable: tuple[str, tuple[int, ...]] | None = None
 
     def _check(self, request: HelmRequest | None, guard: HelmGuard, mutate: bool = False) -> None:
         self.policy.require(Action.MUTATE if mutate else Action.READ)
@@ -253,30 +293,78 @@ class HelmAdapter:
                 "Helm request storage driver differs from the captured settings.",
             )
 
-    async def version(self, guard: HelmGuard) -> HelmVersion:
-        self._check(None, guard)
+    def _resolve_executable(
+        self, environment: Mapping[str, str], directory: Path
+    ) -> tuple[str, tuple[int, ...]]:
+        name = self.settings.executable
+        captured = external_environment(dict(environment))
+        paths = os.pathsep.join(
+            str(Path(part) if Path(part).is_absolute() else directory / part)
+            for part in os.get_exec_path(captured)
+        )
+        if os.sep in name and not Path(name).is_absolute():
+            name = str(directory / name)
+        resolved = shutil.which(name, path=paths)
+        if resolved is None:
+            raise ExecutableUnavailable("Supported Helm executable is unavailable.")
+        info = Path(resolved).stat()
+        return resolved, (
+            info.st_dev,
+            info.st_ino,
+            info.st_size,
+            info.st_mtime_ns,
+            info.st_ctime_ns,
+        )
+
+    async def version(self, request: HelmRequest, guard: HelmGuard) -> HelmVersion:
+        self._check(request, guard)
+        delegation = capture_delegation(
+            self.client, self.environment, self.directory, prefix="helm"
+        )
         async with self._probe_lock:
-            self._check(None, guard)
+            self._check(request, guard)
+            try:
+                executable = await parse_owned(
+                    partial(
+                        self._resolve_executable, dict(delegation.environment), delegation.directory
+                    )
+                )
+            except ExecutableUnavailable:
+                raise HelmProblem(
+                    "missing-tool",
+                    "Helm is unavailable; install supported Helm v3.22.1 or v4.3.1 and reopen this view.",
+                ) from None
+            if self._executable is not None and executable != self._executable:
+                raise HelmProblem("stale", "Helm executable changed; reopen the Helm view.")
+            self._executable = executable
             if self._version is None:
-                command = ProcessCommand(
-                    helm_version_argv(self.settings),
-                    helm_environment(self.environment, self.settings.driver),
-                    self.directory,
-                    ProcessMode.CAPTURE,
-                    ProcessPurpose.HELM_READ,
+                files = await file_worker(
+                    lambda: HelmCommandFiles(Path(self.client.directory.name)),
+                    discard=lambda value: value.close(),
                 )
                 try:
-                    result = await self._runners[16384].capture(command, timeout=5, guard=guard)
-                except ExecutableUnavailable:
-                    raise HelmProblem(
-                        "missing-tool",
-                        "Helm is unavailable; install supported Helm v3.22.1 or v4.3.1 and reopen this view.",
-                    ) from None
-                self._check(None, guard)
+                    async with stage_connection(delegation.path, delegation.configuration):
+                        argv = helm_version_argv(self.settings, request.scope, delegation.path)
+                        command = ProcessCommand(
+                            (executable[0], *argv[1:]),
+                            helm_environment(
+                                dict(delegation.environment),
+                                self.settings.driver,
+                                delegation.path,
+                                isolation=files.path,
+                            ),
+                            delegation.directory,
+                            ProcessMode.CAPTURE,
+                            ProcessPurpose.HELM_READ,
+                        )
+                        result = await self._runners[16384].capture(command, timeout=5, guard=guard)
+                finally:
+                    await file_worker(files.close)
+                self._check(request, guard)
                 if result.status is not ProcessStatus.SUCCEEDED:
                     raise _failure(result.status, result.stderr)
                 self._version = await parse_owned(partial(parse_helm_version, result.stdout))
-                self._check(None, guard)
+                self._check(request, guard)
             return self._version
 
     async def _run[T](
@@ -292,41 +380,58 @@ class HelmAdapter:
         state: _RunState | None = None,
     ) -> T:
         self._check(request, guard, mutate)
-        version = await self.version(guard)
-        self._check(request, guard, mutate)
         delegation = capture_delegation(
             self.client, self.environment, self.directory, prefix="helm"
         )
-        async with stage_connection(delegation.path, delegation.configuration):
-            self._check(request, guard, mutate)
-            command = ProcessCommand(
-                argv(version, delegation.path),
-                helm_environment(
-                    dict(delegation.environment), self.settings.driver, delegation.path
-                ),
-                delegation.directory,
-                ProcessMode.CAPTURE,
-                ProcessPurpose.HELM_MUTATE if mutate else ProcessPurpose.HELM_READ,
-            )
-            try:
+        version = await self.version(request, guard)
+        self._check(request, guard, mutate)
+        files = await file_worker(
+            lambda: HelmCommandFiles(Path(self.client.directory.name)),
+            discard=lambda value: value.close(),
+        )
+        try:
+            async with stage_connection(delegation.path, delegation.configuration):
+                self._check(request, guard, mutate)
+                arguments = argv(version, delegation.path)
+                assert self._executable is not None
+                command = ProcessCommand(
+                    (self._executable[0], *arguments[1:]),
+                    helm_environment(
+                        dict(delegation.environment),
+                        self.settings.driver,
+                        delegation.path,
+                        isolation=files.path,
+                    ),
+                    delegation.directory,
+                    ProcessMode.CAPTURE,
+                    ProcessPurpose.HELM_MUTATE if mutate else ProcessPurpose.HELM_READ,
+                )
+                try:
+                    if state is not None:
+                        state.may_have_started = True
+                    result = await self._runners[limit].capture(
+                        command, timeout=timeout, guard=guard
+                    )
+                except ExecutableUnavailable:
+                    if state is not None:
+                        state.may_have_started = False
+                    raise HelmProblem(
+                        "missing-tool",
+                        "Helm is unavailable; install supported Helm v3.22.1 or v4.3.1 and reopen this view.",
+                    ) from None
                 if state is not None:
-                    state.may_have_started = True
-                result = await self._runners[limit].capture(command, timeout=timeout, guard=guard)
-            except ExecutableUnavailable:
-                if state is not None:
-                    state.may_have_started = False
-                raise HelmProblem(
-                    "missing-tool",
-                    "Helm is unavailable; install supported Helm v3.22.1 or v4.3.1 and reopen this view.",
-                ) from None
-            if state is not None:
-                state.completed = result.status in {ProcessStatus.SUCCEEDED, ProcessStatus.FAILED}
-            self._check(request, guard, mutate)
-            if result.status is not ProcessStatus.SUCCEEDED:
-                raise _failure(result.status, result.stderr)
-            parsed = await parse_owned(partial(parser, result.stdout))
-            self._check(request, guard, mutate)
-            return parsed
+                    state.completed = result.status in {
+                        ProcessStatus.SUCCEEDED,
+                        ProcessStatus.FAILED,
+                    }
+                self._check(request, guard, mutate)
+                if result.status is not ProcessStatus.SUCCEEDED:
+                    raise _failure(result.status, result.stderr)
+                parsed = await parse_owned(partial(parser, result.stdout))
+                self._check(request, guard, mutate)
+                return parsed
+        finally:
+            await file_worker(files.close)
 
     async def list(self, request: HelmRequest, guard: HelmGuard) -> HelmList:
         return await self._run(
@@ -486,6 +591,120 @@ class HelmAdapter:
             raise HelmExecutionProblem(
                 "unavailable",
                 "Helm rollback could not complete; refresh before another review.",
+                may_have_started=state.may_have_started,
+                completed=state.completed,
+            ) from None
+
+    async def release_content(
+        self, request: HelmRequest, address: HelmReleaseKey, revision: int, guard: HelmGuard
+    ) -> HelmRenderedRelease:
+        return await self._run(
+            request,
+            guard,
+            lambda version, path: helm_status_argv(
+                self.settings, version, request.scope, path, address, revision
+            ),
+            partial(rendered_release, address=address, revision=revision),
+        )
+
+    async def reserved_storage_absent(
+        self, request: HelmRequest, address: HelmReleaseKey, guard: HelmGuard
+    ) -> None:
+        self._check(request, guard)
+        path = (
+            _storage_path(request, address)
+            + "/"
+            + quote(f"sh.helm.release.v1.{address.name}.v1", safe="")
+        )
+        try:
+            await self.client.get_json(path, max_bytes=MAX_STORAGE_BYTES, accept=METADATA_ACCEPT)
+        except HttpProblem as error:
+            self._check(request, guard)
+            if error.status == 404:
+                return
+            raise _api_problem(error) from None
+        raise HelmProblem(
+            "stale", "The initial Helm storage name is occupied; select another release name."
+        )
+
+    async def lifecycle_preview(
+        self,
+        request: HelmRequest,
+        address: HelmReleaseKey,
+        operation: HelmLifecycleKind,
+        options: HelmLifecycleOptions,
+        files: HelmCommandFiles,
+        guard: HelmGuard,
+    ) -> HelmRenderedRelease | None:
+        self._check(request, guard, True)
+        await file_worker(files.require_current)
+        return await self._run(
+            request,
+            guard,
+            lambda version, path: lifecycle_argv(
+                self.settings,
+                version,
+                request.scope,
+                path,
+                address,
+                operation,
+                options,
+                files.chart,
+                files.values,
+                preview=True,
+            ),
+            (lambda _: None)
+            if operation is HelmLifecycleKind.UNINSTALL
+            else partial(rendered_release, address=address),
+            mutate=True,
+        )
+
+    async def lifecycle_execute(
+        self,
+        request: HelmRequest,
+        address: HelmReleaseKey,
+        operation: HelmLifecycleKind,
+        options: HelmLifecycleOptions,
+        files: HelmCommandFiles,
+        guard: HelmGuard,
+    ) -> None:
+        state = _RunState()
+        try:
+            self._check(request, guard, True)
+            await file_worker(files.require_current)
+            await self._run(
+                request,
+                guard,
+                lambda version, path: lifecycle_argv(
+                    self.settings,
+                    version,
+                    request.scope,
+                    path,
+                    address,
+                    operation,
+                    options,
+                    files.chart,
+                    files.values,
+                    preview=False,
+                ),
+                lambda _: None,
+                timeout=min(1800, 3 * options.timeout_seconds + 30),
+                mutate=True,
+                state=state,
+            )
+        except asyncio.CancelledError:
+            raise HelmExecutionCancelled(state.may_have_started) from None
+        except HelmProblem as problem:
+            raise HelmExecutionProblem(
+                problem.kind,
+                str(problem),
+                may_have_started=state.may_have_started,
+                completed=state.completed,
+            ) from None
+        except AppError:
+            raise HelmExecutionProblem(
+                "unavailable",
+                "Helm operation could not complete; observe the release before another review.",
                 may_have_started=state.may_have_started,
                 completed=state.completed,
             ) from None

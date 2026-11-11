@@ -102,6 +102,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `exports` | exports |
 | `forward` | forward |
 | `helm` | helm |
+| `helmcharts` | helm catalog |
 | `?`, `help` | help |
 | `hist`, `history` | history |
 | `jump` | jump |

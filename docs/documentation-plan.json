@@ -3865,6 +3865,15 @@
       ],
       "reason": "Retain configured policy exploration boundaries, versioned admission and scheduling observations, original failures and measured verification outside public user navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/helm-lifecycle.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/helm-lifecycle.md"
+      ],
+      "reason": "Keep M09 Helm catalog/lifecycle evidence and pending final qualification outside user navigation; preserve earlier M06 proof identities separately."
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

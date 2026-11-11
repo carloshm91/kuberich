@@ -78,6 +78,12 @@ Automated accessibility does not establish screen-reader certification.
    disposition in `docs/documentation-plan.json` when a source changes purpose.
    The task guides and generated references meet the 250-line page budget.
    Their sources are rendered once and included in the source receipt.
+   Helm guidance lives in `docs/workloads.md`, with catalog configuration in
+   `docs/configuration.md` and scope rules in `docs/context-sessions.md`. Keep
+   development-only commands distinct from the published package. Its private
+   process/integration guidance and ADR/acceptance stay contributor-only; update
+   capability summaries before regenerating references. The new `:helmcharts`
+   declaration is read from the real command catalog, never duplicated by hand.
 3. CLI and standard-resource declaration changes appear automatically in the
    reference on the next build. `scripts/site_reference.py` constructs the parser
    and reads the registry in an isolated subprocess against the selected checkout;

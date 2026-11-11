@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Manage chart catalogs and review Helm install, upgrade and uninstall with private values, native dry-run, live comparison and one-use confirmation ([#233](https://github.com/carloshm91/kuberich/issues/233)).
+
 - Explore admission policies and bindings with typed columns, guarded links and qualified webhook, scaling and scheduling declarations ([#80](https://github.com/carloshm91/kuberich/issues/80)).
 
 - Run explicitly confirmed HTTP benchmarks against one Service/forward backend with an optional Vegeta executable, conservative load limits, cancellation and private browsable local results ([#79](https://github.com/carloshm91/kuberich/issues/79)).

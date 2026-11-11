@@ -152,6 +152,7 @@ class _Selection:
     diagnostic_cancel: bool = False
     diagnostic_client: KubernetesSession | None = None
     helm: HelmRequest | None = None
+    helm_collect: bool = True
 
 
 def _cancel_once(task: asyncio.Task[None] | None) -> None:
@@ -492,7 +493,7 @@ class WorkspaceService:
             self._helm_service.invalidate()
 
     def select_helm(
-        self, scope: HelmScope, *, header: NamespaceChoice | None = None
+        self, scope: HelmScope, *, header: NamespaceChoice | None = None, collect: bool = True
     ) -> asyncio.Task[None]:
         context = self._current_context()
         connection = self.store.observation.connection
@@ -510,7 +511,14 @@ class WorkspaceService:
         revision = self.store.begin(context, replace(connection, namespace=namespace))
         self.store.bind_helm(revision, request)
         if self._helm.snapshot is not None:
-            self.store.apply_helm(revision, replace(self._helm.snapshot, collecting=True))
+            self.store.apply_helm(
+                revision,
+                replace(
+                    self._helm.snapshot,
+                    collecting=collect,
+                    listing=self._helm.snapshot.listing if collect else None,
+                ),
+            )
         return self._schedule(
             _Selection(
                 revision,
@@ -520,6 +528,7 @@ class WorkspaceService:
                 or namespace != self.sessions.observation.namespace,
                 namespace=namespace,
                 helm=request,
+                helm_collect=collect,
             )
         )
 
@@ -564,6 +573,11 @@ class WorkspaceService:
         factory = self._helm_factory
         service = None if factory is None else factory(client, current)
         self._helm_service = service
+        if not selection.helm_collect:
+            snapshot = self._helm.snapshot
+            assert snapshot is not None
+            publish(replace(snapshot, listing=None, collecting=False))
+            return
 
         async def collect(captured: HelmRequest) -> HelmList:
             try:
@@ -1078,31 +1092,39 @@ class WorkspaceService:
         )
 
     async def _stop_watch(self) -> None:
-        await self._helm.stop()
+        failures: list[BaseException] = []
+
+        async def stop(operation: Awaitable[None]) -> None:
+            try:
+                await operation
+            except BaseException as error:
+                failures.append(error)
+
+        await stop(self._helm.stop())
         service, self._helm_service = self._helm_service, None
         if service is not None:
-            await service.close()
-        await self._diagnostics.stop()
-        await self._authorization.stop()
+            await stop(service.close())
+        await stop(self._diagnostics.stop())
+        await stop(self._authorization.stop())
         relationships = self._relationships
         if relationships is not None:
             _cancel_once(relationships)
             try:
-                await _join(relationships)
+                await stop(_join(relationships))
             finally:
                 self._relationships = None
         pulse = self._pulse
         if pulse is not None:
             _cancel_once(pulse)
             try:
-                await _join(pulse)
+                await stop(_join(pulse))
             finally:
                 self._pulse = None
         metrics = self._metrics
         if metrics is not None:
             _cancel_once(metrics)
             try:
-                await _join(metrics)
+                await stop(_join(metrics))
             finally:
                 self._metrics = None
                 self._metrics_poller = None
@@ -1110,9 +1132,13 @@ class WorkspaceService:
         if task is not None:
             _cancel_once(task)
             try:
-                await _join(task)
+                await stop(_join(task))
             finally:
                 self._watch = None
+        if len(failures) == 1:
+            raise failures[0]
+        if failures:
+            raise BaseExceptionGroup("Workspace read owners could not completely close.", failures)
 
     async def _drive(self) -> None:
         while self._desired is not None:
@@ -1433,19 +1459,42 @@ class WorkspaceService:
             _cancel_once(self._pulse)
             _cancel_once(self._relationships)
             self._closing = asyncio.create_task(self._close())
-        await _join(self._closing)
+        cancelled: asyncio.CancelledError | None = None
+        try:
+            await _join(self._closing)
+        except asyncio.CancelledError as error:
+            cancelled = error
         # Retrieve any unexpected close failure rather than silently suppress it.
         self._closing.result()
+        if cancelled is not None:
+            raise cancelled
 
     async def _close(self) -> None:
+        failures: list[BaseException] = []
+
+        async def close(operation: Awaitable[None]) -> None:
+            try:
+                await operation
+            except BaseException as error:
+                failures.append(error)
+
         try:
             if self.task is not None:
-                await _join(self.task)
-            await self._stop_watch()
-            await self.sessions.close()
+                await close(_join(self.task))
+            await close(self._stop_watch())
+            await close(self.sessions.close())
         finally:
             self._discovery = None
             self._relationship_service = None
             self._relationship_request = None
             for subscription in tuple(self._subscriptions):
-                subscription.close()
+                try:
+                    subscription.close()
+                except BaseException as error:
+                    failures.append(error)
+        if len(failures) == 1:
+            raise failures[0]
+        if failures:
+            raise BaseExceptionGroup(
+                "Workspace shutdown could not be completely verified.", failures
+            )

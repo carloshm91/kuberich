@@ -6,7 +6,7 @@ import asyncio
 import logging
 import os
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from contextlib import suppress
 from datetime import UTC, datetime
 from functools import partial
@@ -668,6 +668,7 @@ class KubeRichApp(App[None]):
                 Command.ANNOTATE: self.operations.annotate,
                 Command.EDIT: self.operations.edit,
                 Command.WRITES: self.operations.writes,
+                Command.HELM_CATALOG: self.helm_actions.catalog,
                 Command.RESTART: partial(self.operations.workload, WorkloadAction.RESTART),
                 Command.ROLLOUT: partial(self.operations.workload, WorkloadAction.STATUS),
                 Command.DELETE: partial(self.action_resource_operation, ResourceAction.DELETE),
@@ -1028,6 +1029,7 @@ class KubeRichApp(App[None]):
         self.plugins.manager.invalidate()
         self.command_input.refresh_choices()
         self.navigator.resolve_pending()
+        self.helm_actions.resolve_pending()
         if self._theme_context() != self.appearance_controller.applied_context:
             self._apply_theme()
 
@@ -1045,7 +1047,9 @@ class KubeRichApp(App[None]):
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
         from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
+        from kuberich.ui.helm_catalog import HelmCatalogScreen, HelmRepositoryScreen
         from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
+        from kuberich.ui.helm_lifecycle import HelmLifecycleScreen
 
         async def drain(worker: Worker[object]) -> None:
             with suppress(WorkerCancelled):
@@ -1054,10 +1058,20 @@ class KubeRichApp(App[None]):
         closing = asyncio.gather(
             *(drain(worker) for worker in self.workers.cancel_group(self, "diagnostic-object")),
             *(drain(worker) for worker in self.workers.cancel_group(self, "helm-inspection")),
+            *(drain(worker) for worker in self.workers.cancel_group(self, "helm-catalog")),
             *(
                 screen.stop_owned()
                 for screen in tuple(self.screen_stack)
-                if isinstance(screen, (HelmInspectionScreen, HelmRollbackReviewScreen))
+                if isinstance(
+                    screen,
+                    (
+                        HelmInspectionScreen,
+                        HelmRollbackReviewScreen,
+                        HelmLifecycleScreen,
+                        HelmCatalogScreen,
+                        HelmRepositoryScreen,
+                    ),
+                )
                 and screen.service.client is client
             ),
             *(
@@ -1083,9 +1097,11 @@ class KubeRichApp(App[None]):
             cancelled = error
             await finish_owned(closing)
             outcomes = closing.result()
-        for outcome in outcomes:
-            if isinstance(outcome, BaseException):
-                raise outcome
+        failures = [outcome for outcome in outcomes if isinstance(outcome, BaseException)]
+        if len(failures) == 1:
+            raise failures[0]
+        if failures:
+            raise BaseExceptionGroup("Client operations could not completely close.", failures)
         if cancelled is not None:
             raise cancelled
 
@@ -1125,43 +1141,95 @@ class KubeRichApp(App[None]):
         super().exit(result=result, return_code=return_code, message=message)
 
     async def on_unmount(self) -> None:
-        self.clipboard_queue.stop()
-        self.appearance_controller.stop()
-        await self.appearance_controller.close()
-        try:
-            await self.benchmarks.close()
-            from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
+        failures: list[BaseException] = []
+        cancelled: asyncio.CancelledError | None = None
 
-            await asyncio.gather(
+        def stop(operation: Callable[[], None]) -> None:
+            try:
+                operation()
+            except BaseException as error:
+                failures.append(error)
+
+        async def close(operation: Awaitable[object]) -> None:
+            nonlocal cancelled
+            task = asyncio.ensure_future(operation)
+            try:
+                await asyncio.shield(task)
+            except asyncio.CancelledError as error:
+                cancelled = error
+                try:
+                    await finish_owned(task)
+                except asyncio.CancelledError:
+                    pass
+                except BaseException as cleanup_error:
+                    failures.append(cleanup_error)
+            except BaseException as error:
+                failures.append(error)
+
+        stop(self.clipboard_queue.stop)
+        stop(self.appearance_controller.stop)
+        try:
+            await close(self.appearance_controller.close())
+            await close(self.benchmarks.close())
+            from kuberich.ui.helm_catalog import HelmCatalogScreen, HelmRepositoryScreen
+            from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
+            from kuberich.ui.helm_lifecycle import HelmLifecycleScreen
+
+            screens = asyncio.gather(
                 *(
                     screen.stop_owned()
                     for screen in tuple(self.screen_stack)
-                    if isinstance(screen, (HelmInspectionScreen, HelmRollbackReviewScreen))
-                )
+                    if isinstance(
+                        screen,
+                        (
+                            HelmInspectionScreen,
+                            HelmRollbackReviewScreen,
+                            HelmLifecycleScreen,
+                            HelmCatalogScreen,
+                            HelmRepositoryScreen,
+                        ),
+                    )
+                ),
+                return_exceptions=True,
             )
-            await self.command_routes.close()
-            await self.interactions.close()
-            await self.exports.stop_owned()
+            await close(screens)
+            for outcome in screens.result():
+                if isinstance(outcome, asyncio.CancelledError):
+                    cancelled = outcome
+                elif isinstance(outcome, BaseException):
+                    failures.append(outcome)
+            await close(self.command_routes.close())
+            await close(self.interactions.close())
+            await close(self.exports.stop_owned())
             if self.manifests is not None:
-                await self.manifests.stop_owned()
-            await self.metric_history.close()
+                await close(self.manifests.stop_owned())
+            await close(self.metric_history.close())
             if self._catalog_task is not None:
-                self._catalog_task.cancel()
-                await finish_owned(asyncio.gather(self._catalog_task, return_exceptions=True))
-            await self.clipboard_queue.close()
-            await self.live_preferences.close()
-            await self.plugins.close()
-            await self.operations.ephemeral_debug.close()
-            await self.operations.node_maintenance.close()
-            await self.operations.node_shells.close()
-            await self.mutations.close()
-            await self.forwards.close()
-            await self.processes.close()
-            await self.workspace.close()
-            await self.presenter.close()
-            await self.views.close()
+                if not self._catalog_task.cancelling():
+                    self._catalog_task.cancel()
+                await close(asyncio.gather(self._catalog_task, return_exceptions=True))
+            await close(self.clipboard_queue.close())
+            await close(self.live_preferences.close())
+            await close(self.plugins.close())
+            await close(self.operations.ephemeral_debug.close())
+            await close(self.operations.node_maintenance.close())
+            await close(self.operations.node_shells.close())
+            await close(self.mutations.close())
+            await close(self.forwards.close())
+            await close(self.processes.close())
+            await close(self.workspace.close())
+            await close(self.presenter.close())
+            await close(self.views.close())
         finally:
-            self._terminal_signals.restore()
+            stop(self._terminal_signals.restore)
+        if len(failures) == 1:
+            raise failures[0]
+        if failures:
+            raise BaseExceptionGroup(
+                "Application shutdown could not be completely verified.", failures
+            )
+        if cancelled is not None:
+            raise cancelled
 
     @on(DataTable.RowSelected, "#namespaces")
     def namespace_selected(self, event: DataTable.RowSelected) -> None:
@@ -1898,7 +1966,9 @@ class KubeRichApp(App[None]):
         from kuberich.ui.artifact_viewer import ArtifactViewerScreen
         from kuberich.ui.editing import EditingScreen
         from kuberich.ui.export_review import ArtifactConfirmation, ExportReviewScreen
+        from kuberich.ui.helm_catalog import HelmCatalogScreen, HelmRepositoryScreen
         from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
+        from kuberich.ui.helm_lifecycle import HelmLifecycleScreen
         from kuberich.ui.inspection import InspectionScreen
         from kuberich.ui.logs import LogScreen
         from kuberich.ui.mutations import AnnotationScreen
@@ -1924,7 +1994,16 @@ class KubeRichApp(App[None]):
             screen = self.screen
             await screen.stop_owned()
             screen.dismiss()
-        elif isinstance(self.screen, (HelmInspectionScreen, HelmRollbackReviewScreen)):
+        elif isinstance(
+            self.screen,
+            (
+                HelmInspectionScreen,
+                HelmRollbackReviewScreen,
+                HelmLifecycleScreen,
+                HelmCatalogScreen,
+                HelmRepositoryScreen,
+            ),
+        ):
             await self.screen.action_back()
         elif isinstance(self.screen, ModalScreen):
             self.screen.dismiss()

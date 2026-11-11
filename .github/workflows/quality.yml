@@ -180,7 +180,7 @@ jobs:
           uv run mypy --strict scripts/verify_container_inspection_kind.py
           uv run mypy --strict scripts/verify_history_kind.py
           uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py
-          uv run mypy --strict scripts/helm_tools.py scripts/verify_helm_kind.py
+          uv run mypy --strict scripts/helm_tools.py scripts/verify_helm_kind.py scripts/helm_lifecycle_cases.py scripts/helm_lifecycle_catalog_cases.py scripts/helm_lifecycle_fault_cases.py scripts/helm_registry.py scripts/verify_helm_registry.py
           uv run mypy --strict scripts/verify_manifests_kind.py
           uv run mypy --strict scripts/verify_node_shell_kind.py
           uv run mypy --strict scripts/verify_node_maintenance_kind.py

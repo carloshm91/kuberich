@@ -6,6 +6,7 @@ import base64
 import json
 import os
 import platform
+import subprocess
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -37,8 +38,10 @@ from kuberich.services.helm import HelmService
 from kuberich.services.processes import ProcessRunner
 from kuberich.services.sessions import SessionService
 from scripts.diagnostics_tools import KIND_SHA256
+from scripts.helm_lifecycle_cases import verify_lifecycle_case
+from scripts.helm_registry import owned_helm_registry
 from scripts.helm_tools import HELM_PINS, HelmPin, sha256_file, verify_helm_binary
-from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, OwnedCluster, owned_cluster
+from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, OwnedCluster, capture_docker, owned_cluster
 
 RELEASE = "owned-demo"
 PASSWORD = "synthetic-supplied-password"
@@ -49,6 +52,14 @@ def input_hashes(root: Path) -> dict[str, str]:
     paths = {
         root / "scripts/verify_helm_kind.py",
         root / "scripts/helm_tools.py",
+        root / "scripts/helm_lifecycle_cases.py",
+        root / "scripts/helm_lifecycle_fault_cases.py",
+        root / "scripts/helm_lifecycle_catalog_cases.py",
+        root / "scripts/helm_registry.py",
+        root / "scripts/verify_helm_registry.py",
+        root / "scripts/diagnostics_tools.py",
+        root / "tests/support/helm_catalog.py",
+        root / "tests/support/helm_oci.py",
         root / "scripts/owned_kind.py",
         root / "uv.lock",
         root / "pyproject.toml",
@@ -548,17 +559,49 @@ async def verify_case(
 
 
 async def verify(
-    cluster: OwnedCluster, root: Path, binaries: tuple[Path, ...], fixture_directory: Path
+    cluster: OwnedCluster,
+    root: Path,
+    binaries: tuple[Path, ...],
+    fixture_directory: Path,
+    docker: Path,
+    endpoint: str,
+    report: dict[str, Any],
+    *,
+    lifecycle_only: bool = False,
 ) -> list[dict[str, Any]]:
     before = cluster.path.read_bytes()
-    results = []
+    results: list[dict[str, Any]] = report["cases"]
+    fixture_directory = fixture_directory.absolute()
+    fixture_directory.mkdir(parents=True, mode=0o700)
     async with asyncio.timeout(VERIFY_SECONDS):
-        for pin, binary in zip(HELM_PINS, binaries, strict=True):
-            for driver in HelmDriver:
-                print(f"Verifying {pin.version} / {driver.value}", flush=True)
-                results.append(
-                    await verify_case(cluster, root, binary, pin, driver, fixture_directory)
-                )
+        async with owned_helm_registry(docker, endpoint, cluster.directory) as registry:
+            report["registry"] = registry.receipt
+            for pin, binary in zip(HELM_PINS, binaries, strict=True):
+                for driver in HelmDriver:
+                    print(f"Verifying {pin.version} / {driver.value}", flush=True)
+                    case: dict[str, Any] = {
+                        "version": pin.version,
+                        "driver": driver.value,
+                        "checks": [],
+                        "state": "in-progress",
+                    }
+                    results.append(case)
+                    case["lifecycle"] = await verify_lifecycle_case(
+                        cluster,
+                        binary,
+                        pin,
+                        driver,
+                        fixture_directory / f"lifecycle-{pin.version}-{driver.value}",
+                        registry,
+                    )
+                    if lifecycle_only:
+                        case["regression_executed"] = False
+                    else:
+                        case.update(
+                            await verify_case(cluster, root, binary, pin, driver, fixture_directory)
+                        )
+                        case["regression_executed"] = True
+                    case["state"] = "passed"
     assert cluster.path.read_bytes() == before
     return results
 
@@ -568,13 +611,20 @@ def main() -> None:
     parser.add_argument("--kind", type=Path, required=True)
     parser.add_argument("--helm3", type=Path, required=True)
     parser.add_argument("--helm4", type=Path, required=True)
-    parser.add_argument("--docker", default="docker")
+    parser.add_argument("--docker", type=Path, default=Path("/usr/bin/docker"))
     parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument(
+        "--lifecycle-only",
+        action="store_true",
+        help="Measure the early lifecycle spine without replacing the required regression run.",
+    )
     args = parser.parse_args()
     if sys.platform != "linux" or platform.machine() != "x86_64":
         raise ValueError("This owned qualification requires Linux amd64.")
     if not args.kind.is_absolute() or sha256_file(args.kind) != KIND_SHA256:
         raise ValueError("Use the pinned official Linux amd64 kind v0.33.0 fixture.")
+    if not args.docker.is_absolute():
+        raise ValueError("Use an explicit absolute local Docker executable.")
     binaries = (args.helm3, args.helm4)
     for pin, binary in zip(HELM_PINS, binaries, strict=True):
         verify_helm_binary(binary, pin)
@@ -585,15 +635,36 @@ def main() -> None:
         raise ValueError("Use a fresh evidence path; previous results are immutable.")
     report: dict[str, Any] = {
         "status": "in-progress",
+        "cases": [],
+        "lifecycle_only": args.lifecycle_only,
         "inputs": inputs,
         "node_image": NODE_IMAGE,
         "hook_image": SHELL_IMAGE,
         "scope": "Owned local kind only; no provider or native-platform certification.",
+        "git_head": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=root, text=True, timeout=10
+        ).strip(),
+        "working_tree_dirty": bool(
+            subprocess.check_output(
+                ["git", "status", "--porcelain"], cwd=root, text=True, timeout=10
+            )
+        ),
+        "source_binding": "Exact measured input hashes are authoritative; git head alone does not certify uncommitted inputs.",
     }
     try:
-        with owned_cluster(str(args.kind), docker=args.docker) as cluster:
+        docker_environment = capture_docker(str(args.docker))
+        with owned_cluster(str(args.kind), docker=str(args.docker)) as cluster:
             report["cases"] = asyncio.run(
-                verify(cluster, root, binaries, args.evidence.parent / "cli-fixtures")
+                verify(
+                    cluster,
+                    root,
+                    binaries,
+                    args.evidence.parent / "cli-fixtures",
+                    args.docker,
+                    docker_environment["DOCKER_HOST"],
+                    report,
+                    lifecycle_only=args.lifecycle_only,
+                )
             )
         report["owned_cluster_deleted"] = True
         if input_hashes(root) != inputs:

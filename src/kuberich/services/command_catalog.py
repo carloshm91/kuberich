@@ -96,6 +96,11 @@ COMMAND_SPECS = (
         "Browse Helm releases; optionally choose NAMESPACE or *. Enter inspects and reviews rollback.",
     ),
     _spec(
+        Command.HELM_CATALOG,
+        ("helmcharts",),
+        "Browse the private chart catalog; explicitly manage repositories and review Helm lifecycle changes.",
+    ),
+    _spec(
         Command.HISTORY,
         ("history", "hist"),
         "Open captured resource or cluster metric history.",
