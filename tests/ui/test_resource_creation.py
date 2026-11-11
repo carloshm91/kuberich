@@ -59,6 +59,66 @@ async def test_create_source_capture_is_offline_and_preview_is_redacted(
         assert app.screen is screen and app.sessions.client is None
         await pilot.press("escape")
         await wait_for(lambda: len(app.screen_stack) == 1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("size", [(80, 24), (120, 36)])
+async def test_public_keyboard_sequence_imports_discloses_then_targets_editor(
+    tmp_path, monkeypatch, size
+):
+    from kuberich.domain.processes import ProcessResult, ProcessStatus
+    from kuberich.ui import resource_creation
+
+    calls = []
+
+    async def handoff(app, runner, command, *, guard):
+        guard()
+        calls.append(command)
+        return ProcessResult(ProcessStatus.SUCCEEDED, 0)
+
+    monkeypatch.setattr(resource_creation, "terminal_handoff", handoff)
+    (tmp_path / "owned.yaml").write_text(
+        "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: owned}\n"
+    )
+    app = KubeRichApp(
+        Settings(),
+        logging.Logger("owned-keyboard"),
+        catalog=KubeCatalog(),
+        directory=tmp_path,
+        initial_command=Command.CREATE,
+    )
+    async with app.run_test(size=size) as pilot:
+        await wait_for(lambda: isinstance(app.screen, ResourceCreationScreen))
+        screen = app.screen
+        assert app.focused.id == "creation-back"
+        await pilot.press("tab", *"owned.yaml")
+        await wait_for(lambda: screen.file.value == "owned.yaml")
+        assert app.focused.id == "creation-file"
+        await pilot.press("tab")
+        assert app.focused.id == "creation-preview"
+        await pilot.press("tab")
+        assert app.focused.id == "creation-import"
+        await pilot.press("enter")
+        await wait_for(lambda: "File captured offline" in str(screen.status.render()))
+        assert app.focused.id == "creation-back"
+        for expected in (
+            "creation-review",
+            "creation-edit",
+            "creation-import",
+            "creation-preview",
+            "creation-disclosure",
+        ):
+            await pilot.press("shift+tab")
+            assert app.focused.id == expected
+        await pilot.press("space")
+        for expected in ("creation-preview", "creation-import", "creation-edit"):
+            await pilot.press("tab")
+            assert app.focused.id == expected
+        await pilot.press("enter")
+        await wait_for(lambda: "No changes" in str(screen.status.render()))
+        assert len(calls) == 1 and app.focused.id == "creation-back"
+        await pilot.press("escape")
+        await wait_for(lambda: len(app.screen_stack) == 1)
     assert app.manifests.operation_count == 0
 
 

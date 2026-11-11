@@ -59,11 +59,11 @@ def terminal_resource_creation(
         terminal.wait_for_screen("Create resources · offline source")
         terminal.wait_for_screen("No cluster validation")
         # Back is initial focus. Tab wraps to the explicit file path.
-        terminal.send(b"\towned.yaml\t\r")
+        terminal.send(b"\towned.yaml\t\t\r")
         terminal.wait_for_screen("File captured offline")
         assert "creation-pty-private-source" not in "\n".join(terminal.screen.display)
-        # Back -> Review -> Edit -> Import -> fresh editor disclosure.
-        terminal.send(b"\x1b[Z\x1b[Z\x1b[Z\x1b[Z \t\t\r")
+        # Back -> Review -> Edit -> Import -> preview -> fresh disclosure.
+        terminal.send(b"\x1b[Z\x1b[Z\x1b[Z\x1b[Z\x1b[Z \t\t\t\r")
         terminal.wait_for(b"OWNED CREATION EDITOR START")
         ready = terminal.send(b"start\r")
         terminal.wait_for(b"OWNED CREATION EDITOR READY", since=ready)
@@ -114,7 +114,7 @@ def terminal_resource_creation(
             terminal.wait_for_screen(needle)
             assert not draft.parent.exists()
             if scenario == "repeat":
-                again = terminal.send(b"\x1b[Z\x1b[Z\x1b[Z\x1b[Z \t\t\r")
+                again = terminal.send(b"\x1b[Z\x1b[Z\x1b[Z\x1b[Z\x1b[Z \t\t\t\r")
                 terminal.wait_for(b"OWNED CREATION EDITOR START", since=again)
                 ready = terminal.send(b"start\r")
                 terminal.wait_for(b"OWNED CREATION EDITOR READY", since=ready)

@@ -84,11 +84,11 @@ def _invalid(reason: str) -> AppError:
     return AppError("Resource template refused: " + reason + ".")
 
 
-def _text(value: object, maximum: int, *, empty: bool = False) -> str:
+def _text(value: object, maximum: int, *, empty: bool = False, characters: bool = False) -> str:
     if (
         not isinstance(value, str)
         or (not empty and not value)
-        or len(value.encode("utf-8")) > maximum
+        or (len(value) if characters else len(value.encode("utf-8"))) > maximum
         or escape_controls(value, allow_newlines=True) != value
     ):
         raise _invalid("text is missing, unsafe or exceeds its bound")
@@ -183,7 +183,7 @@ def parse_resource_template(data: bytes) -> ResourceTemplate:
         or value["revision"] < 1
     ):
         raise _invalid("unsupported or incomplete versioned envelope")
-    title = _text(value["title"], 120)
+    title = _text(value["title"], 120, characters=True)
     description = _text(value.get("description", ""), 1024, empty=True)
     objects = _objects(value["objects"])
     declarations = value["parameters"]
@@ -208,6 +208,7 @@ def parse_resource_template(data: bytes) -> ResourceTemplate:
         if not isinstance(paths, list) or not 1 <= len(paths) <= 32:
             raise _invalid("each parameter needs one to 32 destination paths")
         sensitive = declaration.get("sensitive", False)
+        parameter_destinations: list[tuple[str, ...]] = []
         for path in paths:
             parts = _pointer(path)
             container, key = _location(objects, parts)
@@ -219,7 +220,13 @@ def parse_resource_template(data: bytes) -> ResourceTemplate:
             ):
                 raise _invalid("parameter destinations overlap or repeat")
             destinations.append(parts)
+            parameter_destinations.append(parts)
             sensitive = sensitive or parts[1] in {"data", "stringData"}
+        if sensitive and any(
+            parts[1:3] in {("metadata", "name"), ("metadata", "namespace")}
+            for parts in parameter_destinations
+        ):
+            raise _invalid("sensitive parameters cannot supply public destination identity")
         enum = declaration.get("enum", [])
         if (
             not isinstance(enum, list)

@@ -74,6 +74,42 @@ def test_unknown_missing_and_many_parameters_or_objects():
             parse(value)
 
 
+def test_title_counts_unicode_characters_and_description_counts_utf8_bytes():
+    value = envelope()
+    value.update(title="é" * 120, description="é" * 512)
+    template = parse(value)
+    assert template.title == "é" * 120 and template.description == "é" * 512
+    for change in ({"title": "é" * 121}, {"description": "é" * 513}):
+        with pytest.raises(AppError, match="bound"):
+            parse({**value, **change})
+
+
+@pytest.mark.parametrize(
+    "paths",
+    [
+        ["/0/metadata/name"],
+        ["/0/metadata/namespace"],
+        ["/0/data/key", "/0/metadata/name"],
+        ["/0/metadata/name", "/0/data/key"],
+        ["/0/stringData/key", "/0/metadata/namespace"],
+    ],
+)
+def test_sensitive_parameters_cannot_supply_public_routing_identity(paths):
+    value = envelope()
+    value["objects"][0].update(data={"key": ""}, stringData={"key": ""})
+    value["objects"][0]["metadata"]["namespace"] = ""
+    value["parameters"] = {
+        "identity": {
+            "type": "string",
+            "required": True,
+            "paths": paths,
+            "sensitive": len(paths) == 1,
+        }
+    }
+    with pytest.raises(AppError, match="public destination identity"):
+        parse(value)
+
+
 @pytest.mark.parametrize(
     "change",
     [
