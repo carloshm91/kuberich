@@ -21,7 +21,11 @@ MAX_SOURCE_FILES = 64
 COMPONENTS = frozenset({"main", "restricted", "universe", "multiverse"})
 SUITE = re.compile(r"(?:jammy|noble)(?:-(?:updates|security|backports))?\Z")
 ENTRY = re.compile(r"^(\s*deb(?:-src)?\s+(?:\[[^\]\r\n]*\]\s+)?)(\S+)(.*)$")
-HINT = re.compile(r"(?:[a-z.-]*ubuntu\.com|mirrors\.mit\.edu|mirror\+file:)")
+HINT = re.compile(r"(?:ubuntu\.com|mirrors\.mit\.edu|mirror\+file:)")
+
+
+class SourceFormatError(ValueError):
+    """Only fixed source-validation messages; no captured configuration values."""
 
 
 @dataclass(frozen=True)
@@ -33,21 +37,23 @@ class SourceChange:
 
 def mirror_for_architecture(architecture: str) -> str:
     if architecture not in MIRRORS:
-        raise ValueError("CI APT supports only the declared amd64 and arm64 Ubuntu runners.")
+        raise SourceFormatError("CI APT supports only the declared amd64 and arm64 Ubuntu runners.")
     mirror = MIRRORS[architecture]
     family = "ubuntu" if architecture == "amd64" else "ubuntu-ports"
     if mirror != "https://mirrors.mit.edu/" + family:
-        raise ValueError("CI APT requires the bounded reviewed HTTPS mirror selection.")
+        raise SourceFormatError("CI APT requires the bounded reviewed HTTPS mirror selection.")
     return mirror
 
 
 def source_bytes(path: Path) -> bytes:
     mode = path.lstat()
     if not stat.S_ISREG(mode.st_mode) or mode.st_size > MAX_SOURCE_BYTES:
-        raise ValueError("CI APT refuses a symlink or nonregular source file, or oversized data.")
+        raise SourceFormatError(
+            "CI APT refuses a symlink or nonregular source file, or oversized data."
+        )
     data = path.read_bytes()
     if len(data) > MAX_SOURCE_BYTES:
-        raise ValueError("CI APT source file exceeded its byte limit.")
+        raise SourceFormatError("CI APT source file exceeded its byte limit.")
     return data
 
 
@@ -68,7 +74,7 @@ def _uri(value: str, architecture: str) -> tuple[str, bool, bool]:
     if value.rstrip("/") in {*allowed, mirror}:
         return mirror + ("/" if value.endswith("/") else ""), True, False
     if HINT.search(value):
-        raise ValueError("CI APT refuses an unrecognized Ubuntu source URI.")
+        raise SourceFormatError("CI APT refuses an unrecognized Ubuntu source URI.")
     return value, False, False
 
 
@@ -80,7 +86,9 @@ def _scope(suites: str, components: str, signed_by: str | None) -> None:
         or not set(components.split()) <= COMPONENTS
         or (signed_by is not None and signed_by != KEYRING)
     ):
-        raise ValueError("CI APT refuses an unknown Ubuntu suite, component or Signed-By format.")
+        raise SourceFormatError(
+            "CI APT refuses an unknown Ubuntu suite, component or Signed-By format."
+        )
 
 
 def _list(text: str, architecture: str) -> tuple[str, int, bool]:
@@ -93,7 +101,7 @@ def _list(text: str, architecture: str) -> tuple[str, int, bool]:
         match = ENTRY.match(line.rstrip("\r\n"))
         if match is None:
             if HINT.search(active):
-                raise ValueError("CI APT refuses an unknown Ubuntu one-line source format.")
+                raise SourceFormatError("CI APT refuses an unknown Ubuntu one-line source format.")
             lines.append(line)
             continue
         prefix, uri, rest = match.groups()
@@ -101,13 +109,13 @@ def _list(text: str, architecture: str) -> tuple[str, int, bool]:
         if ubuntu:
             parts = rest.split("#", 1)[0].split()
             if len(parts) < 2:
-                raise ValueError("CI APT requires explicit Ubuntu suites and components.")
+                raise SourceFormatError("CI APT requires explicit Ubuntu suites and components.")
             options: dict[str, str] = {}
             if "[" in prefix:
                 for option in prefix.split("[", 1)[1].split("]", 1)[0].split():
                     key, separator, value = option.partition("=")
                     if not separator or key in options or key not in {"arch", "signed-by"}:
-                        raise ValueError("CI APT refuses unknown Ubuntu source options.")
+                        raise SourceFormatError("CI APT refuses unknown Ubuntu source options.")
                     options[key] = value
             _scope(parts[0], " ".join(parts[1:]), options.get("signed-by"))
             count += 1
@@ -129,7 +137,7 @@ def _stanza(lines: list[str], architecture: str) -> tuple[str, int, bool]:
             continue
         key, separator, value = line.partition(":")
         if not separator or key != key.strip() or key.lower() in fields:
-            raise ValueError("CI APT refuses an unknown Ubuntu deb822 source format.")
+            raise SourceFormatError("CI APT refuses an unknown Ubuntu deb822 source format.")
         fields[key.lower()] = index, value.strip()
     if fields.get("enabled", (0, "yes"))[1] == "no":
         return text, 0, False
@@ -141,13 +149,13 @@ def _stanza(lines: list[str], architecture: str) -> tuple[str, int, bool]:
         or not set(fields["types"][1].split()) <= {"deb", "deb-src"}
         or fields.get("enabled", (0, "yes"))[1] != "yes"
     ):
-        raise ValueError("CI APT refuses unknown Ubuntu deb822 fields or trust options.")
+        raise SourceFormatError("CI APT refuses unknown Ubuntu deb822 fields or trust options.")
     _scope(fields["suites"][1], fields["components"][1], fields.get("signed-by", (0, None))[1])
     index, value = fields["uris"]
     values = value.split()
     mapped = [_uri(uri, architecture) for uri in values]
     if not mapped or not all(item[1] for item in mapped):
-        raise ValueError("CI APT refuses mixed or unknown Ubuntu source URIs.")
+        raise SourceFormatError("CI APT refuses mixed or unknown Ubuntu source URIs.")
     line = lines[index]
     for uri, item in zip(values, mapped, strict=True):
         line = line.replace(uri, item[0], 1)
@@ -156,9 +164,12 @@ def _stanza(lines: list[str], architecture: str) -> tuple[str, int, bool]:
 
 
 def rewrite(data: bytes, suffix: str, architecture: str) -> tuple[bytes, int, bool]:
-    text = data.decode("utf-8")
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        raise SourceFormatError("CI APT source encoding is not UTF-8.") from None
     if len(data) > MAX_SOURCE_BYTES or "\x00" in text:
-        raise ValueError("CI APT source bytes are invalid or oversized.")
+        raise SourceFormatError("CI APT source bytes are invalid or oversized.")
     if suffix == ".list":
         result, count, indirect = _list(text, architecture)
     elif suffix == ".sources":
@@ -176,7 +187,7 @@ def rewrite(data: bytes, suffix: str, architecture: str) -> tuple[bytes, int, bo
             block = []
         result = "".join(output)
     else:
-        raise ValueError("CI APT supports only explicit .list and .sources formats.")
+        raise SourceFormatError("CI APT supports only explicit .list and .sources formats.")
     return result.encode("utf-8"), count, indirect
 
 
@@ -187,10 +198,10 @@ def source_changes(
     paths = [source_list] if source_list.exists() or source_list.is_symlink() else []
     if source_directory.exists() or source_directory.is_symlink():
         if source_directory.is_symlink() or not source_directory.is_dir():
-            raise ValueError("CI APT refuses an unsafe source directory.")
+            raise SourceFormatError("CI APT refuses an unsafe source directory.")
         entries = sorted(source_directory.iterdir())
         if len(entries) > MAX_SOURCE_FILES:
-            raise ValueError("CI APT source file inventory exceeded its limit.")
+            raise SourceFormatError("CI APT source file inventory exceeded its limit.")
         paths.extend(path for path in entries if path.suffix in {".list", ".sources"})
     changes, count, indirect = [], 0, False
     for path in paths:
@@ -201,21 +212,26 @@ def source_changes(
         if replacement != original:
             changes.append(SourceChange(path, original, replacement))
     if not count:
-        raise ValueError("CI APT found no recognized active Ubuntu sources.")
+        raise SourceFormatError("CI APT found no recognized active Ubuntu sources.")
     if indirect:
         original = source_bytes(mirror_file)
         mirrors = []
         for line in original.decode("utf-8").splitlines():
-            uri = line.split("#", 1)[0].strip()
+            parts = line.split("#", 1)[0].split()
+            if len(parts) > 2 or (
+                len(parts) == 2 and parts[1] not in {"priority:1", "priority:2", "priority:3"}
+            ):
+                raise SourceFormatError("CI APT refuses unknown mirror-list priority metadata.")
+            uri = parts[0] if parts else ""
             if uri and (not _uri(uri, architecture)[1] or uri == MIRROR_URI):
-                raise ValueError("CI APT refuses an unknown Ubuntu mirror-list format.")
+                raise SourceFormatError("CI APT refuses an unknown Ubuntu mirror-list format.")
             if uri:
                 mirrors.append(uri)
         if not mirrors:
-            raise ValueError("CI APT refuses an empty Ubuntu mirror list.")
+            raise SourceFormatError("CI APT refuses an empty Ubuntu mirror list.")
         replacement = (mirror + "\n").encode("ascii")
         if replacement != original:
             changes.append(SourceChange(mirror_file, original, replacement))
     if len(changes) > 2:
-        raise ValueError("CI APT refuses more than two Ubuntu source file changes.")
+        raise SourceFormatError("CI APT refuses more than two Ubuntu source file changes.")
     return tuple(changes)

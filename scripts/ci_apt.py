@@ -14,8 +14,8 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from scripts.ci_apt_sources import MIRRORS as MIRRORS
+from scripts.ci_apt_sources import SourceFormatError, source_bytes, source_changes
 from scripts.ci_apt_sources import mirror_for_architecture as mirror_for_architecture
-from scripts.ci_apt_sources import source_bytes, source_changes
 
 MIRROR_FILE = Path("/etc/apt/apt-mirrors.txt")
 SOURCE_LIST = Path("/etc/apt/sources.list")
@@ -131,6 +131,9 @@ def main(arguments: Sequence[str] | None = None) -> int:
     args = parser.parse_args(arguments)
     try:
         bootstrap(args.packages)
+    except SourceFormatError as error:
+        print(f"CI APT source preparation failed: {error}", file=sys.stderr)
+        return 1
     except subprocess.CalledProcessError as error:
         print(f"CI APT bootstrap failed (command exit {error.returncode}).", file=sys.stderr)
         return error.returncode if 1 <= error.returncode <= 255 else 1

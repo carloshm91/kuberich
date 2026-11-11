@@ -272,6 +272,19 @@ the existing keys. No key, TLS/signature option, package closure, retry count,
 bootstrap, workflow and qualifier controls pass 199 cases; genuine next-hosted
 signed setup plus the complete current matrix remain mandatory.
 
+Run `43039790495` refused source preparation before network access. The pinned
+Ubuntu image's mirror list includes TAB-separated `priority:1` through
+`priority:3`; the first finite parser rejected those rows as unknown URIs.
+The exact [image provisioning source](https://github.com/actions/runner-images/blob/ubuntu24/20261101.360/images/ubuntu/scripts/build/configure-apt-sources.sh)
+is retained in ignored `pinned-configure-apt-sources.sh`, SHA-256
+`90b1cde55a1daacb8b65efd19faa3a1fe61c24353c3fef829da2104ff6be5f16`.
+The parser now accepts only that observed optional priority field and preserves
+refusal for other metadata. The exact pinned fixture and negative controls pass
+within a 205-case focused cohort. Fixed source-validation reasons are visible
+through SourceFormatError; raw source values/credentials and generic OS details
+remain withheld. Original `hosted-04-fast-failure.log` is retained separately;
+this refused setup establishes no mirror-recovery or application result.
+
 ## Remaining qualification
 
 Whole production/branch/changed-line gates, native workflows and the

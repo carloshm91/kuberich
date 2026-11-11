@@ -58,7 +58,9 @@ def test_mirror_indirection_is_changed_only_in_the_actual_referenced_file(tmp_pa
     original = stanza(MIRROR_URI)
     ubuntu.write_bytes(original)
     mirrors.write_text(
-        "http://azure.archive.ubuntu.com/ubuntu\nhttps://archive.ubuntu.com/ubuntu\n"
+        "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n"
+        "https://archive.ubuntu.com/ubuntu/\tpriority:2\n"
+        "https://security.ubuntu.com/ubuntu/\tpriority:3\n"
     )
     changes = source_changes("amd64", sources, directory, mirrors)
     assert len(changes) == 1 and changes[0].path == mirrors
@@ -80,6 +82,19 @@ def test_actual_arm_one_line_source_is_changed_when_no_mirror_file_exists(tmp_pa
         b"http://ports.ubuntu.com/ubuntu-ports", b"https://mirrors.mit.edu/ubuntu-ports"
     )
     assert not mirror.exists() and source.read_bytes() == original
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    ["priority:0", "priority:4", "priority:999", "priority:1 priority:2", "other:1"],
+)
+def test_mirror_priority_accepts_only_the_observed_pinned_runner_values(tmp_path, metadata):
+    source, directory, mirror = tmp_path / "sources.list", tmp_path / "parts", tmp_path / "mirrors"
+    source.write_text("deb mirror+file:/etc/apt/apt-mirrors.txt noble main\n")
+    mirror.write_text("https://archive.ubuntu.com/ubuntu/\t" + metadata + "\n")
+    with pytest.raises(ValueError, match="priority metadata"):
+        source_changes("amd64", source, directory, mirror)
+    assert metadata in mirror.read_text()
 
 
 def test_unrelated_sources_comments_disabled_stanzas_and_crlf_stay_byte_exact():

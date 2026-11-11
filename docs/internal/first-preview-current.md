@@ -69,6 +69,9 @@ failure before behavior. The CI source helper now selects documented MIT SIPB
 HTTPS archives, authenticated and current against existing Ubuntu keys/Canonical
 metadata in independent agent checks, and fixes the actual ARM source layout.
 All original trust checks, package closure and hard deadlines remain unchanged.
+The first source-preparation attempt safely refused the pinned image's mirror
+priority metadata before network access. Exact priority fixtures and controlled
+safe diagnostics are corrected and pass 205 focused cases.
 The complete corrected hosted matrix, including actual hosted signed dependency
 recovery, remains required.
 

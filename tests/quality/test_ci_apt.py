@@ -27,7 +27,11 @@ def refuse_real_commands(monkeypatch, tmp_path):
 
 @pytest.fixture
 def owned_commands(monkeypatch):
-    ci_apt.MIRROR_FILE.write_text("http://azure.archive.ubuntu.com/ubuntu\n")
+    ci_apt.MIRROR_FILE.write_text(
+        "http://azure.archive.ubuntu.com/ubuntu/\tpriority:1\n"
+        "https://archive.ubuntu.com/ubuntu/\tpriority:2\n"
+        "https://security.ubuntu.com/ubuntu/\tpriority:3\n"
+    )
     fixture = SimpleNamespace(calls=[], architecture=b"amd64\n", fail_phase=None, failure=None)
 
     def command(argv, **kwargs):
@@ -322,6 +326,15 @@ def test_mirror_write_rejects_non_https_or_unbounded_selection(owned_commands, m
 def test_cli_success_runs_declared_packages_without_extra_configuration(owned_commands):
     assert ci_apt.main(["xclip", "xvfb"]) == 0
     assert owned_commands.calls[-1][1][-2:] == ("xclip", "xvfb")
+
+
+def test_cli_source_refusal_exposes_fixed_reason_without_raw_credentials(owned_commands, capsys):
+    ci_apt.MIRROR_FILE.write_text("https://credential@archive.ubuntu.com/ubuntu\tpriority:1\n")
+    assert ci_apt.main(["tmux"]) == 1
+    message = capsys.readouterr().err
+    assert "unrecognized Ubuntu source URI" in message
+    assert "credential" not in message and "archive.ubuntu.com" not in message
+    assert len(owned_commands.calls) == 1
 
 
 @pytest.mark.parametrize("arguments", [[], ["--allow-unauthenticated"], ["curl"]])
