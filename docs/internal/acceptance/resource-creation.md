@@ -221,6 +221,13 @@ external-source checker and both static-site build/check surfaces pass: 53 pages
 2,230 local links/assets and 70 files. Plan validation reports 1,176 local Markdown
 links. Production bytes remain identical to the audited `f28c954` source.
 
+The first genuine PR run `43030692308` failed Fast on an existing UI completion
+fixture that still expected context aliases before the new create candidate.
+The fixture now includes create explicitly and uses four Down events to select
+the unchanged ctx alias. Product source, ordering, result bound and CI gates stay
+unchanged. Original hosted Fast artifacts/logs retain the `5e3c2cf` producer;
+downstream matrix jobs correctly remained skipped and the quality gate failed.
+
 ## Remaining qualification
 
 Whole production/branch/changed-line gates, native workflows and the

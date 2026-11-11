@@ -59,6 +59,9 @@ Whole/branch/changed-line floors and native/platform checks remain separate. The
 failures and the separate private-root counterexample/correction. Strict server
 validation is authoritative; no offline schema completeness, namespace-UID atomic
 precondition, write replay, provider or final release qualification is claimed.
+The first genuine PR run failed on a remaining old UI completion expectation;
+the fixture now includes create and still navigates to the unchanged ctx alias.
+The complete corrected hosted matrix remains required.
 
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 
