@@ -26,6 +26,16 @@ def screen_fixture(*, operation=HelmLifecycleKind.INSTALL, read_only=False):
     return service, screen, LifecycleTestApp(screen)
 
 
+async def feedback(app, screen, text):
+    await wait_for(
+        lambda: (
+            app.screen is screen
+            and screen.operation_count == 0
+            and text.casefold() in str(screen.status.content).casefold()
+        )
+    )
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("operation", list(HelmLifecycleKind))
 @pytest.mark.parametrize("size", [(120, 36), (80, 24), (40, 12)])
@@ -88,7 +98,7 @@ async def test_option_and_values_source_changes_expire_reviews_and_never_implici
         screen.query_one("#helm-lifecycle-timeout", Input).value = ""
         await pilot.pause()
         screen.prepare()
-        await wait_for(lambda: screen.operation_count == 0)
+        await feedback(app, screen, "whole-number")
         assert "whole-number" in str(screen.status.content)
         assert screen.intent is None and service.admissions == 0
 
@@ -102,7 +112,7 @@ async def test_read_only_blocks_preparation_and_editor_disclosure():
         assert screen.query_one("#helm-lifecycle-confirm", Button).disabled
         assert screen.query_one("#helm-lifecycle-edit", Button).disabled
         screen.prepare()
-        await wait_for(lambda: screen.operation_count == 0)
+        await feedback(app, screen, "read-only")
         assert "read-only" in str(screen.status.content).lower()
         assert (
             service.values_sources == [] and service.preparations == [] and service.admissions == 0
@@ -164,7 +174,7 @@ async def test_unexpected_preparation_failure_does_not_expose_private_exception_
     service.failure = RuntimeError("private-chart-token")
     async with app.run_test() as pilot:
         screen.prepare()
-        await wait_for(lambda: screen.operation_count == 0)
+        await feedback(app, screen, "details were withheld")
         assert "private-chart-token" not in str(screen.status.content)
         assert "details were withheld" in str(screen.status.content)
         assert screen.intent is None and service.admissions == 0
@@ -211,7 +221,17 @@ async def test_editor_requires_one_use_disclosure_then_always_drains_private_dra
             if scenario == "cancel":
                 await entered.wait()
                 await screen.stop()
-            await wait_for(lambda: screen.operation_count == 0)
+            await feedback(
+                app,
+                screen,
+                {
+                    "accepted": "accepted privately",
+                    "failed": "stopped or failed",
+                    "open": "preparation refused",
+                    "finish": "output refused",
+                    "cancel": "partial effects",
+                }[scenario],
+            )
             assert service.editor_events[:3] == ["prepare", "confirm", "open"]
             assert not (tmp_path / "values.yaml").exists()
             assert "owned-editor-private-value" not in screen.viewer.text
@@ -262,7 +282,7 @@ async def test_editor_outcome_is_published_only_after_private_cleanup_drains(
             assert screen.operation_count == 1
             assert screen.values is original or screen.values.source == "defaults"
             service.close_release.set()
-            await wait_for(lambda: screen.operation_count == 0)
+            await feedback(app, screen, "accepted privately" if succeeded else "stopped or failed")
             assert not (tmp_path / "values.yaml").exists()
             assert ("accepted privately" if succeeded else "stopped or failed") in str(
                 screen.status.content

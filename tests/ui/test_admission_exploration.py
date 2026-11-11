@@ -155,7 +155,21 @@ async def test_held_admission_source_or_target_never_opens_after_capture_changes
                     else:
                         api.put(binding, changed)
                 held.release.set()
-                await wait_for(lambda: screen.operation_count == 0)
+                await wait_for(
+                    lambda: (
+                        screen.operation_count == 0
+                        and (
+                            change == "context"
+                            or (
+                                app.screen is screen
+                                and any(
+                                    text in str(screen.status.content)
+                                    for text in ("changed", "obsolete")
+                                )
+                            )
+                        )
+                    )
+                )
                 assert app.state.scope.resource != policy
                 if change != "context":
                     assert app.screen is screen
@@ -196,7 +210,13 @@ async def test_admission_link_distinguishes_denial_missing_api_and_missing_objec
                 "absent-api": "unavailable",
                 "absent-object": "not found",
             }[failure]
-            await wait_for(lambda: expected in str(screen.status.content))
+            await wait_for(
+                lambda: (
+                    app.screen is screen
+                    and screen.operation_count == 0
+                    and expected in str(screen.status.content)
+                )
+            )
             assert app.screen is screen
             assert app.state.scope.resource.name == BINDINGS
             assert not any(
@@ -237,7 +257,10 @@ async def test_admission_preferred_or_absent_stable_version_uses_discovery_and_e
 
 
 @pytest.mark.asyncio
-async def test_selected_stable_admission_list_forbidden_does_not_retry_known_beta(tmp_path):
+@pytest.mark.parametrize("hold_status", [False, True])
+async def test_selected_stable_admission_list_forbidden_does_not_retry_known_beta(
+    tmp_path, monkeypatch, hold_status
+):
     fixture = CuratedResourcesApi(admission_versions=("v1", "v1beta1"))
     resource = fixture.resource(POLICIES, version="v1")
     fixture.denied_paths[resource.path(None)] = 403
@@ -245,8 +268,46 @@ async def test_selected_stable_admission_list_forbidden_does_not_retry_known_bet
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await started(app, pilot)
-            await app.run_command("vap")
-            await wait_for(lambda: app.state.status is ViewStatus.FAILED)
+            root = app.screen
+            publish = app.presenter.status
+            held = []
+
+            def status(message):
+                if hold_status and "403" in message:
+                    held.append(message)
+                else:
+                    publish(message)
+
+            with monkeypatch.context() as patch:
+                patch.setattr(app.presenter, "status", status)
+                try:
+                    await app.run_command("vap")
+                    await wait_for(lambda: app.state.status is ViewStatus.FAILED)
+                    if hold_status:
+                        await wait_for(lambda: bool(held))
+                        assert app.screen is root and app.state.scope.resource == resource
+                        assert app.standard_table.row_count == 0
+                        assert "403" not in str(app.status.content)
+                        assert all(request.method == "GET" for request in api.requests)
+                        assert not any(
+                            request.path == fixture.resource(POLICIES, version="v1beta1").path(None)
+                            for request in api.requests
+                        )
+                        assert not api.watch(resource.path(None)).entered.is_set()
+                finally:
+                    patch.undo()
+                    for message in held:
+                        publish(message)
+            await wait_for(
+                lambda: (
+                    app.screen is root
+                    and app.state.scope is not None
+                    and app.state.scope.resource == resource
+                    and app.state.status is ViewStatus.FAILED
+                    and app.standard_table.row_count == 0
+                    and "403" in str(app.status.content)
+                )
+            )
             assert app.standard_table.row_count == 0
             assert "403" in str(app.status.content)
             assert not any(
@@ -254,6 +315,8 @@ async def test_selected_stable_admission_list_forbidden_does_not_retry_known_bet
                 for request in api.requests
             )
             assert not api.watch(resource.path(None)).entered.is_set()
+            assert any(request.path == resource.path(None) for request in api.requests)
+            assert all(request.method == "GET" for request in api.requests)
 
 
 @pytest.mark.asyncio
@@ -288,10 +351,15 @@ async def test_denied_preferred_discovery_never_automatically_selects_beta_but_e
         async with app.run_test() as pilot:
             await started(app, pilot)
             await app.run_command("vap")
-            await wait_for(lambda: app.state.status is ViewStatus.FAILED)
+            await wait_for(
+                lambda: (
+                    app.state.status is ViewStatus.FAILED
+                    and len(app.screen_stack) == 1
+                    and "Higher-preference" in str(app.status.content)
+                )
+            )
             beta = api.resource(POLICIES, version="v1beta1")
             assert not any(request.path == beta.path(None) for request in api.requests)
-            await wait_for(lambda: "Higher-preference" in str(app.status.content))
             assert app.workspace.discovery.partial
             await app.run_command(
                 "resource validatingadmissionpolicies.admissionregistration.k8s.io/v1beta1"

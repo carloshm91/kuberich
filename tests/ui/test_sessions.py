@@ -121,10 +121,19 @@ async def test_case_preserved_commands_and_manual_namespace_for_restricted_rbac(
             await pilot.press("enter")
             assert "DNS label" in str(app.status.content)
             assert app.sessions.observation.namespace == "allowed"
+            root = app.screen
             await pilot.press("colon")
             app.command_input.value = "ns"
             await pilot.press("enter")
-            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.FAILED)
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.status is ViewStatus.FAILED
+                    and app.screen is root
+                    and app.state.view_kind == "namespaces"
+                    and len(app.screen_stack) == 1
+                    and "403" in str(app.status.content)
+                )
+            )
             assert app.state.view_kind == "namespaces" and len(app.screen_stack) == 1
             assert "403" in str(app.status.content)
             await pilot.press("escape")

@@ -403,7 +403,14 @@ async def test_scope_change_and_invalid_form_inputs_never_publish_late_authority
             "#helm-repository-url", Input
         ).value = "https://private:owned-sensitive@owned.invalid/charts?token=owned-sensitive"
         form.confirm()
-        await wait_for(lambda: form.operation_count == 0)
+        await wait_for(
+            lambda: (
+                app.screen is form
+                and form.operation_count == 0
+                and "without credentials or queries"
+                in str(form.query_one(".helm-catalog-status").content)
+            )
+        )
         assert "owned-sensitive" not in str(form.query_one(".helm-catalog-status").content)
         assert fixture.api.requests == [] and fixture.service.catalog.snapshot.repositories == ()
         fixture.service.current = lambda request: False
@@ -451,6 +458,14 @@ async def test_unexpected_cached_load_error_withholds_private_exception_text(tmp
         monkeypatch.setattr(fixture.service.catalog, "load", failure)
         async with app.run_test() as pilot:
             await catalog_ready(screen, rows=0)
+            await wait_for(
+                lambda: (
+                    app.screen is screen
+                    and screen.operation_count == 0
+                    and "private details were withheld"
+                    in str(screen.query_one(".helm-catalog-status").content)
+                )
+            )
             status = str(screen.query_one(".helm-catalog-status").content)
             assert "private details were withheld" in status
             assert "owned-private-catalog-exception" not in status
