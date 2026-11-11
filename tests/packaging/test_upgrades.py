@@ -326,23 +326,22 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
         )
         assert json.loads(before_default.stdout)["config_file"] == str(legacy_config)
         assert "owned-upgrade-private-value" not in before_default.stdout + before_default.stderr
-        # An explicit old pipx spec requires deliberate supported replacement;
-        # the ordinary unversioned 0.4+ installation uses the actual upgrade.
+        # pipx upgrade strips install-time version requirements. Reinstall uses
+        # the captured requirement, so verify it before deliberate replacement.
         shutil.copyfile(newer, wheelhouse / newer.name)
         if pinned_spec:
-            for constrained in (upgrade, reinstall):
-                result = run(constrained, outside, 180, environment=environment)
-                commands.append({"command": constrained, "exit": result.returncode})
-                assert (
-                    run([str(binary), "--version"], outside, environment=environment).stdout
-                    == f"kuberich {old_version}\n"
-                )
-                unchanged = installed_identity(python, outside, environment)
-                assert unchanged["legacy_main"] is old_has_alias
-                for path in retired:
-                    assert path.exists() is old_has_alias
-                    if not old_has_alias:
-                        assert not path.is_symlink()
+            result = run(reinstall, outside, 180, environment=environment)
+            commands.append({"command": reinstall, "exit": result.returncode})
+            assert (
+                run([str(binary), "--version"], outside, environment=environment).stdout
+                == f"kuberich {old_version}\n"
+            )
+            unchanged = installed_identity(python, outside, environment)
+            assert unchanged["legacy_main"] is old_has_alias
+            for path in retired:
+                assert path.exists() is old_has_alias
+                if not old_has_alias:
+                    assert not path.is_symlink()
             removed = run([*manager, "uninstall", "kuberich"], outside, environment=environment)
             commands.append(
                 {"command": [*manager, "uninstall", "kuberich"], "exit": removed.returncode}
@@ -450,7 +449,6 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
                 "transition_method": transition_method,
                 "original_spec": f"kuberich=={old_version}" if pinned_spec else "kuberich",
                 "explicit_old_spec_reinstall_preserves_version": pinned_spec,
-                "explicit_old_spec_upgrade_preserves_version": pinned_spec,
                 "actual_upgraded_navigation_and_shell": True,
                 "preferences_and_caller_config_unchanged": True,
                 "legacy_config_log_lock_archive_bytes_and_ownership_unchanged": True,
