@@ -82,6 +82,10 @@ source protocol shares only identity, documents and source digest; source-local
 callbacks additionally bind original file/template captures and draft generation.
 Local inspection is offline. Validation uses exact discovery and strict named
 POST dry-run as the schema authority, without a generic offline OpenAPI engine.
+The versioned [Kubernetes CRD contract](https://v1-36.docs.kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/)
+defines served-schema validation, defaulting and intentionally preserved unknown
+regions. Request nulls remain literal client input; the server decides whether
+its schema preserves or defaults them.
 
 Create-only preserves literal nulls, strips last-applied input and sends identical
 canonical bytes to dry-run and POST. Any existing name is a conflict, including

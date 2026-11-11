@@ -26,6 +26,7 @@ from tests.support.plugins_terminal import (
     plugin_definitions,
 )
 from tests.support.resource_creation_cli import terminal_resource_creation_cli
+from tests.support.resource_creation_terminal import terminal_resource_creation
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
 
@@ -445,9 +446,50 @@ def creation_requests(host: Host, directory: Path, evidence: Path) -> dict[str, 
                 **result,
             }
         )
+    editors: list[dict[str, Any]] = []
+    for scenario in ("success", "ctrl_c"):
+        name = "standalone-" + native_target() + "-creation-editor-" + scenario
+        result = terminal_resource_creation(
+            [host.executable],
+            directory / ("editor-" + scenario),
+            name,
+            scenario=scenario,
+            shell_editor=True,
+            size=(80, 24),
+            wrap=command,
+            environment=overrides,
+            controller_environment=host.environment,
+        )
+        controls = evidence / (name + "-controls.json")
+        write_original(controls, result)
+        pty = ROOT / "artifacts/terminal" / (name + ".json")
+        retained_pty = evidence / pty.name
+        shutil.copyfile(pty, retained_pty)
+        receipt = json.loads(retained_pty.read_text())
+        if (
+            receipt["exit"] != 0
+            or not receipt["terminal_mode_restored"]
+            or not receipt["alternate_screen_closed"]
+            or not receipt["cursor_restored"]
+            or not all(receipt["reporting_modes_disabled"].values())
+            or result["private_files_absent"] is not True
+        ):
+            raise ValueError("Native creation editor did not restore its terminal/private files")
+        editors.append(
+            {
+                "scenario": scenario,
+                "controls": controls.name,
+                "controls_sha256": digest(controls),
+                "pty": retained_pty.name,
+                "pty_sha256": digest(retained_pty),
+                **result,
+            }
+        )
     return {
         "driver_sha256": digest(ROOT / "tests/support/resource_creation_cli.py"),
+        "editor_driver_sha256": digest(ROOT / "tests/support/resource_creation_terminal.py"),
         "cases": cases,
+        "editors": editors,
         "scope": "Actual native public creation UI and controlled owned HTTP POST effects/cancellation; Python belongs only to the external controller. Real Kubernetes schema/admission behavior is qualified separately by owned kind.",
     }
 

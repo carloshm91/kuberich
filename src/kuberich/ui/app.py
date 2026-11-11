@@ -1597,12 +1597,27 @@ class KubeRichApp(App[None]):
         if connection is not None:
             return connection
         task = self.workspace.task
-        if self.sessions.client is not None or (task is not None and not task.done()):
+        if task is not None and not task.done():
             raise AppError(
                 "A workspace connection is already active; finish it before creation review."
             )
-        self._start_connection(context, remember=False)
-        task = self.workspace.task
+        captured_client = self.sessions.client
+        captured_identity = self.sessions.observation.identity
+        if captured_client is not None:
+            if (
+                captured_identity is None
+                or captured_identity.context != context
+                or self.sessions.observation.state not in USABLE_CONNECTIONS
+                or self.workspace.store.observation.connection.identity != captured_identity
+                or self.workspace.discovery is not None
+            ):
+                raise AppError(
+                    "The existing creation connection changed; select its context again."
+                )
+            task = self.workspace.refresh_discovery()
+        else:
+            self._start_connection(context, remember=False)
+            task = self.workspace.task
         if task is None:
             raise AppError("The explicit creation connection could not be started.")
         revision = self.workspace.store.observation.revision
@@ -1624,6 +1639,13 @@ class KubeRichApp(App[None]):
             or connection.scope.session.context != context
             or not connection.current()
             or self.workspace.store.observation.revision != revision
+            or (
+                captured_client is not None
+                and (
+                    self.sessions.client is not captured_client
+                    or self.sessions.observation.identity != captured_identity
+                )
+            )
         ):
             raise AppError(
                 "Selected context connection did not establish current discovery; draft retained."

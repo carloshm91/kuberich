@@ -12,6 +12,7 @@ from kuberich.config.paths import ConfigLocation
 from kuberich.config.schema import Settings, parse_document
 from kuberich.domain.commands import Command
 from kuberich.domain.connections import ConnectionState
+from kuberich.domain.views import ViewStatus
 from kuberich.services.appearance import PreferenceSource
 from kuberich.services.manifests import ManifestMutationService
 from kuberich.services.mutations import MutationManager
@@ -200,6 +201,74 @@ async def test_superseding_connection_epoch_refuses_review_even_for_same_context
             assert not server.requests
             await pilot.press("escape")
             await wait_for(lambda: len(app.screen_stack) == 1)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("exit_action", ["stop", "back"])
+async def test_post_connect_discovery_cancellation_keeps_owned_client_and_retryable_draft(
+    tmp_path, monkeypatch, exit_action
+):
+    from kuberich.services.resources import ResourceReader
+
+    entered, release = asyncio.Event(), asyncio.Event()
+    discover = ResourceReader.discover
+    calls = []
+
+    async def held(reader):
+        calls.append(reader.session)
+        if len(calls) == 1:
+            entered.set()
+            await release.wait()
+        return await discover(reader)
+
+    monkeypatch.setattr(ResourceReader, "discover", held)
+    async with owned_server() as server:
+        app = initial_app(tmp_path, server)
+        async with app.run_test() as pilot:
+            creator, source = await capture(app, pilot)
+            await click_ready(app, pilot, creator.query_one("#creation-review", Button))
+            await wait_for(entered.is_set)
+            client = app.sessions.client
+            identity = app.sessions.observation.identity
+            assert (
+                client is not None and app.sessions.observation.state is ConnectionState.CONNECTED
+            )
+            if exit_action == "stop":
+                await click_ready(app, pilot, creator.query_one("#creation-stop", Button))
+                await wait_for(lambda: "Operation stopped" in str(creator.status.render()))
+                assert app.screen is creator and creator.service.current_source is source
+            else:
+                await pilot.press("escape")
+                await wait_for(lambda: len(app.screen_stack) == 1)
+            assert app.sessions.client is client and app.sessions.observation.identity == identity
+            assert app.workspace.store.observation.status is ViewStatus.FAILED
+            assert "cancelled during discovery" in str(app.workspace.store.observation.problem)
+            assert not server.requests
+            if exit_action == "back":
+                await wait_for(lambda: "cancelled during discovery" in str(app.status.render()))
+                assert "Retry" in str(app.status.render()) and await app.screen.wait_for_refresh()
+            release.set()
+            if exit_action == "stop":
+                await click_ready(app, pilot, creator.query_one("#creation-review", Button))
+                await wait_for(
+                    lambda: (
+                        isinstance(app.screen, ManifestReviewScreen)
+                        and app.focused is not None
+                        and app.focused.id == "manifest-review-back"
+                    )
+                )
+                review = app.screen
+                assert (
+                    app.sessions.client is client and app.sessions.observation.identity == identity
+                )
+                assert review.service.source is source and calls == [client, client]
+                await click_ready(app, pilot, review.query_one("#manifest-review-validate", Button))
+                await wait_for(lambda: "All resources validated" in str(review.status.render()))
+                assert review.plan.ready and not server.values and len(server.requests) == 1
+                await pilot.press("escape")
+                await wait_for(lambda: app.screen is creator)
+                await pilot.press("escape")
+                await wait_for(lambda: len(app.screen_stack) == 1)
 
 
 @pytest.mark.asyncio

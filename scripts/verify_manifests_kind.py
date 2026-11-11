@@ -636,7 +636,9 @@ async def schema_creation_cases(h: Harness) -> None:
                             "required": ["replicas"],
                             "properties": {
                                 "replicas": {"type": "integer", "minimum": 0, "maximum": maximum},
-                                "mode": {"type": "string", "default": "allowed"},
+                                "mode": {"type": "string", "default": "allowed", "maxLength": 16},
+                                "nullableText": {"type": "string", "nullable": True},
+                                "defaultedText": {"type": "string", "default": "owned-default"},
                                 "opaque": {
                                     "type": "object",
                                     "x-kubernetes-preserve-unknown-fields": True,
@@ -697,7 +699,16 @@ async def schema_creation_cases(h: Harness) -> None:
         }
 
     service, plan = await reviewed_creation_document(
-        h, custom("owned-crd-default", {"replicas": 1, "opaque": {"unknown": {"accepted": False}}})
+        h,
+        custom(
+            "owned-crd-default",
+            {
+                "replicas": 1,
+                "opaque": {"unknown": {"accepted": False}},
+                "nullableText": None,
+                "defaultedText": None,
+            },
+        ),
     )
     h.check(
         "crd-served-version-strict-dryrun-accepts-default-and-preserved-unknown-region",
@@ -721,6 +732,8 @@ async def schema_creation_cases(h: Harness) -> None:
         result.state is MutationState.SUCCEEDED
         and value["spec"]["mode"] == "allowed"
         and value["spec"]["opaque"]["unknown"]["accepted"] is False
+        and value["spec"]["nullableText"] is None
+        and value["spec"]["defaultedText"] == "owned-default"
         and service.created_receipts[0].target.uid == value["metadata"]["uid"],
     )
     for name, spec in (

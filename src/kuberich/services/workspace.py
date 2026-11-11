@@ -370,13 +370,33 @@ class WorkspaceService:
             or task is not self.task
             or not task.done()
             or self._desired is not None
-            or self.sessions.client is not None
             or view.context != context
             or view.revision != revision
-            or view.status is not ViewStatus.CONNECTING
             or (observed.identity is not None and observed.identity.context != context)
-            or observed.state not in {ConnectionState.CONNECTING, ConnectionState.DISCONNECTED}
         ):
+            return
+        client = self.sessions.client
+        if client is not None:
+            if (
+                view.status is ViewStatus.LOADING
+                and observed.state in USABLE_CONNECTIONS
+                and observed.identity is not None
+                and view.connection.identity == observed.identity
+                and client.context.name == context
+                and self._discovery is None
+            ):
+                self._fail(
+                    revision,
+                    ConnectionProblem(
+                        ConnectionState.API_ERROR,
+                        "Connection setup cancelled during discovery. Retry the selected context; captured drafts remain local.",
+                    ),
+                )
+            return
+        if view.status is not ViewStatus.CONNECTING or observed.state not in {
+            ConnectionState.CONNECTING,
+            ConnectionState.DISCONNECTED,
+        }:
             return
         cancelled = replace(
             observed,

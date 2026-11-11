@@ -122,16 +122,34 @@ class CreationServer(Server):
             raise ValueError("Owned creation API request handlers were not drained")
 
 
-def click_visible(terminal: TerminalSession, label: str) -> None:
+def click_visible(terminal: TerminalSession, label: str, *, button: bool = True) -> None:
     """Click the actual rendered public control, without application introspection."""
-    terminal.wait_for_screen(label)
-    for row, line in reversed(tuple(enumerate(terminal.screen.display))):
-        column = line.find(label)
-        if column >= 0:
-            x, y = column + len(label) // 2 + 1, row + 1
-            terminal.send(f"\x1b[<0;{x};{y}M\x1b[<0;{x};{y}m".encode())
-            return
-    raise AssertionError("Visible control disappeared before its owned click")
+    labels = (
+        "Import file",
+        "Edit draft",
+        "Review Create",
+        "Connect & Review",
+        "Validate",
+        "Confirm Create",
+        "Stop",
+        "Previous page",
+        "Next page",
+        "Back",
+    )
+    deadline = time.monotonic() + 15
+    while True:
+        rows = tuple(enumerate(terminal.screen.display))
+        # A title/status can mention Validate before the new modal footer paints.
+        # Wait for the actual footer's parallel controls, not that earlier text.
+        candidates = rows[-6:] if button else rows
+        for row, line in reversed(candidates):
+            column = line.find(label)
+            if column >= 0 and (not button or sum(value in line for value in labels) >= 2):
+                x, y = column + len(label) // 2 + 1, row + 1
+                terminal.send(f"\x1b[<0;{x};{y}M\x1b[<0;{x};{y}m".encode())
+                return
+        assert time.monotonic() < deadline, "Public control footer was not rendered"
+        terminal.read(0.01)
 
 
 def terminal_resource_creation_cli(
@@ -233,7 +251,7 @@ def terminal_resource_creation_cli(
                 terminal.wait_for_screen("80 pods")
                 terminal.send(b":create\r")
             terminal.wait_for_screen("Create resources · offline source")
-            click_visible(terminal, "Explicit local manifest file path")
+            click_visible(terminal, "Explicit local manifest file path", button=False)
             terminal.send(b"owned-create.yaml")
             terminal.wait_for_screen("owned-create.yaml")
             click_visible(terminal, "Import file")

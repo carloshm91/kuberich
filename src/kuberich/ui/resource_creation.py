@@ -659,6 +659,12 @@ class ResourceCreationScreen(ModalScreen[None]):
         await self.service.close_draft()
         self.disclosure = None
         self._controls()
+        if self._current():
+            self.status.update(
+                "Operation stopped · frozen draft retained; explicitly Review or capture a new source."
+                if self.service.current_source is not None
+                else "Operation stopped · capture a fresh source."
+            )
 
     async def action_back(self) -> None:
         await self.stop_owned()

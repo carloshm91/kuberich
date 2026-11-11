@@ -207,6 +207,9 @@ def terminal_resource_creation(
         assert "creation-pty-private-edited" not in "\n".join(terminal.screen.display)
         terminal.send(b"\x11")
         terminal.finish()
+        for token in (b"creation-pty-private-source", b"creation-pty-private-edited"):
+            assert token not in terminal.transcript
+            assert token not in (directory / "kuberich.log").read_bytes()
         terminal.save_evidence(evidence)
     assert config.read_bytes() == config_before
     return {
