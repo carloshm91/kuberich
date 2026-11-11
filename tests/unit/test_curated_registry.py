@@ -24,6 +24,10 @@ LEGACY = tuple(definition for definition in STANDARD_RESOURCES if not definition
 CURATED = tuple(definition for definition in STANDARD_RESOURCES if definition.curated)
 CANARY = "SYNTHETIC_PRINTER_PAYLOAD_MUST_NOT_ENTER_STANDARD_ROWS"
 EXPECTED = {
+    "validatingadmissionpolicies": {"validations": ("1", 1), "match-rules": ("1", 1)},
+    "validatingadmissionpolicybindings": {"match-rules": ("1", 1)},
+    "mutatingadmissionpolicies": {"mutations": ("1", 1), "match-rules": ("1", 1)},
+    "mutatingadmissionpolicybindings": {"match-rules": ("1", 1)},
     "horizontalpodautoscalers": {"min": ("0", 0), "max": ("5", 5), "desired": ("2", 2)},
     "verticalpodautoscalers": {"mode": ("Off", "off"), "recommended-containers": ("1", 1)},
     "poddisruptionbudgets": {"min-available": ("50%", (1, 50.0)), "allowed": ("0", 0)},
@@ -84,9 +88,9 @@ def projected(definition, record=None, resource=None):
 
 
 def test_all_advertised_family_fixtures_preserve_old_fifteen_and_exact_new_sources():
-    assert len(STANDARD_RESOURCES) == len(KINDS) == len(FIXTURES) == 33
+    assert len(STANDARD_RESOURCES) == len(KINDS) == len(FIXTURES) == 37
     assert len(LEGACY) == 15 and STANDARD_RESOURCES[:15] == LEGACY
-    assert len(CURATED) == len(curated_families()) == 18
+    assert len(CURATED) == len(curated_families()) == 22
     assert {definition.name for definition in CURATED} == set(EXPECTED)
     discovery = roots()
     groups = {entry["name"]: entry for entry in discovery["/apis"]["groups"]}

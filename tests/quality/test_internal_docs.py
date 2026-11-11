@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 380
-    assert validate_documentation_plan(ROOT, list(mapped)) == 380
+    assert len(mapped) == 381
+    assert validate_documentation_plan(ROOT, list(mapped)) == 381
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -240,7 +240,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(helm["documents"]) == 370
     assert current["documents"][:370] == helm["documents"]
-    assert len(current["documents"]) == 380
+    assert len(current["documents"]) == 381
     assert current["documents"][366:370] == [
         {
             "source": "docs/adr/0041-helm-release-identity.md",
@@ -367,7 +367,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(ephemeral["documents"]) == 377
     assert current["documents"][:377] == ephemeral["documents"]
-    assert current["documents"][377:] == [
+    assert current["documents"][377:380] == [
         {
             "source": "docs/benchmarks.md",
             "audience": "user",
@@ -390,6 +390,23 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "action": "keep",
             "destinations": ["docs/internal/acceptance/http-benchmarks.md"],
             "reason": "Retain HTTP benchmark tool, service, filesystem and terminal observations, original failures and qualification limits outside public navigation.",
+            "baseline_sha256": None,
+        },
+    ]
+    benchmark = json.loads(
+        git_bytes(
+            ROOT, "show", "871d95890ddc08afa79631a693317e3858a1631e:docs/documentation-plan.json"
+        )
+    )
+    assert len(benchmark["documents"]) == 380
+    assert current["documents"][:380] == benchmark["documents"]
+    assert current["documents"][380:] == [
+        {
+            "source": "docs/internal/acceptance/policy-exploration.md",
+            "audience": "contributor acceptance evidence",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/policy-exploration.md"],
+            "reason": "Retain configured policy exploration boundaries, versioned admission and scheduling observations, original failures and measured verification outside public user navigation.",
             "baseline_sha256": None,
         },
     ]

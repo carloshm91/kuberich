@@ -231,7 +231,7 @@ async def test_offline_browser_filter_stable_viewport_open_delete_and_restart(tm
         screen.action_delete()
         await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
         app.screen.action_cancel()
-        await wait_for(lambda: app.screen is screen)
+        await wait_for(lambda: app.screen is screen and not screen.busy)
         assert len(await store.scan()) == 18
         screen.action_delete()
         await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
@@ -241,6 +241,68 @@ async def test_offline_browser_filter_stable_viewport_open_delete_and_restart(tm
         await pilot.press("escape")
         assert len(app.screen_stack) == 1
     assert len(await BenchmarkStore(store.default_root).scan()) == len(saved) - 1
+
+
+@pytest.mark.asyncio
+async def test_browser_cancelled_modal_must_retire_its_owned_operation_before_the_next_delete(
+    tmp_path, monkeypatch
+):
+    store = BenchmarkStore(tmp_path / "records")
+    await store.save(record())
+    app = KubeRichApp(
+        Settings(read_only=True),
+        logging.Logger("benchmark-dismissal"),
+        initial_command=Command.BENCHMARKS,
+        benchmark_store=store,
+    )
+    async with app.run_test() as pilot:
+        await wait_for(
+            lambda: (
+                isinstance(app.screen, BenchmarkBrowserScreen)
+                and len(app.screen.entries) == 1
+                and not app.screen.busy
+            )
+        )
+        screen = app.screen
+        queued = []
+        original_push = app.push_screen
+
+        def hold_confirmation(child, callback=None, **kwargs):
+            if isinstance(child, ArtifactConfirmation) and callback is not None:
+                return original_push(
+                    child, lambda value: queued.append((callback, value)), **kwargs
+                )
+            return original_push(child, callback, **kwargs)
+
+        monkeypatch.setattr(app, "push_screen", hold_confirmation)
+        screen.action_delete()
+        await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
+        app.screen.action_cancel()
+        await wait_for(lambda: app.screen is screen and bool(queued))
+        # Returning to the browser and a completed filesystem read do not prove
+        # that the prior confirmation's owned operation has finished.
+        assert len(await store.scan()) == 1
+        assert screen.busy
+        screen.action_delete()
+        await pilot.pause()
+        assert app.screen is screen and screen.busy and len(queued) == 1
+        assert len(await store.scan()) == 1
+        assert app.sessions.client is None and app.benchmark_manager.active_count == 0
+        callback, answer = queued.pop(0)
+        assert answer is False
+        callback(answer)
+        await wait_for(lambda: app.screen is screen and not screen.busy)
+        screen.action_delete()
+        await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
+        app.screen.action_cancel()
+        await wait_for(lambda: app.screen is screen and bool(queued))
+        callback, answer = queued.pop(0)
+        callback(answer)
+        await wait_for(lambda: app.screen is screen and not screen.busy)
+        assert len(await store.scan()) == 1
+        await screen.action_back()
+        await pilot.pause()
+        assert len(app.screen_stack) == 1
 
 
 @pytest.mark.asyncio

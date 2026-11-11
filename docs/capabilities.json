@@ -726,7 +726,7 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05/B06 provide networking resource browsing. O03 #70 adds separately labelled Service selector membership, discovered EndpointSlice associations, available legacy Endpoints fallback and backend targetRef identity/readiness/ports in development source. Denied and incomplete endpoint sources remain explicit; broader networking diagnostics remain separate. O09 #232 adds descriptor-bound read-only EndpointSlice, NetworkPolicy and IngressClass columns, details and guarded links in development source.",
+      "difference": "B05/B06 provide networking resource browsing. O03 #70 adds separately labelled Service selector membership, discovered EndpointSlice associations, available legacy Endpoints fallback and backend targetRef identity/readiness/ports in development source. Denied and incomplete endpoint sources remain explicit; broader networking diagnostics remain separate. O09 #232 adds descriptor-bound read-only EndpointSlice, NetworkPolicy and IngressClass columns, details and guarded links in development source. A05 #80 clarifies NetworkPolicy peer/rule scope and declaration-only limits; no CNI or traffic-enforcement claim.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -740,9 +740,13 @@
         "tests/unit/test_relationships.py",
         "tests/unit/test_reference_fields.py",
         "tests/contract/test_relationships.py",
-        "tests/ui/test_relationship_table.py"
+        "tests/ui/test_relationship_table.py",
+        "docs/internal/acceptance/policy-exploration.md",
+        "tests/ui/test_admission_exploration.py",
+        "tests/unit/test_admission_privacy.py",
+        "scripts/curated_kind.py"
       ],
-      "public_summary": "Service and Ingress tables are available. Version 0.4 adds curated EndpointSlice, NetworkPolicy and IngressClass tables and reported service backends with separate selector matches, preserving unknown endpoint identity and incomplete reads.",
+      "public_summary": "Service and Ingress tables are available. Version 0.4 adds curated EndpointSlice, NetworkPolicy and IngressClass tables and reported service backends with separate selector matches, preserving unknown endpoint identity and incomplete reads. Development source clarifies peer selectors and rule scope without testing network enforcement.",
       "public_status": "partial"
     },
     {
@@ -757,7 +761,7 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. O09 #232 adds read-only HPA, VPA, PDB, PriorityClass, RuntimeClass, ResourceQuota and LimitRange summaries, details and guarded links in development source; broader scheduling diagnostics and enforcement remain separate. O01 #68 adds current Node usage/allocatable percentages and generic extended-resource capacity with incomplete Pod-allocation status when cluster-wide Pod reads are unavailable. O03 #70 adds declared Pod/node placement and explicit PV/PVC/PriorityClass reference relationships in development source; scheduling constraints are not placement and unknown implicit PV Secret namespaces stay incomplete.",
+      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. O09 #232 adds read-only HPA, VPA, PDB, PriorityClass, RuntimeClass, ResourceQuota and LimitRange summaries, details and guarded links in development source; broader scheduling diagnostics and enforcement remain separate. O01 #68 adds current Node usage/allocatable percentages and generic extended-resource capacity with incomplete Pod-allocation status when cluster-wide Pod reads are unavailable. O03 #70 adds declared Pod/node placement and explicit PV/PVC/PriorityClass reference relationships in development source; scheduling constraints are not placement and unknown implicit PV Secret namespaces stay incomplete. A05 #80 adds bounded Pod/Node scheduling declarations, HPA behavior and generation comparison while retaining quota/LimitRange/PDB observation limits; no scheduler feasibility or enforcement verdict.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -776,9 +780,13 @@
         "tests/unit/test_relationships.py",
         "tests/unit/test_reference_fields.py",
         "tests/contract/test_relationships.py",
-        "tests/ui/test_relationship_table.py"
+        "tests/ui/test_relationship_table.py",
+        "docs/internal/acceptance/policy-exploration.md",
+        "tests/ui/test_admission_exploration.py",
+        "tests/unit/test_admission_privacy.py",
+        "scripts/curated_kind.py"
       ],
-      "public_summary": "Node, PV, PVC and StorageClass tables are available. Version 0.4 adds curated HPA/VPA, PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity. The cluster overview adds known pressure/unscheduled states; broader quota/disruption diagnostics remain planned. Relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.",
+      "public_summary": "Node, PV, PVC and StorageClass tables are available. Version 0.4 adds curated HPA/VPA, PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity. The cluster overview adds known pressure/unscheduled states; broader quota/disruption diagnostics remain planned. Relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references. Development source separates scheduling declarations and generation-qualified scaling observations from placement or enforcement outcomes.",
       "public_status": "partial"
     },
     {
@@ -1807,15 +1815,19 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "O09 #232 adds read-only HPA/VPA/PDB, NetworkPolicy/EndpointSlice/IngressClass, scheduling/Lease, quota/limits and webhook declaration/status summaries. Wider policy/admission enforcement diagnostics remain A05 #80; a declaration does not prove enforcement.",
-      "public_summary": "Version 0.4 adds read-only scaling, policy, scheduling, quota and webhook summaries. Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate supported schemas.",
+      "difference": "O09 #232 delivers the existing read-only policy/scaling/quota/webhook families. A05 #80 adds descriptor-bound validating and mutating admission policies/bindings at discovered v1/v1beta1, exact current-name navigation, shared default payload concealment, narrow webhook/HPA/scheduling detail and denied-version discovery controls. These are configured declarations and qualified observations, not an admission/network/scheduler simulator or enforcement verdict. Alpha/generic APIs and provider/CNI effectiveness remain unqualified.",
+      "public_summary": "Published 0.4 provides scaling, policy, scheduling, quota and webhook summaries. Development source adds validating/mutating policy and binding exploration with declared matching and current-name links. Configured policy and observed status do not prove enforcement; unavailable APIs and unknown schemas remain explicit.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/resource-workspace.md",
         "docs/internal/acceptance/curated-resources.md",
         "docs/internal/curated-resource-inventory.json",
         "tests/ui/test_curated_resources.py",
-        "tests/ui/test_events_workspace.py"
+        "tests/ui/test_events_workspace.py",
+        "docs/internal/acceptance/policy-exploration.md",
+        "tests/ui/test_admission_exploration.py",
+        "tests/unit/test_admission_privacy.py",
+        "scripts/curated_kind.py"
       ]
     },
     {

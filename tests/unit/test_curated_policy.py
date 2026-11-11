@@ -714,6 +714,84 @@ def test_oversized_valid_selector_disables_action_without_clipping_predicate_ide
     assert len(json.dumps(asdict(inspected)).encode()) < MAX_CURATED_DETAIL_BYTES
 
 
+def test_network_peer_namespace_link_keeps_its_own_selector_and_cluster_scope():
+    manifest = policy_manifest("networkpolicies")
+    manifest["spec"]["ingress"] = [
+        {
+            "from": [
+                {
+                    "podSelector": {"matchLabels": {"app": "api"}},
+                    "namespaceSelector": {"matchLabels": {"team": "owned"}},
+                }
+            ]
+        }
+    ]
+    manifest["spec"]["egress"] = [{"to": [{"namespaceSelector": {}}]}]
+    inspected = details(*policy_record("networkpolicies", manifest=manifest))
+    incoming = next(link for link in inspected.links if link.key == "peer-namespaces-ingress-0-0")
+    assert isinstance(incoming.destination, CollectionDestination)
+    assert incoming.destination.group == "" and incoming.destination.resource == "namespaces"
+    assert incoming.destination.scope == "cluster" and incoming.destination.namespace is None
+    assert isinstance(incoming.destination.predicate, LabelsMatch)
+    requirements = incoming.destination.predicate.selector.requirements
+    assert [(entry.key, entry.values) for entry in requirements] == [("team", ("owned",))]
+    outgoing = next(link for link in inspected.links if link.key == "peer-namespaces-egress-0-0")
+    assert isinstance(outgoing.destination, CollectionDestination)
+    assert isinstance(outgoing.destination.predicate, LabelsMatch)
+    assert outgoing.destination.predicate.selector.requirements == ()
+    assert "intersect" in " ".join(inspected.notices)
+
+
+def test_malformed_network_peer_namespace_selector_has_no_navigation_destination():
+    manifest = policy_manifest("networkpolicies")
+    manifest["spec"]["ingress"] = [{"from": [{"namespaceSelector": {"matchLabels": []}}]}]
+    inspected = details(*policy_record("networkpolicies", manifest=manifest))
+    link = next(link for link in inspected.links if link.key == "peer-namespaces-ingress-0-0")
+    assert link.destination is None and "malformed" in link.unavailable_reason
+
+
+@pytest.mark.parametrize(
+    "conditions,expected",
+    [([], "0"), ([{}, {}], "2"), (None, "—"), ([None], "—"), ([{}] * 65, "—")],
+)
+def test_webhook_condition_counts_and_reinvocation_are_declarations_not_payloads(
+    conditions, expected
+):
+    manifest = policy_manifest("mutatingwebhookconfigurations", 1)
+    hook = manifest["webhooks"][0]
+    hook["matchConditions"] = conditions
+    hook.pop("reinvocationPolicy", None)
+    inspected = details(*policy_record("mutatingwebhookconfigurations", manifest=manifest))
+    section = next(part for part in inspected.sections if part.title == "Webhook declarations")
+    row = dict(zip(section.columns, section.rows[0], strict=True))
+    assert row["Match condition count"] == expected
+    assert row["Reinvocation policy"] == "Never" and row["Reinvocation provenance"] == "API default"
+    hook.update(
+        reinvocationPolicy="IfNeeded",
+        matchConditions=[{"name": "owned", "expression": "opaque-expression-80"}],
+    )
+    inspected = details(*policy_record("mutatingwebhookconfigurations", manifest=manifest))
+    section = next(part for part in inspected.sections if part.title == "Webhook declarations")
+    row = dict(zip(section.columns, section.rows[0], strict=True))
+    assert row["Match condition count"] == "1" and row["Reinvocation policy"] == "IfNeeded"
+    assert row["Reinvocation provenance"] == "declared"
+    assert "opaque-expression-80" not in repr(inspected)
+
+
+@pytest.mark.parametrize("policy", [None, [], "Future"])
+def test_invalid_webhook_reinvocation_is_unknown_while_validating_is_not_applicable(policy):
+    for name, expected in (
+        ("mutatingwebhookconfigurations", "—"),
+        ("validatingwebhookconfigurations", "not applicable"),
+    ):
+        manifest = policy_manifest(name, 1)
+        manifest["webhooks"][0]["reinvocationPolicy"] = policy
+        inspected = details(*policy_record(name, manifest=manifest))
+        section = next(part for part in inspected.sections if part.title == "Webhook declarations")
+        row = dict(zip(section.columns, section.rows[0], strict=True))
+        assert row["Reinvocation policy"] == expected
+
+
 def test_allowed_text_controls_and_credential_fragments_are_inert_before_clipping():
     manifest = policy_manifest("ingressclasses")
     manifest["spec"]["controller"] = "\x1b[31m token=synthetic-private " + "x" * 500

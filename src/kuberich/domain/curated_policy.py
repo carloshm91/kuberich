@@ -376,13 +376,30 @@ def _network(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) ->
             rule = _mapping(raw)
             peers, ports = _list(rule.get(peer_key, []), facts), _list(rule.get("ports", []), facts)
             peer_text = []
-            for peer_raw in (peers or [])[:16]:
+            for peer_index, peer_raw in enumerate((peers or [])[:16]):
                 peer = _mapping(peer_raw)
                 parts = [
                     name + ": " + _selector(peer[name], facts)[0]
                     for name in ("podSelector", "namespaceSelector")
                     if name in peer
                 ]
+                if "namespaceSelector" in peer:
+                    _, namespaces = _selector(peer["namespaceSelector"], facts)
+                    facts.link(
+                        CuratedLink(
+                            f"peer-namespaces-{direction.lower()}-{index}-{peer_index}",
+                            f"Declared {direction.lower()} peer namespaces {index}/{peer_index}",
+                            "Namespace labels from this one peer; exploration is not Pod membership, traffic allowance or CNI enforcement proof.",
+                            CollectionDestination(
+                                "", "namespaces", "v1", "cluster", None, LabelsMatch(namespaces)
+                            )
+                            if namespaces is not None
+                            else None,
+                            None
+                            if namespaces is not None
+                            else "Peer namespace selector is malformed.",
+                        )
+                    )
                 if "ipBlock" in peer:
                     block = _mapping(peer["ipBlock"])
                     parts.append(
@@ -430,6 +447,12 @@ def _network(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) ->
             )
         facts.section(direction + " rules (declared)", ("Rule", "Peers", "Ports"), rows)
     facts.note("Declared selectors/rules do not prove CNI enforcement or network reachability.")
+    facts.note(
+        "Within one peer, namespaceSelector and podSelector intersect; a podSelector without namespaceSelector uses the policy namespace. Peers and rules are alternatives; a rule also requires its port selection."
+    )
+    facts.note(
+        "An empty direction rule list contributes no allowances for that direction. An empty individual rule has unrestricted peers and ports; other policies and cluster networking remain independent."
+    )
 
 
 def _endpoints(
@@ -820,11 +843,11 @@ def _limits(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) -> 
         omitted,
     )
     facts.note(
-        "Each item/type/resource is separate. Namespace browsing does not prove admission decisions or changes to existing objects."
+        "Each item/type/resource is separate. Defaults apply at admission and do not retroactively change existing objects. Namespace browsing does not prove admission decisions or changes to existing objects."
     )
 
 
-def _webhooks(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) -> None:
+def _webhooks(resource: ApiResource, manifest: dict[str, Any], facts: _Facts) -> None:
     hooks = _list(manifest.get("webhooks"), facts)
     facts.values["webhooks"] = _number(len(hooks)) if hooks is not None else _UNKNOWN
     reviews, failures, effects, clients, timeouts, rows = [], [], [], [], [], []
@@ -893,6 +916,39 @@ def _webhooks(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) -
         selector_parts = []
         for field in ("namespaceSelector", "objectSelector"):
             selector_parts.append(field + ": " + _selector(item.get(field, {}), facts)[0])
+        conditions = _list(
+            item.get("matchConditions", []) if isinstance(raw, dict) else None, facts, limit=64
+        )
+        if conditions is None or any(not isinstance(condition, dict) for condition in conditions):
+            condition_count = "—"
+            facts.note(
+                "Webhook match conditions are unavailable; missing input is not zero conditions."
+            )
+        else:
+            condition_count = str(len(conditions))
+        reinvocation = "not applicable"
+        reinvocation_origin = "validating webhook"
+        if resource.kind == "MutatingWebhookConfiguration":
+            configured_reinvocation = (
+                item.get("reinvocationPolicy", "Never") if isinstance(raw, dict) else None
+            )
+            reinvocation = (
+                configured_reinvocation
+                if isinstance(configured_reinvocation, str)
+                and configured_reinvocation in ("Never", "IfNeeded")
+                else "—"
+            )
+            if reinvocation == "—":
+                facts.note(
+                    "Webhook reinvocation policy is unavailable; no invocation count is inferred."
+                )
+            reinvocation_origin = (
+                "unavailable"
+                if not isinstance(raw, dict)
+                else "declared"
+                if "reinvocationPolicy" in item
+                else "API default"
+            )
         rows.append(
             (
                 str(index),
@@ -905,6 +961,9 @@ def _webhooks(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) -
                 str(timeout) if type(timeout) is int and 1 <= timeout <= 30 else "—",
                 _literal(item.get("matchPolicy", "Equivalent")),
                 "; ".join(selector_parts),
+                condition_count,
+                reinvocation,
+                reinvocation_origin,
             )
         )
         hook_rules = _list(item.get("rules", []), facts) or []
@@ -958,6 +1017,9 @@ def _webhooks(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) -
             "Timeout seconds",
             "Match policy",
             "Selectors",
+            "Match condition count",
+            "Reinvocation policy",
+            "Reinvocation provenance",
         ),
         rows,
     )
@@ -969,6 +1031,9 @@ def _webhooks(manifest: dict[str, Any], record: ResourceRecord, facts: _Facts) -
     )
     facts.note(
         "Declarations are capabilities, not admission, trust, enforcement or reachability verdicts. CA bytes and URL payloads remain concealed."
+    )
+    facts.note(
+        "Match conditions are counted, never evaluated. Reinvocation is a configured mutating-webhook declaration, not a promise of execution order or invocation count."
     )
 
 
@@ -986,7 +1051,7 @@ def _extract(resource: ApiResource, record: ResourceRecord) -> tuple[CuratedCell
     elif family.resource == "limitranges":
         _limits(manifest, record, facts)
     else:
-        _webhooks(manifest, record, facts)
+        _webhooks(resource, manifest, facts)
     if any(facts.values.get(field.key, _UNKNOWN).sort is None for field in family.fields):
         facts.note("Some curated fields are unavailable; missing or malformed values are not zero.")
     return CuratedCells(

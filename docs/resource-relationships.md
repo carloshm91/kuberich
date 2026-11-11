@@ -67,6 +67,12 @@ reached through two separate branches can appear in both; sharing does not prove
 a cycle. Pod scheduling selectors, affinity and tolerations are constraints,
 not placement evidence. A numeric Pod priority does not identify a PriorityClass.
 
+Admission policy and binding inspectors also provide literal **Links** in the
+ordinary resource workspace. A policy opens same-version bindings declaring its
+exact name; a binding reads the current named policy. These links do not evaluate
+matching requests or prove historical policy UID continuity. See
+[curated views](resource-workspace.md#curated-read-only-views).
+
 ## Find declarations with UsedBy
 
 Select a ConfigMap, Secret, ServiceAccount, PVC or PriorityClass and type

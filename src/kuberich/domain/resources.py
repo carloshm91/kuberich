@@ -115,14 +115,38 @@ class DiscoveryIssue:
     status: int | None = None
 
 
+class DiscoveryPreferenceUnavailable(AppError):
+    """Fixed safe reason for refusing an automatic choice after partial discovery."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Higher-preference API discovery is denied or incomplete; choose an explicit discovered version."
+        )
+
+
 @dataclass(frozen=True, repr=False)
 class Discovery:
     resources: tuple[ApiResource, ...]
     issues: tuple[DiscoveryIssue, ...] = ()
+    advertised_versions: tuple[str, ...] = ()
 
     @property
     def partial(self) -> bool:
         return bool(self.issues)
+
+    def preferred_available(self, resource: ApiResource) -> bool:
+        """Only observed absence permits an automatic lower-preference version."""
+        unresolved = {issue.source for issue in self.issues if issue.status != 404}
+        for advertised in self.advertised_versions:
+            if advertised == resource.api_version:
+                break
+            if split_api_version(advertised)[0] == resource.group and advertised in unresolved:
+                return False
+        return True
+
+    def require_preferred(self, resource: ApiResource) -> None:
+        if not self.preferred_available(resource):
+            raise DiscoveryPreferenceUnavailable
 
     def find(self, name: str, *, group: str = "", version: str | None = None) -> ApiResource:
         validate_argument(name)
@@ -133,11 +157,15 @@ class Discovery:
         )
         canonical = tuple(resource for resource in matching if resource.name == name)
         if canonical:
+            if version is None:
+                self.require_preferred(canonical[0])
             return canonical[0]
         aliases = tuple(resource for resource in matching if name in resource.aliases)
         if len({resource.name for resource in aliases}) > 1:
             raise AppError("Resource alias is ambiguous; use its canonical name.")
         if aliases:
+            if version is None:
+                self.require_preferred(aliases[0])
             return aliases[0]
         raise AppError("Resource/version was not discovered. Check discovery and permissions.")
 
@@ -146,7 +174,8 @@ class Discovery:
         """One descriptor per group/resource, in the server's preference order."""
         preferred: dict[tuple[str, str], ApiResource] = {}
         for resource in self.resources:
-            preferred.setdefault((resource.group, resource.name), resource)
+            if self.preferred_available(resource):
+                preferred.setdefault((resource.group, resource.name), resource)
         return tuple(preferred.values())
 
     def resolve(
@@ -181,6 +210,8 @@ class Discovery:
         )
         if not candidates:
             raise AppError("Resource/version was not discovered. Check discovery and permissions.")
+        if version is None:
+            self.require_preferred(candidates[0])
         return candidates[0]
 
 

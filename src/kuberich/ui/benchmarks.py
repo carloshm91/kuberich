@@ -435,6 +435,11 @@ class BenchmarkBrowserScreen(ModalScreen[None]):
         self._stop_task: asyncio.Task[None] | None = None
         self._confirmation: ArtifactConfirmation | None = None
 
+    @property
+    def busy(self) -> bool:
+        """A dismissed child can still have an owned completion callback to drain."""
+        return self._browser_task is not None and not self._browser_task.done()
+
     def compose(self) -> ComposeResult:
         with Vertical(id="benchmarks-form"):
             yield Static(
@@ -467,7 +472,7 @@ class BenchmarkBrowserScreen(ModalScreen[None]):
         )
 
     def _start(self, operation: Callable[[], Awaitable[None]]) -> None:
-        if not self._stopped and (self._browser_task is None or self._browser_task.done()):
+        if not self._stopped and not self.busy:
             self._browser_task = asyncio.create_task(self._operate(operation))
 
     async def _operate(self, operation: Callable[[], Awaitable[None]]) -> None:

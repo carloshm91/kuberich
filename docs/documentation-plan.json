@@ -3855,6 +3855,16 @@
       ],
       "reason": "Retain HTTP benchmark tool, service, filesystem and terminal observations, original failures and qualification limits outside public navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/policy-exploration.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/policy-exploration.md"
+      ],
+      "reason": "Retain configured policy exploration boundaries, versioned admission and scheduling observations, original failures and measured verification outside public user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

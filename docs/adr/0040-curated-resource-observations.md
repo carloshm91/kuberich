@@ -68,3 +68,18 @@ It does not establish complete Lens, K9s or paid-feature parity. Behavioral,
 terminal, installed-artifact and disposable-cluster evidence belongs in the
 [acceptance record](../internal/acceptance/curated-resources.md). Deterministic
 critical modules retain complete line and branch coverage requirements.
+
+
+## A05 admission extension
+
+Issue #80 reuses the same resource catalogue, Standard tables and finite
+navigation owner for four admission policy/binding families. Exact selected
+versions remain attached to current-name links. The immutable binding predicate
+matches only `spec.policyName` on its expected full descriptor. No parameter
+values, CEL execution or policy simulator is introduced.
+
+The single discovery catalogue now retains advertised version order through
+partial discovery. Denied or incomplete higher-preference discovery blocks an
+automatic lower-version choice, while explicit discovered versions remain usable.
+Inspection and artifact codecs share descriptor-aware admission payload
+concealment; unrelated resources retain their existing disclosure contract.

@@ -19,6 +19,7 @@ from kuberich.domain.registry import STANDARD_RESOURCES
 from kuberich.services.ownership import finish_owned
 from tests.support.container_inspection_terminal import _AUDIT, _audit_controls
 from tests.support.curated_access import CANARY as ACCESS_CANARY
+from tests.support.curated_admission import CANARIES as ADMISSION_CANARIES
 from tests.support.curated_events import CuratedEventsApi
 from tests.support.curated_policy import ANNOTATION_CANARY, CA_CANARY, URL_CANARIES
 from tests.support.curated_resources import ERROR_CANARY, PRINTER_CANARY, curated_resources_api
@@ -45,6 +46,10 @@ _CASES = {
     "clusterroles": ("rules", ("1", "2"), (0, 1)),
     "rolebindings": ("users", ("0", "2"), (0, 1)),
     "clusterrolebindings": ("users", ("0", "2"), (0, 1)),
+    "validatingadmissionpolicies": ("validations", ("1", "2"), (0, 1)),
+    "validatingadmissionpolicybindings": ("match-rules", ("1", "2"), (0, 1)),
+    "mutatingadmissionpolicies": ("mutations", ("1", "2"), (0, 1)),
+    "mutatingadmissionpolicybindings": ("match-rules", ("1", "2"), (0, 1)),
 }
 _CANARIES = (
     ACCESS_CANARY,
@@ -53,6 +58,7 @@ _CANARIES = (
     ERROR_CANARY,
     PRINTER_CANARY,
     EVENT_CANARY,
+    *ADMISSION_CANARIES,
     *URL_CANARIES,
     "synthetic-curated-pty",
 )
@@ -315,6 +321,12 @@ def _drive(command, directory, url, api, *, evidence, flow, size, source, instal
                             parent(title, "owned-a")
                         else:
                             parent(title, selected)
+                marker = route_command("clusterrolebindings")
+                wait(
+                    "ordinary-family-resize-source",
+                    ("clusterrolebindings(cluster)[2]", "USERS", "owned-a", "owned-b"),
+                    since=marker,
+                )
                 marker = terminal.resize(40, 12)
                 wait(
                     "compact-curated-family",
@@ -325,6 +337,90 @@ def _drive(command, directory, url, api, *, evidence, flow, size, source, instal
                 wait(
                     "wide-curated-family-return",
                     ("clusterrolebindings(cluster)[2]", "USERS", "owned-a", "owned-b"),
+                    since=marker,
+                )
+            elif flow == "admission":
+                for plural, bindings, kind, field in (
+                    (
+                        "validatingadmissionpolicies",
+                        "validatingadmissionpolicybindings",
+                        "ValidatingAdmissionPolicy",
+                        "validations",
+                    ),
+                    (
+                        "mutatingadmissionpolicies",
+                        "mutatingadmissionpolicybindings",
+                        "MutatingAdmissionPolicy",
+                        "mutations",
+                    ),
+                ):
+                    title = plural + "(cluster)[2]"
+                    marker = route_command(
+                        "resource " + plural + ".admissionregistration.k8s.io/v1"
+                    )
+                    wait(
+                        "admission-policy:" + plural,
+                        (title, field.upper(), "owned-a", "owned-b", "live"),
+                        since=marker,
+                        predicate=lambda display: pair_order(display, ("1", "2"), (0, 1)),
+                    )
+                    marker = terminal.send(b"g\r")
+                    wait(
+                        "admission-policy-details:" + plural,
+                        (
+                            "details(Cluster/owned-a)",
+                            "kind: " + kind,
+                            "apiVersion: admissionregistration.k8s.io/v1",
+                            "sections:",
+                        ),
+                        since=marker,
+                    )
+                    marker = terminal.send(b"L")
+                    wait(
+                        "admission-bindings-link:" + plural,
+                        ("links(Cluster/owned-a)", "Bindings declaring this policy", "Available"),
+                        since=marker,
+                    )
+                    marker = terminal.send(b"\r")
+                    binding_title = bindings + "(cluster)[1]"
+                    wait(
+                        "admission-binding-membership:" + plural,
+                        (binding_title, "MATCH-RULES", "owned-a", "live"),
+                        since=marker,
+                        absent=("owned-b", "links("),
+                    )
+                    marker = terminal.send(b"g\r")
+                    wait(
+                        "admission-binding-details:" + plural,
+                        ("details(Cluster/owned-a)", "kind: " + kind + "Binding", "sections:"),
+                        since=marker,
+                    )
+                    marker = terminal.send(b"L")
+                    wait(
+                        "admission-current-policy-link:" + plural,
+                        ("links(Cluster/owned-a)", "Current named policy", "Available"),
+                        since=marker,
+                    )
+                    marker = terminal.send(b"\r")
+                    wait(
+                        "admission-current-policy:" + plural,
+                        (plural + "(cluster)[1]", "owned-a", "live"),
+                        since=marker,
+                        absent=("owned-b", "links("),
+                    )
+                    parent(binding_title, "owned-a")
+                    parent(title, "owned-a")
+                    families.extend((plural, bindings))
+                marker = terminal.resize(40, 12)
+                wait(
+                    "compact-admission-policy",
+                    ("mutatingadmissionpolic", "owned-a"),
+                    since=marker,
+                )
+                marker = terminal.resize(100, 30)
+                wait(
+                    "wide-admission-policy-return",
+                    ("mutatingadmissionpolicies(cluster)[2]", "MUTATIONS", "owned-a", "owned-b"),
                     since=marker,
                 )
             else:
@@ -436,13 +532,16 @@ def _drive(command, directory, url, api, *, evidence, flow, size, source, instal
                     since=marker,
                 )
             stage = "quit-and-terminal-restoration"
-            terminal.send(b"\x11")
+            terminal.send(b"\x03" if flow == "admission" else b"\x11")
             terminal.finish()
             normal_finish = True
             terminal.save_evidence(evidence)
         stage = "positive-audit-and-actual-module-bindings"
         assert kubeconfig.read_bytes() == before
         assert all(value.encode() not in terminal.transcript for value in _CANARIES)
+        log = directory / "kuberich.log"
+        if log.exists():
+            assert all(value.encode() not in log.read_bytes() for value in _CANARIES)
         audit_events = [json.loads(line) for line in audit.read_text().splitlines()]
         assert audit_events[0] == {"event": "loaded"}
         assert any(event["event"] == "socket.connect" for event in audit_events)
@@ -455,11 +554,16 @@ def _drive(command, directory, url, api, *, evidence, flow, size, source, instal
             assert source[relative] == observed["sha256"], relative
             assert Path(observed["path"]).is_relative_to(ROOT.resolve()) is not installed
         assert "src/kuberich/ui/app.py" in binding
-        assert (
-            "src/kuberich/ui/events.py" in binding
+        expected_module = (
+            "src/kuberich/ui/events.py"
             if flow == "events"
-            else "src/kuberich/domain/curated_access.py" in binding
+            else "src/kuberich/domain/curated_admission.py"
+            if flow == "admission"
+            else "src/kuberich/domain/curated_access.py"
         )
+        assert expected_module in binding
+        if flow == "families":
+            assert "src/kuberich/domain/curated_admission.py" in binding
         controls = _audit_controls(command, directory, environment)
         passed = True
         return {
@@ -507,7 +611,7 @@ async def terminal_curated(
     command, directory, *, evidence, flow, size=(100, 30), wheel_sha256=None
 ):
     """Own HTTP and a blocking PTY without blocking the fixture's async server."""
-    assert flow in {"families", "events"}
+    assert flow in {"families", "events", "admission"}
     directory.mkdir(parents=True, exist_ok=True)
     source = _hashes()
     api = CuratedTerminalApi()
@@ -557,6 +661,26 @@ async def terminal_curated(
                 ), name
             target = api.resource("deployments", group="apps").path("team") + "/owned-workload"
             assert any(item["path"] == target for item in requests)
+        elif flow == "admission":
+            for plural in (
+                "validatingadmissionpolicies",
+                "validatingadmissionpolicybindings",
+                "mutatingadmissionpolicies",
+                "mutatingadmissionpolicybindings",
+            ):
+                resource = api.resource(plural, version="v1")
+                path = resource.path(None)
+                assert any(
+                    item["path"] == path and "watch" not in item["query"] for item in requests
+                )
+                assert any(
+                    item["path"] == path and item["query"].get("watch") == "true"
+                    for item in requests
+                )
+                assert any(
+                    item["path"] == path + "/owned-a" and "watch" not in item["query"]
+                    for item in requests
+                )
         else:
             modern = "/apis/events.k8s.io/v1/namespaces/team/events"
             assert any(item["path"] == modern and "watch" in item["query"] for item in requests)

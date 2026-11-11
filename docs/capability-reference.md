@@ -81,13 +81,16 @@ from ownership.
 ### Services, Endpoints, EndpointSlices, Ingresses and NetworkPolicies
 **partial** — Service and Ingress tables are available. Version 0.4 adds curated EndpointSlice,
 NetworkPolicy and IngressClass tables and reported service backends with separate selector matches,
-preserving unknown endpoint identity and incomplete reads.
+preserving unknown endpoint identity and incomplete reads. Development source clarifies peer
+selectors and rule scope without testing network enforcement.
 ### Nodes, PV/PVC, StorageClasses, priority/scheduling, HPA/PDB/quota/limits
 **partial** — Node, PV, PVC and StorageClass tables are available. Version 0.4 adds curated HPA/VPA,
 PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable percentages and
 vendor-neutral extended-resource capacity. The cluster overview adds known pressure/unscheduled
 states; broader quota/disruption diagnostics remain planned. Relationships distinguish declared
-placement, PV/PVC bindings and static PriorityClass references.
+placement, PV/PVC bindings and static PriorityClass references. Development source separates
+scheduling declarations and generation-qualified scaling observations from placement or enforcement
+outcomes.
 ### ConfigMaps, Secrets, service accounts and RBAC resource families
 **partial** — ConfigMap/Secret payload views remain deliberate. Version 0.4 adds read-only
 ServiceAccount and RBAC summaries with declared links and authorization evidence.
@@ -223,9 +226,10 @@ backend, with an optional Vegeta program, conservative limits, cancellation and 
 results browser. HTTP/1.1 only; whole-Service balancing and exact per-second traffic ceilings are
 not claimed.
 ### Policy/quota/admission/scheduling views and removed-API handling
-**partial** — Version 0.4 adds read-only scaling, policy, scheduling, quota and webhook summaries.
-Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate supported
-schemas.
+**partial** — Published 0.4 provides scaling, policy, scheduling, quota and webhook summaries.
+Development source adds validating/mutating policy and binding exploration with declared matching
+and current-name links. Configured policy and observed status do not prove enforcement; unavailable
+APIs and unknown schemas remain explicit.
 ### Linux/macOS downloads, source installs and Homebrew
 **partial** — Install from PyPI, the project Homebrew tap, or GitHub Release archives. Linux/macOS
 and Python support depend on the selected channel and its documented platform requirements.

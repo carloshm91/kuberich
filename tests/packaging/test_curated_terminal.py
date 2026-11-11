@@ -8,7 +8,7 @@ from tests.support.curated_terminal import terminal_curated
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("flow", ["families", "events"])
+@pytest.mark.parametrize("flow", ["families", "events", "admission"])
 @pytest.mark.parametrize("entry_point", ["console", "module"])
 async def test_installed_curated_resources_native_keyboard_and_cleanup(
     installed_wheel, artifacts, tmp_path, flow, entry_point

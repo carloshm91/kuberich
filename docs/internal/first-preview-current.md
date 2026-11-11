@@ -1,5 +1,53 @@
 # Development checkpoint
 
+## Policy exploration implementation checkpoint — 2026-11-11 UTC
+
+A05 #80 is the active implementation issue. The validating-v1 thin spine passed
+actual owned HTTP/Pilot and kind discovery, Standard tables, details, policy and
+binding links, Back, stale-source/context refusal, forbidden reads and absence
+without version downgrade. The exact tested local command is:
+
+```sh
+uv run pytest tests/ui/test_admission_exploration.py -q --basetemp /tmp/kuberich-80-http-spine-2
+```
+
+Its nine cases passed in 11.59 seconds; the actual kind pair passed in 30.969
+seconds with unchanged inputs, sessions closed, generated kubeconfig unchanged
+and cluster/private-directory cleanup verified. Development source now includes
+all four policy/binding families at v1/v1beta1, bounded matching and parameter
+identities, exact-version current-name links, shared default payload concealment
+and narrow webhook/HPA/scheduling explanations. No parameter values are fetched
+and no enforcement simulator is claimed. After two public composition/version
+boundary corrections, all 23 families passed actual kind in 64.5607 seconds with
+326 unchanged inputs and complete cleanup. Four matching source-terminal cases
+passed in 41.71 seconds, the navigation cohort passed 304 cases, and 190 docs/site
+cases passed. Signed implementation `da5920fc78327c877d9c44735758d10fccebe7b7`
+then passed four fresh installed-wheel console/module cases in 66.88 seconds;
+all 320 Python payload modules matched source and cleanup passed. Complete
+coverage and normal hosted platform checks remain separate in
+[policy acceptance](acceptance/policy-exploration.md). The first hosted attempt
+caught a stale partial-webhook-URL assertion and a CodeQL heuristic on the
+apiVersion prefix classifier. Exact group/version parsing preserves the privacy
+contract, and 246 corrected boundary cases pass with 100% helper coverage;
+original failures remain retained. A later Fast attempt exposed a benchmark
+browser test that advanced before a canceled confirmation's owned callback
+retired. The public busy guard and a held-callback control preserve the original
+deadline; all 17 affected UI cases pass. The next hosted run passed the complete
+Fast selection (11,787 passed, one skipped) and all four native jobs/audits. Its
+source parts reported only a 26-word changelog entry against the existing
+25-word limit; the shortened entry passes all five style checks. Diagnostic
+coverage found no additional blocker, but a complete corrected hosted matrix is
+still required. That matrix passed Fast, all four native jobs and 15 source
+parts; the remaining macOS part caught a terminal-harness membership census
+exceeding its separate 0.5-second limit after the application had exited and
+restored its modes. The census now uses the existing absolute finish/cleanup
+deadline and rejects late results before releasing the verified owner. Aggregate
+budgets and strict cleanup checks remain unchanged; slow, late and hung census
+controls retain the original failure. All 51 owned-group/context regressions and
+12 changelog/internal-document cases pass. Current-head full verification is required.
+Published packages remain 0.4.0; no publication occurs. Earlier checkpoint text
+below is retained history, including #79 implementation and verification attempts.
+
 ## HTTP benchmarks usable implementation checkpoint — 2026-11-10 UTC
 
 A04 #79 is the active implementation issue. Clean signed source

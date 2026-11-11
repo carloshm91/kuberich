@@ -90,7 +90,9 @@ argument while preserving your namespace choice for later views.
 
 Other APIs, including custom resources, use discovery and server Table columns.
 `:resource widgets.example.test/v1` selects a specific family/version; the example
-is fictional. An omitted version follows discovery's preferred version.
+is fictional. An omitted version follows discovery's preferred version. A denied or incomplete
+higher-preference discovery is reported instead of silently selecting an older
+version; you can still explicitly choose a discovered version.
 Ambiguous aliases require qualification. No endpoint or API group is guessed.
 `:refresh` renews discovery and the current watch without replacing credentials.
 
@@ -183,6 +185,49 @@ messages and notes are excluded from default summary rows and text matching.
 Server-query changes retain the warnings, grouping and member choices. Screen
 exports record those choices and, for members, the exact group's identity
 fingerprint. Export metadata does not include raw Event messages or notes.
+
+
+### Admission and configured constraints
+
+Development source adds read-only validating and mutating admission policy and
+binding tables for discovered `admissionregistration.k8s.io/v1` and reviewed
+`v1beta1` schemas. For example:
+
+```text
+:vap
+:vapb
+:map
+:mapb
+:resource validatingadmissionpolicies.admissionregistration.k8s.io/v1beta1
+```
+
+Inspect a policy, open **Links**, and choose **Bindings declaring this policy**.
+The resulting collection matches exact `spec.policyName` declarations. A binding's
+**Current named policy** link reads that name through the selected discovered API
+version. These name relationships do not establish historical UID continuity.
+Back/Forward keeps the originating scope, membership, filter and cursor.
+
+Policy and binding selectors describe configured matching. Policy constraints and
+binding matching must both apply; exclusions take precedence. CEL conditions,
+request identity, conversion and admission evaluation are not simulated. Parameter
+kind, name or selector and explicit namespace are declarations; parameter values
+are never fetched. An omitted parameter namespace can depend on the admission
+request's namespace, which is separate from the workspace header.
+
+Validation actions and mutation/reinvocation types describe configuration, not an
+enforcement verdict. Default inspection, clipboard and exports conceal expressions,
+patches, messages, audit values, warning payloads and webhook URLs/CA bytes. Unknown
+or alpha schemas keep metadata fallback. Discovery reports absent or forbidden
+APIs without probing removed PodSecurityPolicy endpoints.
+
+NetworkPolicy details distinguish namespace-local Pod peers, namespace selectors,
+conjunction within a peer and alternatives between peers/rules. They do not test
+traffic or CNI enforcement. Quota status is delayed observed accounting per
+resource, and LimitRange defaults apply at admission rather than retroactively.
+HPA behavior and generation-qualified PDB/HPA status are observations or configured
+constraints, rather than promises of a scale or eviction outcome. Pod/Node details
+separate scheduling declarations from a Pod's reported `nodeName` placement;
+tolerations, affinity and priority do not establish scheduler feasibility.
 
 ## Snapshot inspection and live containers
 

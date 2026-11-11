@@ -365,11 +365,13 @@ class TerminalSession:
             raise TimeoutError("Terminal group observation exceeded its cleanup deadline.")
         # No command lines or credentials are collected. The live session
         # leader prevents its PGID from becoming an unrelated signal target.
+        # This single observation shares the caller's absolute deadline; a
+        # successful but late census must not release the session guard.
         rows = subprocess.run(
             ["ps", "-axo", "pid=,pgid="],
             capture_output=True,
             check=True,
-            timeout=min(0.5, remaining),
+            timeout=remaining,
         ).stdout
         if len(rows) > 1024 * 1024:
             raise RuntimeError("Terminal group observation exceeded its size limit.")
@@ -379,6 +381,8 @@ class TerminalSession:
             if group == self._owner_pid:
                 members.add(pid)
         self._verify_owner()
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Terminal group observation exceeded its cleanup deadline.")
         return members
 
     def _acknowledge_completion(self, deadline: float) -> None:

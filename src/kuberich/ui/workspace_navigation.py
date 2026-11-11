@@ -465,8 +465,10 @@ class WorkspaceNavigation:
             return
         discovery = self.workspace.discovery
         known = RESOURCE_ALIASES.get(resource.name)
-        preferred = discovery is not None and resource == discovery.resolve(
-            resource.name, group=resource.group
+        preferred = (
+            discovery is not None
+            and discovery.preferred_available(resource)
+            and resource == discovery.resolve(resource.name, group=resource.group)
         )
         builtin = (
             (resource.name == "events" and resource.group in {"", "events.k8s.io"})

@@ -18,6 +18,7 @@ from kuberich.domain.curated_navigation import (
     IngressClassName,
     LabelsMatch,
     PodRuntimeClass,
+    PolicyBindingMatch,
     ReferenceDestination,
     RelationshipDestination,
 )
@@ -128,6 +129,8 @@ def _discovered(
     if len({item.name for item in candidates}) != 1:
         raise AppError("Curated destination kind is ambiguous in discovery.")
     resource = candidates[0]  # Discovery preserves the advertised preferred-version order.
+    if version is None:
+        discovery.require_preferred(resource)
     _descriptor(resource)
     return resource
 
@@ -174,7 +177,14 @@ def _collection(
 ) -> ResolvedCollection:
     if not isinstance(
         destination.predicate,
-        (AllResources, LabelsMatch, PodRuntimeClass, IngressClassName, EventGroupMembers),
+        (
+            AllResources,
+            LabelsMatch,
+            PodRuntimeClass,
+            IngressClassName,
+            PolicyBindingMatch,
+            EventGroupMembers,
+        ),
     ):
         raise AppError("Curated collection requires a supported literal predicate.")
     api_segment(destination.resource)
