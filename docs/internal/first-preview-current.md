@@ -2,10 +2,11 @@
 
 ## Create-only resource checkpoint — 2026-11-11 UTC
 
-M10 #234 is the active implementation issue. The named ConfigMap service spine
-and offline file/private-editor checkpoint pass; template/clipboard breadth and
-complete final qualification are in progress. Source and published packages
-remain 0.4.0. No publication is performed or authorized by this checkpoint.
+M10 #234 is the active implementation issue. Development source provides six
+built-ins, selected-config user templates, explicit file/clipboard/paste capture,
+private draft editing and separate strict server review/creation. Source and
+published packages remain 0.4.0. Complete final qualification is in progress;
+no publication is performed or authorized by this checkpoint.
 
 M09 #233 is delivered by protected signed-off squash
 `7b69e226189758c805d1d67c10b01630c8ccbb2c`, parent
@@ -30,7 +31,24 @@ uv run python -m scripts.verify_manifests_kind --creation-spine --kind /absolute
 uv run pytest -q tests/terminal/test_resource_creation.py -x -n 0 --basetemp=/tmp/kuberich-234-source-pty-04
 ```
 
-The [creation acceptance record](acceptance/resource-creation.md) retains original
+Later signed producer `b94d277` passed 110 actual owned-kind creation and existing
+Apply/Delete regression checks, including user/built-in templates, CRD served
+schemas/defaults/CEL/preserved unknown fields, quota/Pod Security/admission,
+partial batches and lost-receipt uncertainty. All 342 measured inputs remained
+unchanged and the owned cluster was deleted. Signed `3976e3c` passed three public
+CLI PTYs, including initially offline capture followed by explicit Connect &
+Review, and eleven private editor PTYs. Fresh installed-wheel console/module
+creation and shell-editor checks passed four cases at `b94d277` in 21.49 seconds:
+
+```sh
+uv run pytest -q tests/packaging/test_resource_creation_cli.py tests/packaging/test_distribution.py::test_installed_creation_draft_import_editor_and_terminal_restoration -x -n 0 --basetemp=/tmp/kuberich-234-wheel-01
+```
+
+Subsequent private-template edits preserve public routing identities, and Stop
+retains a draft for fresh editor disclosure/review. These later changes require
+their focused controls and the final exact-head hosted platform matrix; earlier
+proofs keep their original producer identities. The
+[creation acceptance record](acceptance/resource-creation.md) retains original
 failures and the separate private-root counterexample/correction. Strict server
 validation is authoritative; no offline schema completeness, namespace-UID atomic
 precondition, write replay, provider or final release qualification is claimed.

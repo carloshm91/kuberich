@@ -39,7 +39,12 @@ async def test_capture_is_offline_immutable_and_preserves_private_source(tmp_pat
 
 
 @pytest.mark.asyncio
-async def test_declared_private_template_stays_opaque_after_editor_moves_value(tmp_path):
+@pytest.mark.parametrize(
+    "change", ["content", "name", "namespace", "kind", "version", "add", "remove", "duplicate"]
+)
+async def test_declared_private_template_editor_preserves_public_identity_and_opaque_content(
+    tmp_path, change
+):
     from kuberich.domain.manifests import manifest_preview
     from kuberich.domain.resource_templates import TemplateCatalogEntry, parse_resource_template
     from kuberich.services.resource_templates import TemplateCatalogService
@@ -66,7 +71,12 @@ async def test_declared_private_template_stays_opaque_after_editor_moves_value(t
                         "kind": "Pod",
                         "metadata": {"name": "owned"},
                         "spec": {"containers": [{"name": "owned", "image": ""}]},
-                    }
+                    },
+                    {
+                        "apiVersion": "v1",
+                        "kind": "ConfigMap",
+                        "metadata": {"name": "original-second"},
+                    },
                 ],
             }
         )
@@ -88,19 +98,37 @@ async def test_declared_private_template_stays_opaque_after_editor_moves_value(t
         assert PRIVATE not in before and "containers" not in before
         disclosure = await service.prepare_editor()
         command = await service.open_editor(service.confirm_disclosure(disclosure))
-        value = json.loads(source.body)
+        value = json.loads(source.documents[0].body)
+        second = json.loads(source.documents[1].body)
         private = value["spec"]["containers"][0].pop("image")
         value["metadata"]["annotations"] = {PRIVATE: private}
-        Path(command.argv[-1]).write_bytes(
-            canonical_manifest(
-                {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": "added-first"}}
-            )
-            + b"\n---\n"
-            + canonical_manifest(value)
-        )
+        values = [second, value]
+        if change in {"name", "namespace"}:
+            value["metadata"][change] = PRIVATE
+        elif change == "kind":
+            value["kind"] = PRIVATE.replace("-", "")
+        elif change == "version":
+            value["apiVersion"] = PRIVATE + ".example/v1"
+        elif change == "add":
+            values.append({"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": PRIVATE}})
+        elif change == "remove":
+            values = [value]
+        elif change == "duplicate":
+            values.append(second)
+        draft = Path(command.argv[-1])
+        draft.write_bytes(b"\n---\n".join(canonical_manifest(item) for item in values))
+        if change != "content":
+            with pytest.raises(
+                AppError, match="preserve the captured resource identities"
+            ) as error:
+                await service.finish_editor(succeeded=True)
+            assert PRIVATE not in str(error.value)
+            assert service.current_source is source and not draft.exists()
+            await service.require_source(source)
+            return
         changed = await service.finish_editor(succeeded=True)
-        assert changed is not None and changed.private_preview
-        assert tuple(item.name for item in changed.documents) == ("added-first", "owned")
+        assert changed is not None and changed.private_preview and not draft.exists()
+        assert tuple(item.name for item in changed.documents) == ("original-second", "owned")
         assert PRIVATE in changed.body.decode() and PRIVATE not in repr(changed)
         after = "".join(manifest_preview(None, changed.body, private=changed.private_preview))
         assert PRIVATE not in after and "annotations" not in after

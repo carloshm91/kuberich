@@ -475,5 +475,8 @@ draft's ordinary content preview opaque, including keys and server/editor copies
 Sensitivity remains after editing or reordering objects. Name/namespace routing
 values must remain visible, so a sensitive parameter cannot supply them. A fresh
 trusted-editor disclosure permits deliberate inspection; it does not enable
-ordinary export or history disclosure. Changing source, parameters, destination
+ordinary export or history disclosure. Private-template edits preserve the captured
+GVK, name and namespace of every object; object order may change. Use the template's
+public parameter controls and capture a fresh draft to change those identities.
+Changing source, parameters, destination
 or connection requires fresh validation and confirmation.

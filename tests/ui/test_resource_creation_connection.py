@@ -1,21 +1,25 @@
 """Explicit selected-context connection keeps an offline draft and owns cancellation."""
 
 import asyncio
+import json
 import logging
 import threading
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import pytest
-from textual.widgets import Button, Input
+from textual.widgets import Button, Checkbox, Input
 
 from kuberich.config.paths import ConfigLocation
 from kuberich.config.schema import Settings, parse_document
 from kuberich.domain.commands import Command
 from kuberich.domain.connections import ConnectionState
+from kuberich.domain.processes import ProcessResult, ProcessStatus
 from kuberich.domain.views import ViewStatus
 from kuberich.services.appearance import PreferenceSource
 from kuberich.services.manifests import ManifestMutationService
 from kuberich.services.mutations import MutationManager
+from kuberich.services.resource_creation import ResourceCreationService
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.manifest_review import ManifestReviewScreen
 from kuberich.ui.resource_creation import ResourceCreationScreen
@@ -308,3 +312,157 @@ async def test_unchanged_or_stale_initial_namespace_event_cannot_retire_fresh_va
             await pilot.press("escape")
             await wait_for(lambda: len(app.screen_stack) == 1)
         await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_stop_prepares_fresh_consent_for_same_edited_draft_without_recapture(
+    tmp_path, monkeypatch
+):
+    from kuberich.ui import resource_creation
+
+    captures, edits = [], []
+    capture_file = ResourceCreationService.capture_file
+
+    async def capture_once(owner, path):
+        captures.append(path)
+        return await capture_file(owner, path)
+
+    async def handoff(app, runner, command, *, guard):
+        guard()
+        path = Path(command.argv[-1])
+        value = (
+            json.loads(path.read_text())
+            if edits
+            else {
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "metadata": {"name": "owned-connection"},
+                "data": {"private": "owned-connection-private"},
+            }
+        )
+        if edits:
+            assert value["metadata"]["labels"]["example.io/phase"] == "before-stop"
+        phase = "after-stop" if edits else "before-stop"
+        value["metadata"]["labels"] = {"example.io/phase": phase}
+        path.write_text(json.dumps(value))
+        edits.append(phase)
+        return ProcessResult(ProcessStatus.SUCCEEDED, 0)
+
+    monkeypatch.setattr(ResourceCreationService, "capture_file", capture_once)
+    monkeypatch.setattr(resource_creation, "terminal_handoff", handoff)
+    async with owned_server(hold=True) as server:
+        app = initial_app(tmp_path, server)
+        async with app.run_test() as pilot:
+            creator, original = await capture(app, pilot)
+            creator.query_one("#creation-disclosure", Checkbox).value = True
+            await click_ready(app, pilot, creator.query_one("#creation-edit", Button))
+            await wait_for(lambda: "Draft updated" in str(creator.status.render()))
+            edited = creator.service.current_source
+            assert edited is not original and edited is not None
+            disclosure = creator.disclosure
+            creator.query_one("#creation-disclosure", Checkbox).value = True
+            await click_ready(app, pilot, creator.query_one("#creation-review", Button))
+            await wait_for(server.namespace_requested.is_set)
+            await click_ready(app, pilot, creator.query_one("#creation-stop", Button))
+            await wait_for(
+                lambda: (
+                    "Operation stopped" in str(creator.status.render())
+                    and not creator.query_one("#creation-edit", Button).disabled
+                )
+            )
+            assert creator.service.current_source is edited
+            assert creator.service.current_source.generation == edited.generation
+            assert creator.disclosure is not None and creator.disclosure is not disclosure
+            assert creator.disclosure.source is edited
+            assert not creator.query_one("#creation-disclosure", Checkbox).value
+            creator.query_one("#creation-disclosure", Checkbox).value = True
+            await click_ready(app, pilot, creator.query_one("#creation-edit", Button))
+            await wait_for(
+                lambda: (
+                    edits == ["before-stop", "after-stop"]
+                    and "Draft updated" in str(creator.status.render())
+                )
+            )
+            assert len(captures) == 1
+            assert (
+                json.loads(creator.service.current_source.body)["metadata"]["labels"][
+                    "example.io/phase"
+                ]
+                == "after-stop"
+            )
+            assert (tmp_path / "draft.yaml").read_text() == BODY and not server.requests
+            await pilot.press("escape")
+            await wait_for(lambda: len(app.screen_stack) == 1)
+
+
+@pytest.mark.asyncio
+async def test_back_joins_held_stop_disclosure_before_retiring_foreground(tmp_path, monkeypatch):
+    async with owned_server(hold=True) as server:
+        app = initial_app(tmp_path, server)
+        async with app.run_test() as pilot:
+            creator, source = await capture(app, pilot)
+            entered, release = asyncio.Event(), asyncio.Event()
+            prepare = ResourceCreationService.prepare_editor
+
+            async def held(owner):
+                intent = await prepare(owner)
+                entered.set()
+                await release.wait()
+                return intent
+
+            monkeypatch.setattr(ResourceCreationService, "prepare_editor", held)
+            await click_ready(app, pilot, creator.query_one("#creation-review", Button))
+            await wait_for(server.namespace_requested.is_set)
+            await click_ready(app, pilot, creator.query_one("#creation-stop", Button))
+            await wait_for(entered.is_set)
+            assert creator.service.current_source is source and creator.operation_count > 0
+            assert creator.query_one("#creation-edit", Button).disabled
+            back = asyncio.create_task(pilot.press("escape"))
+            try:
+                await wait_for(lambda: creator.stopped)
+                assert app.screen is creator and creator.operation_count > 0
+                assert await creator.wait_for_refresh()
+            finally:
+                release.set()
+                await back
+            await wait_for(lambda: len(app.screen_stack) == 1)
+            assert creator.disclosure is None and creator.service.current_source is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["readonly", "source"])
+async def test_stop_disclosure_rejects_policy_or_source_changed_after_preparation(
+    tmp_path, monkeypatch, change
+):
+    async with owned_server(hold=True) as server:
+        app = initial_app(tmp_path, server)
+        async with app.run_test() as pilot:
+            creator, source = await capture(app, pilot)
+            entered, release = asyncio.Event(), asyncio.Event()
+            prepare = ResourceCreationService.prepare_editor
+
+            async def held(owner):
+                intent = await prepare(owner)
+                entered.set()
+                await release.wait()
+                return intent
+
+            monkeypatch.setattr(ResourceCreationService, "prepare_editor", held)
+            await click_ready(app, pilot, creator.query_one("#creation-review", Button))
+            await wait_for(server.namespace_requested.is_set)
+            await click_ready(app, pilot, creator.query_one("#creation-stop", Button))
+            await wait_for(entered.is_set)
+            assert creator.service.current_source is source
+            if change == "readonly":
+                creator.service.policy.tighten()
+            else:
+                creator.file.value = "different.yaml"
+                await pilot.pause()
+            release.set()
+            await wait_for(lambda: "Source or policy changed" in str(creator.status.render()))
+            assert (
+                creator.disclosure is None and creator.query_one("#creation-edit", Button).disabled
+            )
+            assert not server.requests
+            await pilot.press("escape")
+            await wait_for(lambda: len(app.screen_stack) == 1)

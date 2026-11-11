@@ -85,11 +85,11 @@ def test_completions_are_literal_bounded_case_preserving_and_deduplicated():
         "context",
         "contexts",
         "cordon",
+        "create",
         "ctx",
         "cj",
         "clusterrole",
         "clusterrolebindings",
-        "clusterroles",
     )
     assert suggestions("ct", (), ()) == ("ctx",)
     assert suggestions("cl", (), ()) == (

@@ -100,6 +100,11 @@ they execute no expressions, hooks or includes. Sensitive input makes all conten
 previews opaque, including keys and admission/editor copies. This property stays
 with the draft through editing. Sensitive parameters cannot supply routing names
 or namespaces, which must be visible in exact destination review and history.
+Private-template editor results preserve the multiset of literal GVK/name/namespace
+identities, allowing reordering while refusing added or changed public identities
+before adopting the edited source. Routing changes use a fresh template capture
+through public parameter controls, keeping arbitrary private editor content out
+of routing review and history.
 Raw source/request/default/enum bytes and source/rendered digests stay out of repr
 and ordinary diagnostic results. Private editor directories have explicit lifetime
 and captured root/parent identities; replacement cleanup refusal retains ownership

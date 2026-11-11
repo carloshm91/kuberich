@@ -6,10 +6,12 @@ development checkpoints from complete issue, platform and release qualification.
 
 ## Current status
 
-The create-only ConfigMap service and source editor checkpoints pass. Template,
-clipboard, batch, schema/admission, installed/native and final hosted verification
-are being completed on the issue branch. No tag, package, website, DNS or
-repository visibility change is authorized by this work.
+Development source includes the complete creation workflow. Coherent owned-kind,
+public source-terminal and fresh installed-wheel checkpoints pass at the distinct
+producers below. Later private-editor routing and retained-draft corrections have
+focused controls; complete final current-source/platform qualification remains
+pending. No tag, package, website, DNS or repository visibility change is
+authorized by this work.
 
 The protected base is `7b69e226189758c805d1d67c10b01630c8ccbb2c`, the delivered
 #233 squash. Its tree is `ae978481c19859223d47c272b84b7ab65ffcceb8`; see the
@@ -35,6 +37,9 @@ That earlier issue's successful CI does not qualify creation behavior.
   opaque, including map keys and server/editor copies. Routing identities remain
   visible, so sensitive parameters cannot supply names or namespaces. Trusted
   editor disclosure remains explicit and does not authorize ordinary export.
+  Private-template editor results preserve the captured literal GVK/name/namespace
+  multiset, allowing reordering and requiring a fresh template capture for routing
+  changes; refused edits retain the prior immutable draft without echoing values.
 - Source replacement, parameters, namespace and session generations retire old
   validation and confirmation. A clipboard capture is immutable and is never
   reread on Confirm.
@@ -106,11 +111,75 @@ garbage-collection and cancelled-discard controls pass; the independent original
 counterexample and green repeat retain separate receipts. Cleanup refusal stays
 visible and retains the owner for retry; it is not reported as complete cleanup.
 
+## Coherent creation and regression checkpoints
+
+Signed producer `b94d2772f7d88e429fd1f05e2de36efe1cbfbeff` passed 110 owned-kind
+check occurrences (88 unique names), including all six built-ins and a selected-config user template, actual
+201 receipts matched to independent GETs, zero replicas, changed-template refusal,
+served-version CRD schemas/defaults/nullable values/CEL/preserved unknown regions,
+ResourceQuota, Pod Security and validating admission. Partial and committed-write
+cancellation cases retain known outcomes or uncertainty, keep later items unsent
+and do not replay. Existing Apply/Delete, Kustomize, scope, race, RBAC, immutable
+field and actual public Pilot review regressions pass in the same run.
+
+Reproduce with explicit owned tool paths:
+
+```sh
+uv run python -m scripts.verify_manifests_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl --evidence artifacts/issue234/full-kind-03.json
+```
+
+The report SHA-256 is
+`0fb4fc0e5c066c2bb497ad98424e98a19a731926a0ec3b891fdb1e8794dbe70f`.
+All 342 measured inputs stayed unchanged; every owned service/worker/private
+connection drained, kubeconfig/sentinel bytes stayed unchanged, and independent
+inspection confirmed disposable-cluster deletion. This is Linux amd64 kind
+1.36.4 evidence, not provider or complete platform certification.
+The actual owned-tool argv and coherent report/log identities are retained in
+ignored `artifacts/issue234/coherent-producer-receipts.json`, SHA-256
+`6d7edf981ee7527903ff33824b555ead917f8be0e966900d918b018f1d1676ec`.
+
+Original `full-kind-01` failed because the new verifier expected Forbidden for
+an admission policy whose default reason returns HTTP 422 Invalid. The application
+correctly refused it; the verifier now expects Rejected. `full-kind-02` passed all
+new creation cases, then failed when the new quota fixture reused the existing
+Apply quota namespace. Only the new fixture namespace changed. Both original
+reports/logs remain retained with unchanged-source and complete cleanup results.
+
+Signed producer `3976e3c` passed three actual public CLI PTYs in 13.53 seconds:
+known 201 UID/version and server-default review, committed-write cancellation
+with missing receipt/unsent later item/no replay, and initially offline capture
+followed by explicit Connect & Review of the same draft. Eleven source editor
+PTYs passed in 28.92 seconds, including eight Python-editor cases and three
+`/bin/sh` cases at 80×24. Full terminal/log private-sentinel absence, public
+foreground feedback, handler drain and restored terminal modes were checked.
+
+The exact tested commands were:
+
+```sh
+uv run pytest -q tests/terminal/test_resource_creation_cli.py -x -n 0 --basetemp=/tmp/kuberich-234-public-cli-03
+uv run pytest -q tests/terminal/test_resource_creation.py -x -n 0 --basetemp=/tmp/kuberich-234-source-pty-05
+uv run pytest -q tests/packaging/test_resource_creation_cli.py tests/packaging/test_distribution.py::test_installed_creation_draft_import_editor_and_terminal_restoration -x -n 0 --basetemp=/tmp/kuberich-234-wheel-01
+```
+
+The last command passed four fresh installed-wheel cases in 21.49 seconds at
+`b94d277`: both console/module entrypoints exercised initially offline public
+connection/review/creation and the private shell editor outside the checkout.
+The wheel SHA-256 is
+`f02dfaf3527b74026230d3bab2f0cf1f9a86268c900a3e2eb1762f5c839c3152`;
+all 337 packaged Python modules match the committed producer's bytes.
+Earlier CLI namespace-event and rendered-footer harness failures retain their
+original identities and logs; successful runs do not relabel them.
+
+These checkpoints precede the final private-template editor identity guard and
+Stop disclosure restoration. Their original input/producer identities remain
+historical; focused current-source controls and the ordinary exact-head hosted
+matrix qualify later changes.
+
 ## Remaining qualification
 
-Complete current-source built-in/user/clipboard/schema/admission/batch trials,
-source/installed/native workflows, all changed critical modules at 100%, whole
-production/branch/changed-line gates, docs/site checks and the ordinary exact-head
-hosted matrix remain separate requirements. Provider certification remains Q05
+All changed critical modules at 100%, complete current-source private/import/docs
+checks, whole production/branch/changed-line gates, native workflows and the
+ordinary exact-head hosted matrix remain separate requirements. Provider
+certification remains Q05
 #87. D09 #82 owns cumulative v0.5 qualification and any source version change;
 publication requires separate approval.

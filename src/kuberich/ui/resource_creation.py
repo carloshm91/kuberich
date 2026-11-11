@@ -139,6 +139,7 @@ class ResourceCreationScreen(ModalScreen[None]):
         self.page = 0
         self.disclosure: DraftDisclosureIntent | None = None
         self._operation_task: asyncio.Task[None] | None = None
+        self._stopping: asyncio.Task[None] | None = None
         self._stopped = False
         self._cleanup_failed = False
 
@@ -150,6 +151,7 @@ class ResourceCreationScreen(ModalScreen[None]):
     def operation_count(self) -> int:
         return (
             int(self._operation_task is not None and not self._operation_task.done())
+            + int(self._stopping is not None and not self._stopping.done())
             + self.service.operation_count
             + self.catalog.operation_count
         )
@@ -206,7 +208,9 @@ class ResourceCreationScreen(ModalScreen[None]):
     def _controls(self) -> None:
         if not self.viewer.is_attached:
             return
-        busy = self._operation_task is not None and not self._operation_task.done()
+        busy = (self._operation_task is not None and not self._operation_task.done()) or (
+            self._stopping is not None and not self._stopping.done()
+        )
         source = self.service.current_source
         choice = self.source_choice.value
         template = choice in {"builtin", "user"}
@@ -252,7 +256,11 @@ class ResourceCreationScreen(ModalScreen[None]):
         self.query_one("#creation-next", Button).disabled = self.page + 1 >= len(self.pages)
 
     def _start(self, operation: Callable[[], Awaitable[str]]) -> None:
-        if self._stopped or (self._operation_task is not None and not self._operation_task.done()):
+        if (
+            self._stopped
+            or (self._operation_task is not None and not self._operation_task.done())
+            or (self._stopping is not None and not self._stopping.done())
+        ):
             return
         self._operation_task = asyncio.create_task(self._run(operation))
         self._operation_task.add_done_callback(self._retired)
@@ -651,6 +659,18 @@ class ResourceCreationScreen(ModalScreen[None]):
             self.run_worker(self.action_back())
 
     async def action_stop(self) -> None:
+        if self._stopping is None or self._stopping.done():
+            self._stopping = asyncio.create_task(self._stop_action())
+        stopping = self._stopping
+        self._controls()
+        try:
+            await finish_owned(stopping)
+        finally:
+            if self._stopping is stopping and stopping.done():
+                self._stopping = None
+            self._controls()
+
+    async def _stop_action(self) -> None:
         task = self._operation_task
         if task is not None:
             task.cancel()
@@ -658,10 +678,34 @@ class ResourceCreationScreen(ModalScreen[None]):
         self._operation_task = None
         await self.service.close_draft()
         self.disclosure = None
-        self._controls()
+        source, generation = self.service.current_source, self._capture_generation
+        if self._current():
+            self.query_one("#creation-disclosure", Checkbox).value = False
+            if source is not None and not self.service.policy.read_only:
+                try:
+                    disclosure = await self.service.prepare_editor()
+                except AppError as error:
+                    if self._current():
+                        self.status.update(safe_text(str(error)))
+                    return
+                if (
+                    not self._current()
+                    or self.service.current_source is not source
+                    or disclosure.source is not source
+                    or self._capture_generation != generation
+                    or self.service.policy.read_only
+                ):
+                    if self._current():
+                        self.status.update(
+                            "Source or policy changed · fresh editor disclosure required."
+                        )
+                    return
+                self.disclosure = disclosure
         if self._current():
             self.status.update(
-                "Operation stopped · frozen draft retained; explicitly Review or capture a new source."
+                "Operation stopped · read-only mode blocks fresh editor disclosure and creation."
+                if self.service.policy.read_only
+                else "Operation stopped · frozen draft retained; explicitly Review or capture a new source."
                 if self.service.current_source is not None
                 else "Operation stopped · capture a fresh source."
             )

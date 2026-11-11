@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import threading
+from collections import Counter
 from collections.abc import Awaitable, Callable, Coroutine, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -314,6 +315,17 @@ class ResourceCreationService:
                     private_preview=original.private_preview,
                 )
             )
+            if original.private_preview and Counter(
+                (item.api_version, item.kind, item.name, item.namespace)
+                for item in source.documents
+            ) != Counter(
+                (item.api_version, item.kind, item.name, item.namespace)
+                for item in original.documents
+            ):
+                raise AppError(
+                    "Private template edits must preserve the captured resource identities. "
+                    "Capture a fresh template to change them."
+                )
             await self._require_source(original)
             self.require_editor_current()
             self._generation = generation
