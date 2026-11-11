@@ -239,6 +239,39 @@ lines (100%). Original failed JUnit/statuses remain intact and the diagnostic
 receipt explicitly sets source qualification false. No passing source receipt
 was fabricated; this failed run still requires a genuine corrected-head matrix.
 
+## Terminal membership observation correction
+
+Application run
+[42950685427](https://github.com/carloshm91/kuberich/actions/runs/42950685427)
+on `32e0ba135ab995c2c436541d3e60ec0b25ec4051` passed Fast, all four native jobs
+and 15 source parts. The remaining macOS part reported one failure, 3,258 passes
+and four skips in 790.46 seconds. After successful context/namespace navigation,
+the application exited with restored terminal modes, but the harness's subsequent
+`ps` membership census exceeded its independent 0.5-second subprocess limit.
+The original failure receipt records actual exit zero, unchanged terminal modes
+and complete later owner/group/descriptor cleanup. It does not establish that
+the failed census would have completed within the overall deadline.
+
+The single census now shares the caller's existing absolute deadline and rejects
+any result observed at or after that deadline before acknowledging its owner.
+The 15-second finish and three-second cleanup-phase budgets, verified owner,
+exact membership and restoration requirements remain unchanged. No observation
+retry or uncertain-to-empty fallback was added. A real delayed census reproduces
+the former 0.5-second refusal; a separate late-result control reproduces the
+former missing expiry check. Hung observation still refuses acknowledgement and
+its actual `Popen` child is killed and reaped. Original RED and hosted receipts
+remain retained under `artifacts/issue80/hosted-04/`.
+
+The final owned-group/context regression command passed 51 cases in 60.79 seconds:
+
+```sh
+uv run pytest -q tests/terminal/test_owner_cleanup.py tests/terminal/test_contexts.py --basetemp=/tmp/kuberich-80-membership-regressions-02
+```
+
+Ruff, formatting and strict helper types passed. The changelog/internal-document
+cohort passed all 12 cases in 7.24 seconds. A complete corrected-head ordinary
+matrix remains required; the failed run is not qualified by these focused checks.
+
 ## Remaining qualification at this source freeze
 
 The ordinary 27-job PR matrix, complete independent production/changed-line

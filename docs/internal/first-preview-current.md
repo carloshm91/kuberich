@@ -37,7 +37,14 @@ Fast selection (11,787 passed, one skipped) and all four native jobs/audits. Its
 source parts reported only a 26-word changelog entry against the existing
 25-word limit; the shortened entry passes all five style checks. Diagnostic
 coverage found no additional blocker, but a complete corrected hosted matrix is
-still required.
+still required. That matrix passed Fast, all four native jobs and 15 source
+parts; the remaining macOS part caught a terminal-harness membership census
+exceeding its separate 0.5-second limit after the application had exited and
+restored its modes. The census now uses the existing absolute finish/cleanup
+deadline and rejects late results before releasing the verified owner. Aggregate
+budgets and strict cleanup checks remain unchanged; slow, late and hung census
+controls retain the original failure. All 51 owned-group/context regressions and
+12 changelog/internal-document cases pass. Current-head full verification is required.
 Published packages remain 0.4.0; no publication occurs. Earlier checkpoint text
 below is retained history, including #79 implementation and verification attempts.
 

@@ -6,6 +6,7 @@ import fcntl
 import json
 import os
 import signal
+import subprocess
 import sys
 import time
 from contextlib import suppress
@@ -626,6 +627,119 @@ def test_expired_membership_observation_cannot_report_an_empty_group(tmp_path):
         with pytest.raises(TimeoutError, match="group observation exceeded"):
             terminal._group_members(time.monotonic() - 1)
     assert terminal.cleanup["status"] == "complete"
+    assert_descriptors_closed(terminal)
+
+
+def test_slow_membership_observation_can_acknowledge_within_the_existing_deadline(
+    tmp_path, monkeypatch
+):
+    command = [sys.executable, "-c", "import os;os.write(1,b'completed-child')"]
+    terminal = TerminalSession(command, tmp_path)
+    original_run = subprocess.run
+    observations = []
+
+    def slow_census(command, *args, **kwargs):
+        assert command == ["ps", "-axo", "pid=,pgid="]
+        started = time.monotonic()
+        result = original_run(
+            [
+                sys.executable,
+                "-c",
+                "import os,sys,time;time.sleep(0.65);os.execvp('ps',['ps',*sys.argv[1:]])",
+                *command[1:],
+            ],
+            *args,
+            **kwargs,
+        )
+        observations.append(time.monotonic() - started)
+        return result
+
+    with terminal:
+        terminal.wait_for(b"completed-child")
+        deadline = time.monotonic() + 3
+        while terminal.completion is None:
+            terminal.read()
+            assert time.monotonic() < deadline
+        assert terminal.completion["exit"] == 0
+        with monkeypatch.context() as query:
+            query.setattr(subprocess, "run", slow_census)
+            terminal._acknowledge_completion(deadline)
+        assert observations and observations[0] > 0.5
+        assert time.monotonic() < deadline and terminal._acknowledged
+        terminal.process.wait(timeout=deadline - time.monotonic())
+    assert len(observations) == 1
+    assert terminal.cleanup["status"] == "complete" and terminal.cleanup["group"] == "gone"
+    assert_descriptors_closed(terminal)
+
+
+def test_late_membership_observation_cannot_acknowledge_a_completed_owner(tmp_path, monkeypatch):
+    command = [sys.executable, "-c", "import os;os.write(1,b'completed-child')"]
+    terminal = TerminalSession(command, tmp_path)
+    with terminal:
+        terminal.wait_for(b"completed-child")
+        deadline = time.monotonic() + 3
+        while terminal.completion is None:
+            terminal.read()
+            assert time.monotonic() < deadline
+        observations = iter((deadline - 3, deadline))
+        with monkeypatch.context() as clock:
+            clock.setattr(
+                pty_support, "time", SimpleNamespace(monotonic=lambda: next(observations))
+            )
+            with pytest.raises(TimeoutError, match="group observation exceeded"):
+                terminal._acknowledge_completion(deadline)
+        assert not terminal._acknowledged and not terminal._acknowledgement_attempted
+        assert os.fstat(terminal.acknowledgement_write)
+    assert terminal.cleanup["status"] == "complete" and terminal.cleanup["group"] == "gone"
+    assert_descriptors_closed(terminal)
+
+
+def test_hung_membership_census_times_out_without_acknowledgement_and_is_reaped(
+    tmp_path, monkeypatch
+):
+    command = [sys.executable, "-c", "import os;os.write(1,b'completed-child')"]
+    terminal = TerminalSession(command, tmp_path)
+    original_run = subprocess.run
+    original_popen = subprocess.Popen
+    census_processes = []
+    observations = []
+
+    def owned_popen(*args, **kwargs):
+        process = original_popen(*args, **kwargs)
+        census_processes.append(process)
+        return process
+
+    def hung_census(command, *args, **kwargs):
+        assert command == ["ps", "-axo", "pid=,pgid="]
+        observations.append(True)
+        return original_run(
+            [
+                sys.executable,
+                "-c",
+                "import signal;signal.pause()",
+            ],
+            *args,
+            **kwargs,
+        )
+
+    with terminal:
+        terminal.wait_for(b"completed-child")
+        deadline = time.monotonic() + 3
+        while terminal.completion is None:
+            terminal.read()
+            assert time.monotonic() < deadline
+        with monkeypatch.context() as query:
+            query.setattr(subprocess, "run", hung_census)
+            query.setattr(subprocess, "Popen", owned_popen)
+            with pytest.raises(subprocess.TimeoutExpired):
+                terminal._acknowledge_completion(time.monotonic() + 0.25)
+        assert observations == [True]
+        assert not terminal._acknowledged and not terminal._acknowledgement_attempted
+        assert len(census_processes) == 1
+        assert census_processes[0].returncode == -signal.SIGKILL
+        assert census_processes[0].wait(timeout=0) == -signal.SIGKILL
+        assert os.fstat(terminal.acknowledgement_write)
+    assert terminal.cleanup["status"] == "complete" and terminal.cleanup["group"] == "gone"
     assert_descriptors_closed(terminal)
 
 
