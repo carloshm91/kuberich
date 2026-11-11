@@ -133,3 +133,32 @@ def test_other_resource_fields_remain_available_in_default_exports():
     }
     resource = ResourceSource(resource=api, record=resource_record(api, body))
     assert prepared(resource, "resource-yaml").payload.count(b"ordinary") == 4
+
+
+@pytest.mark.parametrize(
+    "version,recognized",
+    [
+        ("admissionregistration.k8s.io/v1", True),
+        ("admissionregistration.k8s.io/v1beta1", True),
+        ("admissionregistration.k8s.io/v1alpha1", True),
+        ("admissionregistration.k8s.io/future", True),
+        ("admissionregistration.k8s.io/", True),
+        ("admissionregistration.k8s.io", False),
+        ("https://admissionregistration.k8s.io/v1", False),
+        ("foreign.example/admissionregistration.k8s.io/v1", False),
+        ("admissionregistration.k8s.io.foreign.example/v1", False),
+        ("foreign-admissionregistration.k8s.io/v1", False),
+    ],
+)
+def test_api_group_classification_uses_literal_partition_and_preserves_version_independent_privacy(
+    version, recognized
+):
+    from kuberich.domain.inspection import REDACTED, redacted
+
+    body = {
+        "apiVersion": version,
+        "kind": "ValidatingAdmissionPolicy",
+        "spec": {"expression": MARKER},
+    }
+    assert admission_document(body) is recognized
+    assert redacted(body)["spec"]["expression"] == (REDACTED if recognized else MARKER)

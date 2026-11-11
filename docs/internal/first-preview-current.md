@@ -25,7 +25,11 @@ cases passed. Signed implementation `da5920fc78327c877d9c44735758d10fccebe7b7`
 then passed four fresh installed-wheel console/module cases in 66.88 seconds;
 all 320 Python payload modules matched source and cleanup passed. Complete
 coverage and normal hosted platform checks remain separate in
-[policy acceptance](acceptance/policy-exploration.md).
+[policy acceptance](acceptance/policy-exploration.md). The first hosted attempt
+caught a stale partial-webhook-URL assertion and a CodeQL heuristic on the
+apiVersion prefix classifier. Exact group/version parsing preserves the privacy
+contract, and 246 corrected boundary cases pass with 100% helper coverage;
+original failures remain retained and the corrected hosted matrix is required.
 Published packages remain 0.4.0; no publication occurs. Earlier checkpoint text
 below is retained history, including #79 implementation and verification attempts.
 

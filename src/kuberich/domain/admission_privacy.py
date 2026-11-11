@@ -27,12 +27,16 @@ _ADMISSION_PAYLOADS = frozenset(
 
 
 def admission_document(value: Any) -> bool:
+    """Classify the Kubernetes group while keeping version interpretation separate."""
     if not isinstance(value, dict):
         return False
     version, kind = value.get("apiVersion"), value.get("kind")
+    if not isinstance(version, str):
+        return False
+    group, separator, _version = version.partition("/")
     return (
-        isinstance(version, str)
-        and version.startswith("admissionregistration.k8s.io/")
+        group == "admissionregistration.k8s.io"
+        and separator == "/"
         and isinstance(kind, str)
         and kind in _ADMISSION_KINDS
     )

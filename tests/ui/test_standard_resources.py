@@ -127,13 +127,11 @@ async def test_every_resource_has_discovered_list_watch_detail_and_correct_hints
                 clients = [hook["clientConfig"] for hook in document["webhooks"]]
                 assert all(client["caBundle"] == "[REDACTED]" for client in clients)
                 assert CA_CANARY not in app.screen.viewer.text
-                assert not any(URL_CANARIES[index] in app.screen.viewer.text for index in (0, 1, 3))
-                # Deliberate YAML retains ordinary URL path data; default Details
-                # above exposes only the client classification and safe links.
+                assert not any(value in app.screen.viewer.text for value in URL_CANARIES)
+                # Default YAML conceals the complete URL payload and retains
+                # literal Service identity for inspection and navigation.
                 url_client = next(client for client in clients if "url" in client)
-                assert url_client["url"] == (
-                    "https://[REDACTED]@example.test/private-path-canary?token=[REDACTED]"
-                )
+                assert url_client["url"] == "[REDACTED]"
                 service = next(client["service"] for client in clients if "service" in client)
                 assert (service["namespace"], service["name"]) == ("team", "owned-webhook")
             elif definition.name == "configmaps":

@@ -162,6 +162,35 @@ Original receipts and the wheel are preserved under
 This documentation-only evidence update preserves the measured implementation
 commit and receipt identities rather than relabeling them as a later source.
 
+## First hosted attempt and source clarification
+
+The first ordinary Application run
+[42943836205](https://github.com/carloshm91/kuberich/actions/runs/42943836205)
+on `e34cb5a3f430ea89a065f42829dc23f123c60a13` failed Fast before the expensive
+source/native matrices. A legacy Standard-inspection assertion still expected a
+partially redacted webhook URL; the intended descriptor-aware default conceals
+its complete payload. The corrected assertion requires `[REDACTED]`, rejects
+every URL canary and retains the exact Service name/namespace checks.
+
+The same source received a new high CodeQL result for a domain-shaped
+`startswith` literal in the Kubernetes apiVersion classifier. Review of the
+[official query](https://codeql.github.com/codeql-query-help/python/py-incomplete-url-substring-sanitization/)
+identified a syntactic URL-check heuristic; the classifier selects no request
+endpoint. The source now explicitly partitions group/version and compares the
+exact Kubernetes group and slash. No alert suppression or dismissal was used.
+An independent differential review preserved all 378 descriptor combinations,
+10 non-document/missing-field cases and 3,024 nested concealment/preservation
+checks, including unknown versions and foreign/scheme lookalikes.
+
+The corrected privacy/export/inspection/App cohort passed 246 cases in 52.43
+seconds, with 13/13 privacy-helper statements and 4/4 branches, plus Ruff and
+strict types. The Standard/curated/inspection-export UI cohort passed 102 cases
+in 64.13 seconds with complete URL concealment and retained Service identities.
+The original CodeQL/Fast failures and source/native skips remain
+retained under `artifacts/issue80/root-audit/codeql-01/` and `hosted-01/`.
+Earlier native/installed receipts above retain their original source identities;
+the corrected head requires its own genuine CodeQL and complete normal matrix.
+
 ## Remaining qualification at this source freeze
 
 The ordinary 27-job PR matrix, complete independent production/changed-line
