@@ -396,7 +396,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1271,8 +1271,8 @@
       ],
       "source": "internal/view/dir.go",
       "status": "planned",
-      "difference": "M07 development source adds an anchored local browser, bounded multi-document inspection/editing, local-only builtin Kustomize, exact server dry-run/diff and reviewed create/update/delete batches. Named creation has no fabricated UID; existing updates use client-side merge previews and conditional JSON patch commits. Remote dependencies/plugins, generated names, force/prune, transactions and automatic replay are unsupported. Complete issue and cumulative phase qualification are recorded separately. M10 #234 adds original data-only built-in/user templates, file and explicit clipboard/paste creation with strict named POST dry-run, separate one-use confirmation and typed persistent receipts. This extends the local workflow; the pinned K9s source is not evidence of a template catalog or complete parity.",
-      "public_summary": "Development source for 0.5 adds local manifests/Kustomize and separate create-only templates, file or explicit clipboard imports, with strict server review and per-resource outcomes. Published 0.4.0 predates these workflows.",
+      "difference": "M07 development source adds an anchored local browser, bounded multi-document inspection/editing, local-only builtin Kustomize, exact server dry-run/diff and reviewed create/update/delete batches. Named creation has no fabricated UID; existing updates use client-side merge previews and conditional JSON patch commits. Remote dependencies/plugins, generated names, force/prune, transactions and automatic replay are unsupported. Complete issue and cumulative phase qualification are recorded separately. M10 #234 adds original data-only built-in/user templates, file and explicit clipboard/paste creation with strict named POST dry-run, separate one-use confirmation and typed persistent receipts. This extends the local workflow; the pinned K9s source is not evidence of a template catalog or complete parity. M10 feature delivery passed its protected PR matrix and independent current source/runtime/native audits. Those original feature identities remain separate from the pending 0.5 cumulative engineering checkpoint.",
+      "public_summary": "Prepared 0.5 source adds local manifests/Kustomize and distinct create-only templates, file or explicit clipboard imports, with strict server review and per-resource outcomes. Published 0.4.0 predates these workflows; cumulative candidate qualification remains pending.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/workloads.md",
@@ -1301,7 +1301,8 @@
         "tests/contract/test_create_only_manifests.py",
         "tests/contract/test_resource_templates.py",
         "tests/ui/test_resource_creation_sources.py",
-        "tests/terminal/test_resource_creation.py"
+        "tests/terminal/test_resource_creation.py",
+        "docs/internal/acceptance/operations-qualification.md"
       ]
     },
     {
@@ -1313,8 +1314,8 @@
       ],
       "source": "internal/dao/helm_chart.go",
       "status": "planned",
-      "difference": "M06 adds a native optional-CLI release workspace for Helm 3.22.1/4.3.1 and Secret/ConfigMap storage, with exact metadata identity, bounded reads, default redaction and one-use disclosure. M09 extends public :helmcharts with private classic/registered-OCI catalogs and immutable version selection; read-only cached browsing does not refresh or download. Focused HTTP/UI and historical native component evidence exists; final coherent current-source native, installed and ordinary CI qualification remains pending. Published 0.4.0 predates these controls; cumulative phase qualification remains separate.",
-      "public_summary": "Development source for 0.5 adds Helm release browsing and a private classic/registered-OCI chart catalog with exact version selection. Public 0.4.0 predates these controls; final development qualification remains in progress.",
+      "difference": "M06 adds a native optional-CLI release workspace for Helm 3.22.1/4.3.1 and Secret/ConfigMap storage, with exact metadata identity, bounded reads, default redaction and one-use disclosure. M09 extends public :helmcharts with private classic/registered-OCI catalogs and immutable version selection; read-only cached browsing does not refresh or download. M09 feature delivery passed its protected PR matrix and independent source/runtime/native audits; original producer identities remain in lifecycle acceptance. The prepared 0.5 candidate requires fresh cumulative qualification. Published 0.4.0 predates these controls; cumulative phase qualification remains separate.",
+      "public_summary": "Prepared 0.5 source adds Helm release browsing and a private classic/registered-OCI chart catalog with exact version selection. Published 0.4.0 predates these controls; cumulative candidate qualification remains pending.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/workloads.md",
@@ -1338,7 +1339,8 @@
         "tests/contract/test_helm_catalog_downloads.py",
         "tests/ui/test_helm_catalog.py",
         "scripts/verify_helm_registry.py",
-        "docs/internal/acceptance/helm-lifecycle.md"
+        "docs/internal/acceptance/helm-lifecycle.md",
+        "docs/internal/acceptance/operations-qualification.md"
       ]
     },
     {
@@ -1350,8 +1352,8 @@
       ],
       "source": "internal/dao/helm_history.go",
       "status": "planned",
-      "difference": "M06 adds reviewed prior-revision rollback with read-only enforcement and exact actual storage identity. M09 implements public chart/values selection, separate editor disclosure, mandatory native dry-run, current live desired-state diff, supplemental supported named-CREATE dryRun=All admission and one-use install/upgrade/uninstall. Hooks default off, CRDs are skipped, history retention defaults on; non-atomic final rendering, resource retention and uncertain writes never imply automatic replay or rollback. Catalog310/live48, authority286, teardown111 and current UI40 plus actual-root CLI2 are distinct focused measurements, not whole coverage. Final coherent native/installed/current-head ordinary CI and cumulative phase qualification remain pending.",
-      "public_summary": "Development source for 0.5 adds reviewed Helm install, upgrade, rollback and uninstall with private values, dry-run/live comparison and explicit history choices. Final qualification is pending; published 0.4.0 predates Helm management.",
+      "difference": "M06 adds reviewed prior-revision rollback with read-only enforcement and exact actual storage identity. M09 implements public chart/values selection, separate editor disclosure, mandatory native dry-run, current live desired-state diff, supplemental supported named-CREATE dryRun=All admission and one-use install/upgrade/uninstall. Hooks default off, CRDs are skipped, history retention defaults on; non-atomic final rendering, resource retention and uncertain writes never imply automatic replay or rollback. Catalog310/live48, authority286, teardown111 and current UI40 plus actual-root CLI2 are distinct focused measurements, not whole coverage. M09 feature delivery passed its protected PR matrix and independent source/runtime/native audits; those measurements retain their original producers. Fresh cumulative 0.5 candidate qualification remains pending.",
+      "public_summary": "Prepared 0.5 source adds reviewed Helm install, upgrade, rollback and uninstall with private values, dry-run/live comparison and explicit history choices. Cumulative candidate qualification remains pending; published 0.4.0 predates Helm management.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/workloads.md",
@@ -1367,7 +1369,8 @@
         "tests/ui/test_helm_lifecycle.py",
         "tests/terminal/test_helm_catalog.py",
         "scripts/helm_lifecycle_cases.py",
-        "docs/internal/acceptance/helm-lifecycle.md"
+        "docs/internal/acceptance/helm-lifecycle.md",
+        "docs/internal/acceptance/operations-qualification.md"
       ]
     },
     {
@@ -1609,8 +1612,8 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m–24h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
-      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
+      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m\u201324h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
+      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m\u201324h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/cluster-overview.md",

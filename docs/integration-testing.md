@@ -114,18 +114,21 @@ measured checkpoints and pending final native, installed and hosted checks.
 
 ## Release-time repetition
 
-Required PR/main CI runs the complete suite and all twenty-five real rehearsals once
+Required full CI runs the complete suite, every feature verifier registered in
+[`KIND_SCENARIOS`](../scripts/qualification.py) and the installed quickstart once
 (contexts, lifecycle faults, shell, port forwards, credential interoperability,
 mutations, editing, workloads, resource operations, cleanup, transfers, custom
 resources, aggregate logs, Pulse, relationships, authorization, native/external
 diagnostics, container inspection, historical metrics, curated resources,
-Helm, local manifests, node diagnostics, node maintenance and installed quickstart).
+Helm, local manifests, node diagnostics, node maintenance, ephemeral debugging,
+HTTP benchmarks and installed quickstart). Helm lifecycle and resource creation
+remain inside their existing Helm and manifest verifiers.
 The diagnostic rehearsal acquires a
 checksum-pinned official Popeye fixture through `scripts.diagnostics_tools`.
 It executes the tool only inside its owned container, with a disposable home,
 private connection and owned cluster. Production never downloads the tool.
 Before each canonical stable or RC publication, and after client/runtime or lifecycle
-changes, repeat the contract suite and all twenty-five real rehearsals three consecutive
+changes, repeat the contract suite, all registered feature verifiers and installed quickstart three consecutive
 times on the exact candidate checkout. A failure blocks qualification; retain
 its evidence and diagnose before repetition.
 
@@ -152,14 +155,20 @@ Ephemeral debugging uses `artifacts/cluster/rc-N-ephemeral-debug/evidence.json`.
 Its receipts separate the irreversible append, local attach exit and freshly
 observed remote running/terminated state; production cleanup never deletes the Pod.
 The curated rehearsal checks native tables, typed values, read-only App flows
-and representative links across 18 ordinary families plus Events. Its minimal
+and representative links across every family in its
+[current fixture catalog](../scripts/curated_kind.py), including Events and
+versioned admission policies/bindings. Its minimal
 VPA CRD is an explicitly unapproved disposable fixture without an autoscaler
 controller; it does not certify an installed VPA implementation. Source hashes,
 API observations and cleanup remain required even when latency is advisory.
 Preserve per-run logs, duration, exit status,
 candidate SHA, tool versions/digests, configuration invariance and node inventory.
-Archive `artifacts/ui`, `artifacts/terminal` and `artifacts/cluster` after each run
-so repeated screenshots do not overwrite earlier evidence. Hosted quality retains
+The coordinator retains exclusive initial and per-contract runtime snapshots,
+including raw backend/UI parents, children, replay/merge evidence and canonical
+source/installed creation HTTP receipts. It verifies their original hashes after
+later stages; failed or cancelled writers drain before partial evidence is copied.
+Keep per-round cluster directories separate so repetitions cannot overwrite them.
+Hosted quality retains
 these directories even on failure. Link exact evidence from the release qualification record;
 a documented schedule is not a claim those repetitions ran.
 

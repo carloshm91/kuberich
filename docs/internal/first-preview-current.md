@@ -1,12 +1,40 @@
 # Development checkpoint
 
-## Create-only resource checkpoint — 2026-11-11 UTC
+## Advanced operations qualification preparation — 2026-11-11 UTC
 
-M10 #234 is the active implementation issue. Development source provides six
+D09 #82 is the active implementation issue after completed M09/M10 delivery.
+Source/own-lock metadata now prepares 0.5.0 without dependency changes; installed
+editable metadata and module location match this checkout. Published channels
+remain 0.4.0, and website deployment remains separate. Nothing is published.
+
+M10 #234 is delivered by protected signed Gmail/sign-off squash
+`6e80c78ed8c982141d3c743356a76a6c5d3ba3f5`, single parent `7b69e226` and tree
+`e7273e2734c94182040bc3582e52964d67c067c1`. All 27 genuine
+[PR Application jobs](https://github.com/carloshm91/kuberich/actions/runs/43057564729)
+and required checks pass, with four independent source/runtime and four native
+audits, 74 native PTYs and current actual-kind creation effects. The
+[main Repository run](https://github.com/carloshm91/kuberich/actions/runs/43069460139)
+passes; all three criteria/project delivery and branch retirement are complete.
+See the [delivery record](https://github.com/carloshm91/kuberich/issues/234#issuecomment-6802900159).
+These are feature-delivery identities, not 0.5.0 qualification.
+
+Current preparation adds immutable per-stage runtime originals, canonical
+source/installed creation HTTP receipts, genuine 0.4 upgrade/replacement evidence
+and exact existing check/app binding validation. The policy focus passes 350
+cases, including typed-float refusal; authored notes/style pass 34 cases.
+Workers' scoped fixtures do not establish candidate qualification. Ordinary
+preparation CI, exact-main six-profile/native/Homebrew qualification, one canonical
+three-round campaign and the separate 1,800-second soak remain required. The
+[operations record](acceptance/operations-qualification.md) keeps commands and
+limits; final immutable reports attach to live #82 without changing its candidate.
+
+## Earlier create-only implementation checkpoint — 2026-11-11 UTC
+
+At this earlier checkpoint M10 #234 was being implemented. That source provided six
 built-ins, selected-config user templates, explicit file/clipboard/paste capture,
 private draft editing and separate strict server review/creation. Source and
-published packages remain 0.4.0. Complete final qualification is in progress;
-no publication is performed or authorized by this checkpoint.
+published packages were 0.4.0. Final qualification was still in progress; the
+completed delivery is recorded above. This checkpoint authorized no publication.
 
 M09 #233 is delivered by protected signed-off squash
 `7b69e226189758c805d1d67c10b01630c8ccbb2c`, parent

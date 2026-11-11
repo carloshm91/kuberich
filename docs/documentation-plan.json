@@ -3884,6 +3884,26 @@
       ],
       "reason": "Retain create-only template, source, schema, clipboard and ownership observations, original failures and qualification limits outside public navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/release-notes/0.5.0.md",
+      "audience": "user release notes",
+      "action": "keep",
+      "destinations": [
+        "docs/release-notes/0.5.0.md"
+      ],
+      "reason": "Keep authored advanced-operations features, compatibility, genuine predecessor upgrade commands and known limits source-bound before separately approved activation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/operations-qualification.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/operations-qualification.md"
+      ],
+      "reason": "Retain operations qualification preparation, immutable runtime-original retention, exact-byte upgrade observations and pending engineering evidence outside user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

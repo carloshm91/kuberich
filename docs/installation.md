@@ -118,6 +118,16 @@ archive directory until the replacement works.
 Homebrew keeps old versions until `brew cleanup` removes them; it has no general
 downgrade command. An exact Python version pin needs an explicit version change.
 
+### Prepared 0.5 upgrade
+
+Development source prepares 0.5.0; the published channels above remain 0.4.0.
+After separate approval and channel activation, unpinned 0.4 installations use
+the normal uv, pipx or Homebrew upgrade commands above. No console-alias migration
+is needed between these versions. Explicit version pins still require deliberate
+replacement. For standalone archives, replace the complete verified directory;
+keep preferences and kubeconfig outside it. Candidate tests use owned unpublished
+installations and do not establish public channel availability.
+
 ### Upgrade from 0.3 to 0.4
 
 Version 0.4 removes the deprecated `kubetrol` command and Python shim.

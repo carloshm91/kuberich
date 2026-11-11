@@ -71,7 +71,7 @@ The runtime inventory uses tracked paths, and application-image capture requires
 clean committed source. Keep that candidate unchanged throughout measurement;
 test artifacts belong in the ignored output directories.
 For the full current strict-target, private-access, startup and coverage stages,
-use `uv run python scripts/qualify.py 0.4.0`; see [phase verification](docs/releases.md#reproduce-phase-verification).
+use `uv run python scripts/qualify.py 0.5.0`; see [phase verification](docs/releases.md#reproduce-phase-verification).
 The individual tools include:
 
 ```sh
