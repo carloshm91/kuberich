@@ -55,7 +55,7 @@ case "$action" in
 esac
 """
 
-type CommandWrap = Callable[[list[str], dict[str, str]], list[str]]
+type CommandWrap = Callable[[list[str], dict[str, str], Path], list[str]]
 
 
 def terminal_resource_creation(
@@ -109,7 +109,7 @@ def terminal_resource_creation(
         outside.update(process_environment)
     argv = [*command, "--kubeconfig", str(config), "--command", "create"]
     if wrap is not None:
-        argv = wrap(argv, process_environment)
+        argv = wrap(argv, process_environment, directory)
     drafts: list[Path] = []
 
     def editor_state() -> tuple[Path, int]:

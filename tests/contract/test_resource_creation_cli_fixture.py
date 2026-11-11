@@ -23,7 +23,9 @@ def test_wrapper_failure_closes_listener_controller_and_active_watch_handler(tmp
     monkeypatch.setattr(resource_creation_cli.threading, "Thread", track)
     connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=2)
 
-    def broken_wrap(argv, environment):
+    def broken_wrap(argv, environment, cwd):
+        assert cwd == tmp_path
+        assert (cwd / "owned-create.yaml").is_file()
         connection.request(
             "GET",
             "/api/v1/namespaces/team/pods?watch=1&resourceVersion=owned&timeoutSeconds=30",

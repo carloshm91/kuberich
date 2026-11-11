@@ -285,6 +285,24 @@ through SourceFormatError; raw source values/credentials and generic OS details
 remain withheld. Original `hosted-04-fast-failure.log` is retained separately;
 this refused setup establishes no mirror-recovery or application result.
 
+Run `43041184702` passes current Fast (12,613 cases, two platform skips, 482.84
+seconds). Actual checkout is `761abebad9545b7cf2d54da88e8b6c0cda0bb84e`.
+All twelve Ubuntu source-part dependency setups and both Linux native compiler
+setups succeed with the reviewed mirror and original authentication/bounds.
+The completed Fast log retains actual MIT base/updates/backports/security index
+refresh and package installation. This demonstrates hosted setup recovery.
+
+Both Linux native outside-checkout workflows then refuse the relative creation
+file: the Docker wrapper preserved UID/GID but omitted the container working
+directory, so the app correctly looked under `/` and found no source. macOS
+sandbox execution inherited the owned fixture cwd. The verifier-only correction
+passes that exact cwd through both creation-driver wrap ports and sets Docker
+`--workdir` only for this cohort. Global Host/root negative controls, private-file
+ownership, application guards and deadlines remain unchanged. Focused verifier/
+fixture controls pass 37 cases with one macOS platform skip. The original Linux
+logs and provider ZIP remain retained; those native failures are unqualified and
+the next genuine complete current-source/native matrix is still required.
+
 ## Remaining qualification
 
 Whole production/branch/changed-line gates, native workflows and the

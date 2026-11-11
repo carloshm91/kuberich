@@ -15,7 +15,7 @@ from tests.support.resources import descriptor, legacy_roots
 from tests.support.terminal_api import Handler, Server, config
 from tests.terminal.pty_support import TerminalSession
 
-type CommandWrap = Callable[[list[str], dict[str, str]], list[str]]
+type CommandWrap = Callable[[list[str], dict[str, str], Path], list[str]]
 
 COLLECTION = "/api/v1/namespaces/team/configmaps"
 PRIVATE = "owned-creation-cli-private-value"
@@ -242,7 +242,7 @@ def terminal_resource_creation_cli(
         argv = [*command, "--kubeconfig", str(kubeconfig), "--namespace", "team"]
         if initial_offline:
             argv.extend(("--command", "create"))
-        launched = wrap(argv, variables) if wrap is not None else argv
+        launched = wrap(argv, variables, directory) if wrap is not None else argv
         outside = dict(controller_environment or {})
         if wrap is None:
             outside.update(variables)

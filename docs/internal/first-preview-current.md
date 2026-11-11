@@ -72,8 +72,12 @@ All original trust checks, package closure and hard deadlines remain unchanged.
 The first source-preparation attempt safely refused the pinned image's mirror
 priority metadata before network access. Exact priority fixtures and controlled
 safe diagnostics are corrected and pass 205 focused cases.
-The complete corrected hosted matrix, including actual hosted signed dependency
-recovery, remains required.
+The following run passes Fast (12,613 cases, two platform skips) and all Linux
+signed dependency setups. Both Linux native creation drivers then expose a
+verifier cwd omission: Docker looked for the relative fixture file under `/`.
+The scoped wrapper now preserves the actual owned cwd alongside UID/GID, with
+global Host controls and application checks unchanged. The complete corrected
+hosted source/native matrix remains required.
 
 ## Helm catalog and release changes checkpoint — 2026-11-11 UTC
 

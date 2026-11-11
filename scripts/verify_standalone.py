@@ -386,7 +386,7 @@ def creation_requests(host: Host, directory: Path, evidence: Path) -> dict[str, 
         directory, helpers=False, bundle="/app" if host.linux else str(host.bundle)
     )
 
-    def command(argv: list[str], child_environment: dict[str, str]) -> list[str]:
+    def command(argv: list[str], child_environment: dict[str, str], cwd: Path) -> list[str]:
         wrapped = host.command(argv, child_environment, tty=True)
         if host.linux:
             try:
@@ -397,7 +397,12 @@ def creation_requests(host: Host, directory: Path, evidence: Path) -> dict[str, 
                 ) from None
             # Only this private-file cohort shares the controller identity.
             # Global Host controls retain their original root behavior.
-            wrapped[position:position] = ["--user", f"{os.getuid()}:{os.getgid()}"]
+            wrapped[position:position] = [
+                "--user",
+                f"{os.getuid()}:{os.getgid()}",
+                "--workdir",
+                str(cwd),
+            ]
             return wrapped
         return [
             "/usr/bin/env",
