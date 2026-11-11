@@ -114,7 +114,8 @@ visible and retains the owner for retry; it is not reported as complete cleanup.
 ## Coherent creation and regression checkpoints
 
 Signed producer `b94d2772f7d88e429fd1f05e2de36efe1cbfbeff` passed 110 owned-kind
-check occurrences (88 unique names), including all six built-ins and a selected-config user template, actual
+check occurrences (88 unique names), including all six built-ins and a
+selected-config user template, actual
 201 receipts matched to independent GETs, zero replicas, changed-template refusal,
 served-version CRD schemas/defaults/nullable values/CEL/preserved unknown regions,
 ResourceQuota, Pod Security and validating admission. Partial and committed-write
@@ -175,10 +176,49 @@ Stop disclosure restoration. Their original input/producer identities remain
 historical; focused current-source controls and the ordinary exact-head hosted
 matrix qualify later changes.
 
+## Final focused source checks
+
+Signed producer `f28c95449073262815a7b11368375e66aeb200cb` passed 1,866 targeted
+unit/contract cases with two platform skips in 131.89 seconds. Every changed
+critical module has 100% line and branch coverage, with no exclusions:
+
+| Module | Executable lines | Branches |
+| --- | ---: | ---: |
+| `domain/clipboard.py` | 69/69 | 32/32 |
+| `domain/commands.py` | 71/71 | 0/0 |
+| `domain/manifests.py` | 332/332 | 96/96 |
+| `domain/resource_templates.py` | 264/264 | 136/136 |
+| `services/command_catalog.py` | 64/64 | 8/8 |
+| `services/commands.py` | 189/189 | 98/98 |
+
+Whole-tree Ruff/formatting, the exact workflow strict-type union (402 sources)
+and the complete private-access audit pass at the same producer. All 337
+production module bytes match committed blobs. The ignored
+`artifacts/issue234/final-focused-receipt.json` SHA-256 is
+`d35444e568f261955b34b6ad6ec353612b89aac9dd507f496700b5dd646b513b`;
+it binds the module inventory, coverage/log hashes and original docs failure.
+This focused coverage does not establish whole-production or changed-line floors.
+
+The five creation UI files and complete lazy-SDK family passed within a combined
+266-passing-case feature/docs run. Its two failures were existing public-document
+tracking guards treating the product term X11 as an issue-code token. The guide
+uses the standard X Window System name; neither guard is weakened. The original
+`final-feature-docs-01.log` remains retained. Earlier critical coverage aborted
+two completion tests at stale expected candidate lists; corrected lists include
+create within the existing eight-result bound and preserve the old aliases.
+
+Private-template editor controls reject name/namespace/GVK changes, additions,
+removals and duplicate identities, preserve the prior draft and remove the
+private file. Same-identity content moves and document reorder remain opaque.
+Public UI controls await the actual refusal/update text and demonstrate fresh
+disclosure on the same retained draft. Stop controls preserve in-memory edits,
+join held disclosure preparation on Back, reject stale source/policy results and
+restore fresh consent without recapture. Original failures retain their own logs.
+
 ## Remaining qualification
 
-All changed critical modules at 100%, complete current-source private/import/docs
-checks, whole production/branch/changed-line gates, native workflows and the
+Complete corrected documentation checks, whole production/branch/changed-line
+gates, native workflows and the
 ordinary exact-head hosted matrix remain separate requirements. Provider
 certification remains Q05
 #87. D09 #82 owns cumulative v0.5 qualification and any source version change;

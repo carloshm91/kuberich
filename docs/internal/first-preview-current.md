@@ -46,8 +46,13 @@ uv run pytest -q tests/packaging/test_resource_creation_cli.py tests/packaging/t
 
 Subsequent private-template edits preserve public routing identities, and Stop
 retains a draft for fresh editor disclosure/review. These later changes require
-their focused controls and the final exact-head hosted platform matrix; earlier
-proofs keep their original producer identities. The
+the final exact-head hosted platform matrix; earlier proofs keep their original
+producer identities. Signed `f28c954` passes 1,866 targeted cases (two platform
+skips), all six changed critical modules at 100% lines/branches, whole Ruff and
+formatting, all 402 workflow strict-type sources and the complete private-access
+audit. Creation UI and lazy-SDK controls pass; the complete docs family is being
+rerun after replacing a product term that matched the existing ticket-code guard.
+Whole/branch/changed-line floors and native/platform checks remain separate. The
 [creation acceptance record](acceptance/resource-creation.md) retains original
 failures and the separate private-root counterexample/correction. Strict server
 validation is authoritative; no offline schema completeness, namespace-UID atomic

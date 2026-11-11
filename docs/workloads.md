@@ -398,7 +398,7 @@ through the explicitly disclosed trusted editor. A returned edit replaces only
 the in-memory draft; it does not save over the imported file.
 
 Choose **Read clipboard** only when you intend to import its current text.
-Native reads need the selected macOS, Wayland or X11 helper/session. SSH, tmux,
+Native reads need the selected macOS, Wayland or X Window System helper/session. SSH, tmux,
 OSC52 or unavailable native reads offer an explicit focused **Paste** capture.
 It accepts a public terminal paste event without echoing the payload. Clipboard
 and paste retention is limited to 1 MiB UTF-8; invalid, truncated, excessive or
