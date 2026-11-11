@@ -122,7 +122,9 @@ def terminal_resource_creation(
                 terminal.wait_for_screen("No changes")
             terminal.resize(120, 36)
             terminal.send(b"\x1b")
-        terminal.wait_for_screen("Status", absent=("Create resources · offline source",))
+        terminal.wait_for_screen(
+            "No cluster connection", absent=("Create resources · offline source",)
+        )
         assert source.read_bytes() == before
         assert not draft.parent.exists()
         assert "creation-pty-private-source" not in "\n".join(terminal.screen.display)
